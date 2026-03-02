@@ -1,15 +1,12 @@
 package com.menna.nabata_7asena.ui.theme
 
-import android.R.attr.category
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
-import androidx.compose.runtime.CompositionLocal
 
 @Immutable
 data class NabataColors(

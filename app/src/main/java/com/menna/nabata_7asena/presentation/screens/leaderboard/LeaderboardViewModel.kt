@@ -7,7 +7,11 @@ import com.menna.nabata_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabata_7asena.domain.usecase.GetCurrentUserUseCase
 import com.menna.nabata_7asena.domain.usecase.GetLeaderboardUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
