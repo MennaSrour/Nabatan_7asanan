@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "865936905898",
+    "project_id": "nabatan-hasanan",
+    "storage_bucket": "nabatan-hasanan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865936905898:android:36dd8a4c2408da1ec822d3",
+        "android_client_info": {
+          "package_name": "com.menna.nabata_7asena"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrT2-JNVRLA9T-_VzPIuj_aJS0TYJeP6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
