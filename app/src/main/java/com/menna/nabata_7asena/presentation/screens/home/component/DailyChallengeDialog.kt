@@ -1,18 +1,25 @@
 package com.menna.nabata_7asena.presentation.screens.home.component
 
-import android.media.MediaPlayer
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,19 +30,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabata_7asena.R
 import com.menna.nabata_7asena.domain.entity.DailyContent
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 
 @Composable
 fun DailyChallengeDialog(
@@ -43,111 +46,130 @@ fun DailyChallengeDialog(
     onDismiss: () -> Unit,
     onAnswerSelected: (Boolean) -> Unit
 ) {
-    var selectedAnswerIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedIdx by remember { mutableStateOf<Int?>(null) }
     var isSolved by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
-
-    fun checkAnswer(index: Int) {
-        selectedAnswerIndex = index
-        
-        if (riddle.options[index] == riddle.answer) {
+    fun check(index: Int) {
+        selectedIdx = index
+        val isCorrect = riddle.options[index] == riddle.answer
+        if (isCorrect) {
             isSolved = true
-            MediaPlayer.create(context, R.raw.good).start()
-            onAnswerSelected(true)
-        } else {
-            
         }
+        onAnswerSelected(isCorrect)
     }
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(32.dp))
-                .background(Color.White)
-                .border(4.dp, Color(0xFFFFD54F), RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .background(SummerTheme.colors.dialogBackground)
+                .border(3.dp, SummerTheme.colors.goldWarm, RoundedCornerShape(24.dp))
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "🌟 فزورة اليوم 🌟",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFFFF6F00)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.HelpOutline,
+                        contentDescription = null,
+                        tint = SummerTheme.colors.textPrimary,
+                        modifier = Modifier.size(SummerTheme.dimensions.iconLarge)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "سؤال اليوم",
+                        style = SummerTheme.typography.dialogTitle,
+                        color = SummerTheme.colors.textPrimary
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = SummerTheme.colors.goldWarm,
+                        modifier = Modifier.size(SummerTheme.dimensions.iconLarge)
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(14.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFE3F2FD), RoundedCornerShape(16.dp))
-                        .padding(16.dp)
+                        .background(SummerTheme.colors.white, SummerTheme.shapes.taskCard)
+                        .border(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.4f), SummerTheme.shapes.taskCard)
+                        .padding(SummerTheme.dimensions.paddingLarge)
                 ) {
                     Text(
                         text = riddle.question,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = SummerTheme.typography.dialogQuestion,
                         textAlign = TextAlign.Center,
-                        color = Color(0xFF1565C0),
-                        lineHeight = 26.sp,
+                        color = SummerTheme.colors.textPrimary,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(Modifier.height(18.dp))
 
-                
-                riddle.options.forEachIndexed { index, answerOption ->
-
-                    
-                    val isCorrectOption = answerOption == riddle.answer 
-
-                    val backgroundColor by animateColorAsState(
-                        targetValue = when {
-                            isSolved && isCorrectOption -> Color(0xFF4CAF50) 
-                            selectedAnswerIndex == index && !isCorrectOption -> Color(0xFFEF5350) 
-                            else -> Color(0xFFF5F5F5)
-                        },
-                        label = "color"
+                riddle.options.forEachIndexed { index, option ->
+                    val isCorrect = option == riddle.answer
+                    val bgColor by animateColorAsState(
+                        when {
+                            isSolved && isCorrect -> SummerTheme.colors.successGreen
+                            selectedIdx == index && !isCorrect -> SummerTheme.colors.errorRed
+                            else -> SummerTheme.colors.white
+                        }, label = "color"
                     )
 
-                    val textColor = if (selectedAnswerIndex == index || (isSolved && isCorrectOption)) Color.White else Color.Black
-
                     Button(
-                        onClick = { if (!isSolved) checkAnswer(index) },
-                        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
-                        shape = RoundedCornerShape(16.dp),
+                        onClick = { if (!isSolved) check(index) },
+                        colors = ButtonDefaults.buttonColors(containerColor = bgColor),
+                        shape = SummerTheme.shapes.taskCard,
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (bgColor == SummerTheme.colors.white) SummerTheme.colors.goldWarm.copy(alpha = 0.3f) else SummerTheme.colors.transparent
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                            .height(56.dp)
-                            .shadow(if(isSolved) 0.dp else 4.dp, RoundedCornerShape(16.dp))
+                            .padding(vertical = 5.dp)
+                            .height(52.dp)
                     ) {
                         Text(
-                            text = answerOption,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor
+                            text = option,
+                            style = SummerTheme.typography.buttonText,
+                            color = if (bgColor == SummerTheme.colors.white) SummerTheme.colors.textPrimary else SummerTheme.colors.white
                         )
                     }
                 }
 
                 if (isSolved) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text("أحسنت! 🎉", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = SummerTheme.colors.successGreen,
+                            modifier = Modifier.size(SummerTheme.dimensions.iconSmall)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "ما شاء الله أحسنت",
+                            color = SummerTheme.colors.successGreen,
+                            style = SummerTheme.typography.taskTitle
+                        )
+                    }
                 }
             }
 
             if (isSolved) {
-                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.win_celebration))
+                val comp by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.win_celebration))
                 LottieAnimation(
-                    composition = composition,
+                    comp,
                     iterations = 1,
-                    modifier = Modifier.matchParentSize().scale(1.2f)
+                    modifier = Modifier
+                        .matchParentSize()
+                        .scale(1.2f)
                 )
             }
         }

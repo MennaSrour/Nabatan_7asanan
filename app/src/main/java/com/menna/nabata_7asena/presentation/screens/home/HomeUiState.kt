@@ -1,7 +1,6 @@
 package com.menna.nabata_7asena.presentation.screens.home
 
-
-import androidx.compose.ui.graphics.Color
+import com.menna.nabata_7asena.domain.entity.DailyContent
 import com.menna.nabata_7asena.domain.entity.TaskCategory
 
 data class HomeUiState(
@@ -10,7 +9,11 @@ data class HomeUiState(
     val dailyWisdom: String = "جاري تحميل نور اليوم...",
     val hijriDate: String = "",
     val tasks: List<UiTaskItem> = emptyList(),
-    val showCelebration: Boolean = false
+    val showCelebration: Boolean = false,
+    val isNightTheme: Boolean = false,
+    val hasBookmark: Boolean = false,
+    val showChallengeDialog: Boolean = false,
+    val currentRiddle: DailyContent.Riddle? = null
 ) {
     data class UiUser(
         val name: String,
@@ -24,8 +27,6 @@ data class HomeUiState(
         val title: String,
         val subtitle: String? = null,
         val isCompleted: Boolean,
-        val backgroundColor: Color,
-        val contentColor: Color,
         val emoji: String,
         val category: TaskCategory,
         val isPlaying: Boolean = false

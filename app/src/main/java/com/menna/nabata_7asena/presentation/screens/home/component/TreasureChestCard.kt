@@ -1,90 +1,79 @@
 package com.menna.nabata_7asena.presentation.screens.home.component
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
-import com.menna.nabata_7asena.R
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 
 @Composable
-fun TreasureChestCard(isUnlocked: Boolean, onClick: () -> Unit) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.treasure))
-
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = isUnlocked,
-        iterations = LottieConstants.IterateForever
+fun TreasureChestCard(
+    isUnlocked: Boolean,
+    onClick: () -> Unit
+) {
+    val infinite = rememberInfiniteTransition(label = "chest")
+    val bounce by infinite.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "bounce"
     )
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
-            .clip(RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
-                Brush.linearGradient(
-                    if (isUnlocked) listOf(
-                        Color(0xFFFFD54F),
-                        Color(0xFFFF8F00)
-                    ) else listOf(Color(0xFFECEFF1), Color(0xFFCFD8DC))
-                )
+                if (isUnlocked) {
+                    Brush.verticalGradient(listOf(SummerTheme.colors.goldWarm, SummerTheme.colors.goldDeep))
+                } else {
+                    Brush.verticalGradient(listOf(SummerTheme.colors.chestLockedStart, SummerTheme.colors.chestLockedEnd))
+                }
             )
             .clickable(enabled = isUnlocked) { onClick() }
             .padding(20.dp),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-
-            
-            if (isUnlocked) {
-                
-                LottieAnimation(
-                    composition = composition,
-                    progress = { progress },
-                    modifier = Modifier.size(50.dp)
-                )
-            } else {
-                Text(text = "🔒", fontSize = 40.sp)
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    text = if (isUnlocked) "هديتك جاهزة!" else "الكنز مقفول",
-                    color = if (isUnlocked) Color.White else Color.Gray,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 20.sp
-                )
-                Text(
-                    text = if (isUnlocked) "اضغط عشان تفتح" else "خلص مهامك عشان تكسب",
-                    color = if (isUnlocked) Color.White.copy(0.9f) else Color.Gray,
-                    fontSize = 14.sp
-                )
-            }
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .scale(if (isUnlocked) bounce else 1f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(SummerTheme.colors.white.copy(alpha = if (isUnlocked) 0.25f else 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isUnlocked) Icons.Rounded.CardGiftcard else Icons.Rounded.Lock,
+                contentDescription = null,
+                tint = if (isUnlocked) SummerTheme.colors.white else SummerTheme.colors.chestLockedText,
+                modifier = Modifier.size(28.dp)
+            )
         }
+        Text(
+            text = if (isUnlocked) "الكنز اتفتح" else "كملي مهامك وصلواتك",
+            style = SummerTheme.typography.chestTitle,
+            color = if (isUnlocked) SummerTheme.colors.white else SummerTheme.colors.chestLockedText,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        Text(
+            text = if (isUnlocked) "اضغطي وشوفي مفاجأتك" else "عشان تفتحي الكنز",
+            style = SummerTheme.typography.chestSubtitle,
+            color = if (isUnlocked) SummerTheme.colors.white.copy(alpha = 0.85f) else SummerTheme.colors.chestLockedText.copy(alpha = 0.75f),
+            modifier = Modifier.padding(top = 2.dp)
+        )
     }
 }

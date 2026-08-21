@@ -1,9 +1,16 @@
 package com.menna.nabata_7asena.presentation.screens.leaderboard
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -38,7 +46,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,16 +60,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabata_7asena.R
 import com.menna.nabata_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabata_7asena.domain.entity.User
-import com.menna.nabata_7asena.ui.theme.RamadanTheme
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
 @Composable
 fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
-    val starAlphas = RamadanTheme.rememberStarAlphas(count = 8)
+    val particleAlphas = SummerTheme.rememberParticleAlphas(count = 8)
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -71,7 +85,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LeaderboardBackground(starAlphas)
+        LeaderboardBackground(particleAlphas)
 
         Scaffold(
             containerColor = Color.Transparent,
@@ -86,10 +100,10 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
 
                 if (state.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = RamadanTheme.Colors.PrimaryGold)
+                        CircularProgressIndicator(color = SummerTheme.Colors.PrimaryGold)
                     }
                 } else if (state.list.isEmpty()) {
-                    RamadanEmptyState()
+                    SummerEmptyState()
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(bottom = 100.dp),
@@ -99,7 +113,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                             val topThree = state.list.take(3)
                             if (topThree.isNotEmpty()) {
                                 Spacer(Modifier.height(24.dp))
-                                RamadanPodiumView(topThree, state.currentUserId)
+                                SummerPodiumView(topThree, state.currentUserId)
                                 Spacer(Modifier.height(20.dp))
 
                                 Row(
@@ -109,18 +123,18 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                                     Box(
                                         Modifier
                                             .weight(1f).height(1.dp)
-                                            .background(Color.White.copy(0.2f))
+                                            .background(Color(0xFF37474F).copy(0.15f))
                                     )
                                     Text(
                                         "  بقية المتسابقين  ",
                                         fontSize = 12.sp,
-                                        color = Color.White.copy(0.6f),
+                                        color = Color(0xFF37474F).copy(0.6f),
                                         fontWeight = FontWeight.Bold
                                     )
                                     Box(
                                         Modifier
                                             .weight(1f).height(1.dp)
-                                            .background(Color.White.copy(0.2f))
+                                            .background(Color(0xFF37474F).copy(0.15f))
                                     )
                                 }
                             }
@@ -128,7 +142,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
 
                         val restOfList = state.list.drop(3)
                         itemsIndexed(restOfList) { index, user ->
-                            RamadanLeaderboardItem(
+                            SummerLeaderboardItem(
                                 user = user,
                                 rank = index + 4,
                                 isCurrentUser = user.userId == state.currentUserId
@@ -142,77 +156,111 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun LeaderboardBackground(starAlphas: List<Float>) {
-    val starPositions = remember {
+fun LeaderboardBackground(particleAlphas: List<Float>) {
+    val positions = remember {
         listOf(
-            Offset(0.05f, 0.04f) to 3f,
-            Offset(0.80f, 0.06f) to 4f,
-            Offset(0.40f, 0.02f) to 3f,
-            Offset(0.65f, 0.10f) to 5f,
-            Offset(0.15f, 0.08f) to 3f,
-            Offset(0.90f, 0.15f) to 4f,
-            Offset(0.55f, 0.05f) to 3f,
-            Offset(0.25f, 0.12f) to 4f,
+            Offset(0.05f, 0.04f) to (3f to SparkleKind.STAR),
+            Offset(0.80f, 0.06f) to (4f to SparkleKind.GOLD),
+            Offset(0.40f, 0.02f) to (3f to SparkleKind.STAR),
+            Offset(0.65f, 0.10f) to (5f to SparkleKind.PINK),
+            Offset(0.15f, 0.08f) to (3f to SparkleKind.STAR),
+            Offset(0.90f, 0.15f) to (4f to SparkleKind.GOLD),
+            Offset(0.55f, 0.05f) to (3f to SparkleKind.STAR),
+            Offset(0.25f, 0.12f) to (4f to SparkleKind.PINK),
         )
     }
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF1A237E),
-                    Color(0xFF283593),
-                    Color(0xFF3949AB),
-                    Color(0xFF5C6BC0).copy(alpha = 0.5f)
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.clouds))
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        SummerTheme.Colors.PrimarySummerBlue,
+                        Color(0xFF81D4FA),
+                        SummerTheme.Colors.BackgroundSunny
+                    )
                 )
             )
-        )
-        starPositions.forEachIndexed { i, (off, radius) ->
-            drawCircle(
-                color = Color(0xFFFFF176),
-                radius = radius.dp.toPx(),
-                center = Offset(size.width * off.x, size.height * off.y),
-                alpha = starAlphas.getOrElse(i) { 0.7f }
-            )
+            positions.forEachIndexed { i, (off, radiusAndKind) ->
+                val (radius, kind) = radiusAndKind
+                val sparkleColor = when (kind) {
+                    SparkleKind.STAR -> Color.White
+                    SparkleKind.GOLD -> SummerTheme.Colors.PrimaryGold
+                    SparkleKind.PINK -> SummerTheme.Colors.PrimaryPink
+                }
+                drawCircle(
+                    color = sparkleColor.copy(alpha = 0.75f),
+                    radius = radius.dp.toPx(),
+                    center = Offset(size.width * off.x, size.height * off.y),
+                    alpha = particleAlphas.getOrElse(i) { 0.7f }
+                )
+            }
         }
+
+        LottieAnimation(
+            composition = composition,
+            iterations = LottieConstants.IterateForever,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .alpha(0.5f)
+        )
     }
 }
 
+private enum class SparkleKind { STAR, GOLD, PINK }
+
 @Composable
 fun LeaderboardHeader() {
+    val floatOffset = SummerTheme.rememberFloatingAnimation()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("👑", fontSize = 36.sp)
+            Text(
+                "🏆",
+                fontSize = 40.sp,
+                modifier = Modifier.offset(y = floatOffset.dp)
+            )
             Spacer(Modifier.height(4.dp))
             Text(
                 "أبطال التحدي",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF37474F)
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Surface(
-                color = RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(50)
+                color = SummerTheme.Colors.PrimaryPink.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(50),
+                border = BorderStroke(1.5.dp, SummerTheme.Colors.PrimaryGold.copy(0.5f))
             ) {
-                Text(
-                    "تنافسوا على الخير 🌙",
-                    fontSize = 13.sp,
-                    color = RamadanTheme.Colors.PrimaryGold,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text("🌟", fontSize = 14.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "يلا نكسب سوا!",
+                        fontSize = 13.sp,
+                        color = Color(0xFFE65100),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun RamadanPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
+fun SummerPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
     val first  = users.firstOrNull()
     val second = users.getOrNull(1)
     val third  = users.getOrNull(2)
@@ -225,30 +273,30 @@ fun RamadanPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
         horizontalArrangement = Arrangement.Center
     ) {
         if (second != null) {
-            RamadanPodiumMember(
+            SummerPodiumMember(
                 user = second, rank = 2, height = 130.dp,
-                baseColor = Color(0xFF5C6BC0),
-                darkerColor = Color(0xFF3949AB),
+                baseColor = SummerTheme.Colors.PrimaryTeal,
+                darkerColor = Color(0xFF00897B),
                 crownRes = "🥈", isWinner = false,
                 isCurrentUser = second.userId == currentUserId,
                 modifier = Modifier.weight(1f).zIndex(1f)
             )
         }
         if (first != null) {
-            RamadanPodiumMember(
-                user = first, rank = 1, height = 170.dp,
-                baseColor = Color(0xFF7E57C2),
-                darkerColor = Color(0xFF512DA8),
+            SummerPodiumMember(
+                user = first, rank = 1, height = 175.dp,
+                baseColor = SummerTheme.Colors.PrimaryGold,
+                darkerColor = Color(0xFFF57C00),
                 crownRes = "👑", isWinner = true,
                 isCurrentUser = first.userId == currentUserId,
                 modifier = Modifier.weight(1.2f).zIndex(2f).offset(y = (-10).dp)
             )
         }
         if (third != null) {
-            RamadanPodiumMember(
+            SummerPodiumMember(
                 user = third, rank = 3, height = 100.dp,
-                baseColor = Color(0xFF42A5F5),
-                darkerColor = Color(0xFF1976D2),
+                baseColor = SummerTheme.Colors.PrimarySummerBlue,
+                darkerColor = Color(0xFF0288D1),
                 crownRes = "🥉", isWinner = false,
                 isCurrentUser = third.userId == currentUserId,
                 modifier = Modifier.weight(1f).zIndex(1f)
@@ -258,7 +306,7 @@ fun RamadanPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
 }
 
 @Composable
-fun RamadanPodiumMember(
+fun SummerPodiumMember(
     user: LeaderboardEntry,
     rank: Int,
     height: Dp,
@@ -269,6 +317,20 @@ fun RamadanPodiumMember(
     isCurrentUser: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val crownScale = if (isWinner) {
+        val infinite = rememberInfiniteTransition(label = "crownPulse")
+        val scale by infinite.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.15f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(700, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "crownScale"
+        )
+        scale
+    } else 1f
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -279,15 +341,15 @@ fun RamadanPodiumMember(
                 shape = CircleShape,
                 border = BorderStroke(
                     3.dp,
-                    if (isCurrentUser) RamadanTheme.Colors.PrimaryPink
-                    else RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.8f)
+                    if (isCurrentUser) SummerTheme.Colors.PrimaryPink
+                    else baseColor.copy(alpha = 0.9f)
                 ),
                 shadowElevation = 8.dp,
-                modifier = Modifier.size(if (isWinner) 82.dp else 62.dp)
+                modifier = Modifier.size(if (isWinner) 86.dp else 64.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.background(Color(0xFF283593))
+                    modifier = Modifier.background(Color(0xFFFFFDE7))
                 ) {
                     Image(
                         painter = painterResource(
@@ -303,15 +365,16 @@ fun RamadanPodiumMember(
 
             Text(
                 crownRes,
-                fontSize = if (isWinner) 38.sp else 28.sp,
+                fontSize = if (isWinner) 40.sp else 28.sp,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = if (isWinner) (-34).dp else (-24).dp)
+                    .offset(y = if (isWinner) (-36).dp else (-24).dp)
+                    .scale(crownScale)
             )
 
             if (isCurrentUser) {
                 Surface(
-                    color = RamadanTheme.Colors.PrimaryPink,
+                    color = SummerTheme.Colors.PrimaryPink,
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -319,7 +382,7 @@ fun RamadanPodiumMember(
                         .zIndex(3f)
                 ) {
                     Text(
-                        "أنت",
+                        "أنت ⭐",
                         color = Color.White,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -336,20 +399,21 @@ fun RamadanPodiumMember(
                 user.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
-                color = Color.White,
+                color = Color(0xFF37474F),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Surface(
-                color = Color.White.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.padding(top = 3.dp)
+                color = Color.White.copy(alpha = 0.7f),
+                shape = SummerTheme.Shapes.SmallRounded,
+                modifier = Modifier.padding(top = 3.dp),
+                border = BorderStroke(1.dp, SummerTheme.Colors.PrimaryGold.copy(0.4f))
             ) {
                 Text(
                     "${user.totalStars} ⭐",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    color = RamadanTheme.Colors.PrimaryGold,
+                    color = Color(0xFFE65100),
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
@@ -362,13 +426,13 @@ fun RamadanPodiumMember(
                 modifier = Modifier
                     .fillMaxWidth().height(height)
                     .padding(horizontal = 4.dp).offset(y = 4.dp)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .background(darkerColor)
+                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
+                    .background(darkerColor.copy(0.2f))
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth().height(height)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                     .background(
                         Brush.verticalGradient(listOf(baseColor, darkerColor))
                     ),
@@ -376,9 +440,9 @@ fun RamadanPodiumMember(
             ) {
                 Text(
                     "$rank",
-                    fontSize = 48.sp,
+                    fontSize = 50.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color.White.copy(alpha = 0.3f)
+                    color = Color.White.copy(alpha = 0.4f)
                 )
             }
         }
@@ -386,38 +450,26 @@ fun RamadanPodiumMember(
 }
 
 @Composable
-fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
+fun SummerLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
     val cardBg = if (isCurrentUser)
-        Brush.horizontalGradient(listOf(Color(0xFF283593).copy(0.95f), Color(0xFF3949AB).copy(0.85f)))
+        Brush.horizontalGradient(listOf(SummerTheme.Colors.PrimaryPink.copy(0.15f), SummerTheme.Colors.PrimaryGold.copy(0.15f)))
     else
-        Brush.horizontalGradient(listOf(Color(0xFF1A237E).copy(0.7f), Color(0xFF283593).copy(0.6f)))
+        Brush.horizontalGradient(listOf(Color.White.copy(0.9f), Color(0xFFFAFAFA).copy(0.9f)))
+
+    val contentColor = if (isCurrentUser) SummerTheme.Colors.PrimaryPink else Color(0xFF37474F)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(SummerTheme.Shapes.MediumRounded)
             .background(cardBg)
-            .then(
-                if (isCurrentUser)
-                    Modifier.then(
-                        Modifier.padding(0.dp)
-                    )
-                else Modifier
+            .border(
+                width = if (isCurrentUser) 1.5.dp else 1.dp,
+                color = if (isCurrentUser) SummerTheme.Colors.PrimaryPink.copy(0.6f) else Color.Gray.copy(0.15f),
+                shape = SummerTheme.Shapes.MediumRounded
             )
     ) {
-        if (isCurrentUser) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Transparent)
-                    .then(
-                        Modifier.padding(0.dp)
-                    )
-            )
-        }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -427,19 +479,19 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(SummerTheme.Shapes.SmallRounded)
                     .background(
                         if (isCurrentUser)
-                            RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.3f)
+                            SummerTheme.Colors.PrimaryGold.copy(alpha = 0.25f)
                         else
-                            Color.White.copy(alpha = 0.1f)
+                            Color.Gray.copy(alpha = 0.08f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     "$rank",
                     fontWeight = FontWeight.Black,
-                    color = if (isCurrentUser) RamadanTheme.Colors.PrimaryGold else Color.White.copy(0.7f),
+                    color = if (isCurrentUser) Color(0xFFE65100) else Color.Gray,
                     fontSize = 15.sp
                 )
             }
@@ -450,9 +502,9 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
                 shape = CircleShape,
                 border = BorderStroke(
                     1.5.dp,
-                    if (isCurrentUser) RamadanTheme.Colors.PrimaryGold.copy(0.6f) else Color.White.copy(0.15f)
+                    if (isCurrentUser) SummerTheme.Colors.PrimaryGold.copy(0.6f) else Color.Gray.copy(0.15f)
                 ),
-                color = Color(0xFF283593),
+                color = Color.White,
                 modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -474,19 +526,19 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
                         user.name,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color.White
+                        color = contentColor
                     )
                     if (isCurrentUser) {
                         Spacer(Modifier.width(6.dp))
                         Surface(
-                            color = RamadanTheme.Colors.PrimaryPink.copy(alpha = 0.2f),
+                            color = SummerTheme.Colors.PrimaryPink.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(4.dp),
-                            border = BorderStroke(1.dp, RamadanTheme.Colors.PrimaryPink.copy(0.5f))
+                            border = BorderStroke(1.dp, SummerTheme.Colors.PrimaryPink.copy(0.5f))
                         ) {
                             Text(
                                 "أنت",
                                 fontSize = 9.sp,
-                                color = RamadanTheme.Colors.PrimaryPink,
+                                color = SummerTheme.Colors.PrimaryPink,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -498,7 +550,7 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (user.quranPartsFinished > 0) {
                     Surface(
-                        color = Color(0xFF283593).copy(alpha = 0.6f),
+                        color = SummerTheme.Colors.PrimaryTeal.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
@@ -506,7 +558,7 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
                             "${user.quranPartsFinished} 📖",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = RamadanTheme.Colors.PrimaryTeal,
+                            color = Color(0xFF00796B),
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                         )
                     }
@@ -514,14 +566,14 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
                 Text(
                     "${user.totalStars}",
                     fontWeight = FontWeight.Black,
-                    color = RamadanTheme.Colors.PrimaryGold,
+                    color = Color(0xFFE65100),
                     fontSize = 18.sp
                 )
                 Spacer(Modifier.width(3.dp))
                 Icon(
                     Icons.Rounded.EmojiEvents,
                     contentDescription = null,
-                    tint = RamadanTheme.Colors.PrimaryGold,
+                    tint = SummerTheme.Colors.PrimaryGold,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -530,22 +582,28 @@ fun RamadanLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boo
 }
 
 @Composable
-fun RamadanEmptyState() {
+fun SummerEmptyState() {
+    val floatOffset = SummerTheme.rememberFloatingAnimation()
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("🌙", fontSize = 64.sp)
+            Text(
+                "🏆",
+                fontSize = 64.sp,
+                modifier = Modifier.offset(y = floatOffset.dp)
+            )
             Spacer(Modifier.height(16.dp))
             Text(
                 "كن أنت البطل الأول!",
-                fontSize = 20.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                fontSize = 22.sp,
+                color = Color(0xFF37474F),
+                fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "ابدأ رحلتك الرمضانية الآن",
+                "ابدأ في جمع النجوم وخد مكانك في القمة 🌟",
                 fontSize = 14.sp,
-                color = Color.White.copy(0.6f)
+                color = Color(0xFF37474F).copy(0.6f)
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -51,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -66,17 +68,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.menna.nabata_7asena.R
 import com.menna.nabata_7asena.presentation.components.CelebrationOverlaySebha
-import com.menna.nabata_7asena.ui.theme.RamadanTheme
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 
 @Composable
 fun SebhaScreen(viewModel: SebhaViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     AnimatedContent(targetState = state.isSelectionMode, label = "azkar_transition") { isSelection ->
         if (isSelection) {
-            ZikrSelectionMenuRamadan(azkarList = viewModel.azkarList, onSelect = { viewModel.selectZikr(it) })
+            ZikrSelectionMenuSummer(azkarList = viewModel.azkarList, onSelect = { viewModel.selectZikr(it) })
         } else {
-            ZikrCounterViewRamadan(
+            ZikrCounterViewSummer(
                 state = state,
                 onBack = { viewModel.backToMenu() },
                 onTasbeeh = { viewModel.onTasbeehClick() },
@@ -89,23 +96,23 @@ fun SebhaScreen(viewModel: SebhaViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun ZikrSelectionMenuRamadan(azkarList: List<ZikrItem>, onSelect: (ZikrItem) -> Unit) {
-    val starAlphas = RamadanTheme.rememberStarAlphas(count = 6)
+fun ZikrSelectionMenuSummer(azkarList: List<ZikrItem>, onSelect: (ZikrItem) -> Unit) {
+    val particleAlphas = SummerTheme.rememberParticleAlphas(count = 6)
     Box(modifier = Modifier.fillMaxSize()) {
-        SebhaRamadanBackground(starAlphas)
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        SebhaSummerBackground(particleAlphas)
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)) {
             Card(
-                shape = RamadanTheme.Shapes.ExtraRounded,
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A237E).copy(0.75f)),
-                border = BorderStroke(1.dp, RamadanTheme.Colors.PrimaryGold.copy(0.3f)),
+                shape = SummerTheme.Shapes.ExtraRounded,
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FBE7).copy(0.9f)),
+                border = BorderStroke(2.dp, SummerTheme.Colors.PrimaryGold.copy(0.5f)),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("📿", fontSize = 48.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("اختر ذكرك الآن", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("اختر ذكرك الآن", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF37474F))
                     Spacer(Modifier.height(4.dp))
-                    Text("واكسب النجوم الرمضانية ⭐", fontSize = 13.sp, color = RamadanTheme.Colors.PrimaryGold.copy(0.9f))
+                    Text("واكسب نجوم الأذكار البراقة ⭐", fontSize = 13.sp, color = Color(0xFFE65100).copy(0.9f))
                 }
             }
             LazyVerticalGrid(
@@ -114,14 +121,14 @@ fun ZikrSelectionMenuRamadan(azkarList: List<ZikrItem>, onSelect: (ZikrItem) -> 
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(bottom = 100.dp)
             ) {
-                items(azkarList) { zikr -> ZikrCardRamadan(zikr, onSelect) }
+                items(azkarList) { zikr -> ZikrCardSummer(zikr, onSelect) }
             }
         }
     }
 }
 
 @Composable
-fun ZikrCardRamadan(zikr: ZikrItem, onClick: (ZikrItem) -> Unit) {
+fun ZikrCardSummer(zikr: ZikrItem, onClick: (ZikrItem) -> Unit) {
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(if (isPressed) 0.94f else 1f, label = "scale")
 
@@ -129,30 +136,30 @@ fun ZikrCardRamadan(zikr: ZikrItem, onClick: (ZikrItem) -> Unit) {
         modifier = Modifier
             .height(160.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(RamadanTheme.Shapes.ExtraRounded)
+            .clip(SummerTheme.Shapes.ExtraRounded)
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(zikr.color).copy(0.35f), Color(0xFF1A237E).copy(0.88f))
+                    listOf(Color(zikr.color).copy(0.12f), Color.White.copy(0.95f))
                 )
             )
-            .border(1.5.dp, Color(zikr.color).copy(0.5f), RamadanTheme.Shapes.ExtraRounded)
+            .border(1.5.dp, Color(zikr.color).copy(0.4f), SummerTheme.Shapes.ExtraRounded)
             .clickable { isPressed = true; onClick(zikr) }
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
-                modifier = Modifier.size(54.dp).clip(CircleShape).background(Color(zikr.color).copy(0.25f)),
+                modifier = Modifier.size(54.dp).clip(CircleShape).background(Color(zikr.color).copy(0.2f)),
                 contentAlignment = Alignment.Center
             ) { Text("📿", fontSize = 26.sp) }
             Spacer(Modifier.height(10.dp))
-            Text(zikr.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center, lineHeight = 20.sp)
+            Text(zikr.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF37474F), textAlign = TextAlign.Center, lineHeight = 20.sp)
             Spacer(Modifier.height(8.dp))
-            Surface(color = Color(zikr.color).copy(0.8f), shape = RoundedCornerShape(12.dp)) {
+            Surface(color = Color(zikr.color).copy(0.85f), shape = RoundedCornerShape(12.dp)) {
                 Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("${zikr.target}", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(4.dp))
-                    Text("🌙", fontSize = 11.sp)
+                    Text("☀️", fontSize = 11.sp)
                 }
             }
         }
@@ -160,7 +167,7 @@ fun ZikrCardRamadan(zikr: ZikrItem, onClick: (ZikrItem) -> Unit) {
 }
 
 @Composable
-fun ZikrCounterViewRamadan(
+fun ZikrCounterViewSummer(
     state: AzkarState,
     onBack: () -> Unit,
     onTasbeeh: () -> Unit,
@@ -170,7 +177,7 @@ fun ZikrCounterViewRamadan(
 ) {
     val zikr = state.currentZikr ?: return
     val view = LocalView.current
-    val starAlphas = RamadanTheme.rememberStarAlphas(count = 6)
+    val particleAlphas = SummerTheme.rememberParticleAlphas(count = 6)
 
     val infiniteTransition = rememberInfiniteTransition(label = "rotation")
     val rotation by infiniteTransition.animateFloat(
@@ -180,7 +187,7 @@ fun ZikrCounterViewRamadan(
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        SebhaRamadanBackground(starAlphas)
+        SebhaSummerBackground(particleAlphas)
 
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(
@@ -191,33 +198,34 @@ fun ZikrCounterViewRamadan(
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color(0xFF37474F))
                 }
                 Spacer(Modifier.width(8.dp))
                 Column {
-                    Text("السبحة الرمضانية 📿", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("اذكر ربك يا بطل 🌙", fontSize = 12.sp, color = Color.White.copy(0.55f))
+                    Text("السبحة الصيفية 📿", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF37474F))
+                    Text("اذكر ربك يا بطل ☀️", fontSize = 12.sp, color = Color(0xFF37474F).copy(0.8f))
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) { Box(
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
                     modifier = Modifier
                         .padding(horizontal = 24.dp)
-                        .clip(RamadanTheme.Shapes.ExtraRounded)
+                        .clip(SummerTheme.Shapes.ExtraRounded)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(Color(zikr.color).copy(0.25f), Color(0xFF1A237E).copy(0.7f), Color(zikr.color).copy(0.25f))
+                                listOf(Color(zikr.color).copy(0.15f), Color.White, Color(zikr.color).copy(0.15f))
                             )
                         )
-                        .border(1.dp, Color(zikr.color).copy(0.4f), RamadanTheme.Shapes.ExtraRounded)
+                        .border(1.5.dp, Color(zikr.color).copy(0.35f), SummerTheme.Shapes.ExtraRounded)
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(zikr.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, textAlign = TextAlign.Center)
+                    Text(zikr.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF37474F), textAlign = TextAlign.Center)
                 }
 
                 Spacer(Modifier.height(36.dp))
@@ -237,14 +245,14 @@ fun ZikrCounterViewRamadan(
                     Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
                         drawCircle(
                             brush = Brush.radialGradient(
-                                listOf(Color(zikr.color).copy(0.25f), Color(zikr.color).copy(0.05f), Color.Transparent)
+                                listOf(Color(zikr.color).copy(0.2f), Color(zikr.color).copy(0.04f), Color.Transparent)
                             ),
                             radius = size.width * 0.52f
                         )
                     }
 
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(color = Color.White.copy(0.1f), style = Stroke(width = 22.dp.toPx()))
+                        drawCircle(color = Color.White.copy(0.4f), style = Stroke(width = 22.dp.toPx()))
                         drawArc(
                             brush = Brush.sweepGradient(
                                 listOf(Color(zikr.color).copy(0.6f), Color(zikr.color), Color(zikr.color).copy(0.8f))
@@ -258,7 +266,7 @@ fun ZikrCounterViewRamadan(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("📿", fontSize = 28.sp)
                         Spacer(Modifier.height(4.dp))
-                        Text("${state.currentCount}", fontSize = 72.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("${state.currentCount}", fontSize = 72.sp, fontWeight = FontWeight.Black, color = Color(0xFF37474F))
                         Text("/ ${zikr.target}", fontSize = 20.sp, color = Color(zikr.color).copy(0.9f), fontWeight = FontWeight.Bold)
                     }
 
@@ -268,24 +276,24 @@ fun ZikrCounterViewRamadan(
                 Spacer(Modifier.height(36.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RamadanActionButton(icon = Icons.Rounded.Refresh, color = Color.White.copy(0.6f), onClick = onReset)
-                    RamadanActionButton(
+                    SummerActionButton(icon = Icons.Rounded.Refresh, color = Color(0xFF37474F).copy(0.6f), onClick = onReset)
+                    SummerActionButton(
                         icon = if (state.isPlayingAudio) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff,
-                        color = if (state.isPlayingAudio) Color(zikr.color) else Color.White.copy(0.6f),
+                        color = if (state.isPlayingAudio) Color(zikr.color) else Color(0xFF37474F).copy(0.6f),
                         onClick = onToggleSound
                     )
                 }
 
                 Spacer(Modifier.weight(1f))
 
-                Text("اضغط في أي مكان للعد 🌙", color = Color.White.copy(0.35f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 100.dp))
+                Text("اضغط في أي مكان للعد ☀️", color = Color(0xFF37474F).copy(0.5f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 100.dp))
             }
         }
     }
 }
 
 @Composable
-fun RamadanActionButton(icon: ImageVector, color: Color, onClick: () -> Unit) {
+fun SummerActionButton(icon: ImageVector, color: Color, onClick: () -> Unit) {
     Surface(
         onClick = onClick, shape = CircleShape,
         color = color.copy(0.12f), modifier = Modifier.size(60.dp),
@@ -298,29 +306,43 @@ fun RamadanActionButton(icon: ImageVector, color: Color, onClick: () -> Unit) {
 }
 
 @Composable
-fun SebhaRamadanBackground(starAlphas: List<Float>) {
-    val starPositions = remember {
+fun SebhaSummerBackground(particleAlphas: List<Float>) {
+    val positions = remember {
         listOf(
             Offset(0.10f, 0.06f) to 3f, Offset(0.80f, 0.04f) to 4f,
             Offset(0.45f, 0.02f) to 3f, Offset(0.65f, 0.10f) to 5f,
             Offset(0.20f, 0.09f) to 3f, Offset(0.90f, 0.13f) to 4f,
         )
     }
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF1A237E), Color(0xFF283593),
-                    Color(0xFF3949AB), Color(0xFF5C6BC0).copy(0.5f)
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.clouds))
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF29B6F6),
+                        Color(0xFF81D4FA),
+                        Color(0xFFFFFDE7)
+                    )
                 )
             )
-        )
-        starPositions.forEachIndexed { i, (off, r) ->
-            drawCircle(
-                color = Color(0xFFFFF176), radius = r.dp.toPx(),
-                center = Offset(size.width * off.x, size.height * off.y),
-                alpha = starAlphas.getOrElse(i) { 0.7f }
-            )
+            positions.forEachIndexed { i, (off, r) ->
+                drawCircle(
+                    color = Color.White.copy(0.7f), radius = r.dp.toPx(),
+                    center = Offset(size.width * off.x, size.height * off.y),
+                    alpha = particleAlphas.getOrElse(i) { 0.7f }
+                )
+            }
         }
+
+        LottieAnimation(
+            composition = composition,
+            iterations = LottieConstants.IterateForever,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .alpha(0.5f)
+        )
     }
 }

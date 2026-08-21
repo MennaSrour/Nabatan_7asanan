@@ -88,21 +88,21 @@ data class NabataTypography(
     val material: Typography
 )
 
-val RamadanPalette = NabataColors(
-    primaryPurple = Color(0xFF3A1875),
-    primaryGold = Color(0xFFB093E5),
+val SummerPalette = NabataColors(
+    primaryPurple = Color(0xFF0288D1),
+    primaryGold = Color(0xFFFFD54F),
     primaryTeal = Color(0xFF26C6DA),
-    primaryPink = Color(0xFFEC407A),
+    primaryPink = Color(0xFFFF8A80),
 
-    backgroundLight = Color(0xFFFFF9E6),
+    backgroundLight = Color(0xFFF9FBE7),
     backgroundSky = Color(0xFFE1F5FE),
     backgroundMoon = Color(0xFFFFFDE7),
-    backgroundPaperWarm = Color(0xFFFFFDF7),
-    backgroundWarmAccent = Color(0xFFFFECB3),
-    dialogWarningBg = Color(0xFFFFF5F5),
+    backgroundPaperWarm = Color(0xFFFFFDF9),
+    backgroundWarmAccent = Color(0xFFFFE082),
+    dialogWarningBg = Color(0xFFFFF3E0),
 
-    successGreen = Color(0xFF66BB6A),
-    pendingBlue = Color(0xFF42A5F5),
+    successGreen = Color(0xFF4CAF50),
+    pendingBlue = Color(0xFF29B6F6),
     specialPurple = Color(0xFFAB47BC),
     errorRed = Color(0xFFE57373),
     warningOrange = Color(0xFFFFB74D),
@@ -110,26 +110,26 @@ val RamadanPalette = NabataColors(
     starGold = Color(0xFFFFB300),
 
     textDark = Color(0xFF37474F),
-    textAlmostBlack = Color(0xFF1A1A1A),
+    textAlmostBlack = Color(0xFF2D1B18),
     neutralSlate = Color(0xFF455A64),
-    neutralDarkBlueText = Color(0xFF2E3E5C),
+    neutralDarkBlueText = Color(0xFF01579B),
 
-    nightBlueDeep = Color(0xFF1A237E),
-    nightBlueMid = Color(0xFF283593),
-    nightBlueSoft = Color(0xFF3949AB),
-    nightBlueLight = Color(0xFF5C6BC0),
+    nightBlueDeep = Color(0xFF0288D1),
+    nightBlueMid = Color(0xFF03A9F4),
+    nightBlueSoft = Color(0xFF29B6F6),
+    nightBlueLight = Color(0xFF81D4FA),
 
     accentGoldBright = Color(0xFFFFD54F),
     accentGoldDeep = Color(0xFFFFB300),
-    accentGoldWarm = Color(0xFFFFA726),
+    accentGoldWarm = Color(0xFFFF8F00),
 
-    headerPurple = Color(0xFF7E57C2),
-    headerPurpleDarker = Color(0xFF512DA8),
-    blueDarker = Color(0xFF1976D2),
+    headerPurple = Color(0xFF0288D1),
+    headerPurpleDarker = Color(0xFF01579B),
+    blueDarker = Color(0xFF0288D1),
 
     mintLight = Color(0xFFE8F5E9),
-    prayerFajr = Color(0xFF0E6EBB),
-    prayerFajrDark = Color(0xFF156081),
+    prayerFajr = Color(0xFF0288D1),
+    prayerFajrDark = Color(0xFF01579B),
     prayerZuhr = Color(0xFF9CBD77),
     prayerZuhrDark = Color(0xFF559809),
     prayerAsr = Color(0xFFC0A44F),
@@ -148,24 +148,24 @@ val RamadanPalette = NabataColors(
     extraPurple = Color(0xFF7E57C2),
     extraPurpleDark = Color(0xFF5E35B1),
 
-    podiumBlue = Color(0xFF283593),
-    podiumBlueDarker = Color(0xFF3949AB),
-    podiumLightBlue = Color(0xFF5C6BC0),
-    podiumBlueDarkVariant = Color(0xFF283593),
+    podiumBlue = Color(0xFF81C784),
+    podiumBlueDarker = Color(0xFF4CAF50),
+    podiumLightBlue = Color(0xFFA5D6A7),
+    podiumBlueDarkVariant = Color(0xFF388E3C),
 
     nightSkyGradient = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF1A237E),
-            Color(0xFF283593),
-            Color(0xFF3949AB),
-            Color(0xFF5C6BC0)
+            Color(0xFF0288D1),
+            Color(0xFF03A9F4),
+            Color(0xFF29B6F6),
+            Color(0xFF81D4FA)
         )
     ),
     sunsetGradient = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFF6F00),
-            Color(0xFFFF8F00),
-            Color(0xFFFFCA28)
+            Color(0xFFFFCA28),
+            Color(0xFFFFB300),
+            Color(0xFFFF8F00)
         )
     ),
     moonGlowGradient = Brush.radialGradient(
@@ -184,20 +184,20 @@ val RamadanPalette = NabataColors(
     ),
     headerGradient = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF7E57C2),
-            Color(0xFF9575CD),
-            Color(0xFFB39DDB)
+            Color(0xFF0288D1),
+            Color(0xFF03A9F4),
+            Color(0xFF29B6F6)
         )
     ),
     quranBackgroundGradient = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFFFDF7),
-            Color(0xFFFFF9E6),
-            Color(0xFFFFECB3).copy(alpha = 0.3f)
+            Color(0xFFFFFDF9),
+            Color(0xFFFFFDE7),
+            Color(0xFFFFF9C4).copy(alpha = 0.3f)
         )
     ),
-    doneGradient = Brush.linearGradient(listOf(Color(0xFFF1F8E9), Color(0xFFDCEDC8))),
-    prayerFajrGradient = Brush.linearGradient(listOf(Color(0xFF0E6EBB), Color(0xFF156081))),
+    doneGradient = Brush.linearGradient(listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9))),
+    prayerFajrGradient = Brush.linearGradient(listOf(Color(0xFF0288D1), Color(0xFF03A9F4))),
     prayerZuhrGradient = Brush.linearGradient(listOf(Color(0xFF9CBD77), Color(0xFF559809))),
     prayerAsrGradient = Brush.linearGradient(listOf(Color(0xFFC0A44F), Color(0xFFEA910E))),
     prayerMaghribGradient = Brush.linearGradient(listOf(Color(0xFFEF5350), Color(0xFFC62828))),
@@ -209,7 +209,7 @@ val RamadanPalette = NabataColors(
     extraGradient = Brush.linearGradient(listOf(Color(0xFF7E57C2), Color(0xFF5E35B1)))
 )
 
-val LocalNabataColors: CompositionLocal<NabataColors> = staticCompositionLocalOf { RamadanPalette }
+val LocalNabataColors: CompositionLocal<NabataColors> = staticCompositionLocalOf { SummerPalette }
 val LocalNabataTypography: CompositionLocal<NabataTypography> = staticCompositionLocalOf { NabataTypography(Typography()) }
 
 object NabataTheme {

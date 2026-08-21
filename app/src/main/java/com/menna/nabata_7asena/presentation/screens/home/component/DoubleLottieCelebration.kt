@@ -7,36 +7,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 
 @Composable
-fun DoubleLottieCelebration(
-    firstAnimation: LottieCompositionSpec.RawRes,
-    secondAnimation: LottieCompositionSpec.RawRes
-) {
-    val confettiComposition by rememberLottieComposition(firstAnimation)
-    val trophyComposition by rememberLottieComposition(secondAnimation)
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+fun DoubleLottieCelebration(spec1: LottieCompositionSpec, spec2: LottieCompositionSpec) {
+    val c1 by rememberLottieComposition(spec1)
+    val c2 by rememberLottieComposition(spec2)
+    Box(modifier = Modifier.size(260.dp), contentAlignment = Alignment.Center) {
         LottieAnimation(
-            composition = confettiComposition,
-            iterations = 1,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-            speed = 1.5f
+            c1,
+            iterations = LottieConstants.IterateForever,
+            modifier = Modifier.fillMaxSize()
         )
-
         LottieAnimation(
-            composition = trophyComposition,
-            iterations = 1,
-            modifier = Modifier.size(300.dp)
+            c2,
+            iterations = LottieConstants.IterateForever,
+            modifier = Modifier.size(110.dp)
         )
     }
 }

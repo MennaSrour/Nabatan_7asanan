@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.DeleteForever
@@ -61,7 +63,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.menna.nabata_7asena.ui.theme.RamadanTheme
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,21 +100,21 @@ fun SettingsScreen(
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
                     Card(
-                        shape = RamadanTheme.Shapes.MediumRounded,
+                        shape = SummerTheme.Shapes.MediumRounded,
                         colors = CardDefaults.cardColors(
-                            containerColor = RamadanTheme.Colors.BackgroundMoon
+                            containerColor = SummerTheme.Colors.BackgroundSunny
                         ),
-                        border = BorderStroke(2.dp, RamadanTheme.Colors.PrimaryGold)
+                        border = BorderStroke(2.dp, SummerTheme.Colors.PrimaryGold)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("🌙", fontSize = 20.sp)
+                            Text("☀️", fontSize = 20.sp)
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = data.visuals.message,
-                                color = RamadanTheme.Colors.PrimaryPurple,
+                                color = Color(0xFF37474F),
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -123,12 +125,12 @@ fun SettingsScreen(
                 CenterAlignedTopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🌙", fontSize = 24.sp)
+                            Text("⚙️", fontSize = 24.sp)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "الإعدادات الرمضانية",
+                                "إعدادات رحلتي",
                                 fontWeight = FontWeight.Bold,
-                                color = RamadanTheme.Colors.PrimaryPurple
+                                color = Color(0xFF37474F)
                             )
                         }
                     },
@@ -137,18 +139,18 @@ fun SettingsScreen(
                             Icon(
                                 Icons.AutoMirrored.Rounded.ArrowBack,
                                 contentDescription = "Back",
-                                tint = RamadanTheme.Colors.PrimaryPurple
+                                tint = Color(0xFF37474F)
                             )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = RamadanTheme.Colors.BackgroundMoon
+                        containerColor = SummerTheme.Colors.BackgroundSunny
                     )
                 )
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize()) {
-                RamadanSettingsBackground()
+                SummerSettingsBackground()
 
                 Column(
                     modifier = Modifier
@@ -156,24 +158,24 @@ fun SettingsScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    RamadanSectionTitle("الحساب 👤")
-                    RamadanSettingsItem(
+                    SummerSectionTitle("الحساب 👤")
+                    SummerSettingsItem(
                         icon = Icons.Rounded.Edit,
                         title = "تعديل الاسم",
                         subtitle = "غير اسمك اللي بيظهر",
-                        iconColor = RamadanTheme.Colors.PrimaryPurple,
+                        iconColor = SummerTheme.Colors.PrimarySummerBlue,
                         onClick = { showEditNameDialog = true }
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    RamadanSectionTitle("تنبيهات العبادات 🔔")
+                    SummerSectionTitle("تنبيهات العبادات 🔔")
 
-                    RamadanSettingsItem(
+                    SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
                         title = "مواقيت الصلاة",
                         subtitle = "تنبيه عند كل أذان",
-                        iconColor = RamadanTheme.Colors.PrimaryTeal,
+                        iconColor = SummerTheme.Colors.PrimaryTeal,
                         hasSwitch = true,
                         isSwitchChecked = stats?.prayerNotifications ?: true,
                         onSwitchChange = { isChecked ->
@@ -185,11 +187,11 @@ fun SettingsScreen(
                         }
                     )
 
-                    RamadanSettingsItem(
+                    SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
                         title = "الأذكار",
                         subtitle = "تذكير بورد الذكر اليومي",
-                        iconColor = RamadanTheme.Colors.PrimaryPink,
+                        iconColor = SummerTheme.Colors.PrimaryPink,
                         hasSwitch = true,
                         isSwitchChecked = stats?.azkarNotifications ?: true,
                         onSwitchChange = { isChecked ->
@@ -201,11 +203,11 @@ fun SettingsScreen(
                         }
                     )
 
-                    RamadanSettingsItem(
+                    SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
                         title = "ورد القرآن",
                         subtitle = "تذكير بقراءة ورد القرآن",
-                        iconColor = RamadanTheme.Colors.TaskCompletedGreen,
+                        iconColor = SummerTheme.Colors.TaskCompletedGreen,
                         hasSwitch = true,
                         isSwitchChecked = stats?.quranNotifications ?: true,
                         onSwitchChange = { isChecked ->
@@ -219,12 +221,12 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    RamadanSectionTitle("التحكم ⚙️")
-                    RamadanSettingsItem(
+                    SummerSectionTitle("التحكم ⚙️")
+                    SummerSettingsItem(
                         icon = Icons.Rounded.DeleteForever,
                         title = "بدء رحلة جديدة",
                         subtitle = "مسح كل النجوم والبدء من الصفر",
-                        iconColor = RamadanTheme.Colors.LanternRed,
+                        iconColor = SummerTheme.Colors.FlowerCoral,
                         onClick = { showResetDialog = true }
                     )
                 }
@@ -235,13 +237,13 @@ fun SettingsScreen(
             var tempName by remember { mutableStateOf("") }
             AlertDialog(
                 onDismissRequest = { showEditNameDialog = false },
-                containerColor = RamadanTheme.Colors.BackgroundMoon,
-                shape = RamadanTheme.Shapes.ExtraRounded,
+                containerColor = SummerTheme.Colors.BackgroundSunny,
+                shape = SummerTheme.Shapes.ExtraRounded,
                 icon = { Text("✏️", fontSize = 48.sp) },
                 title = {
                     Text(
-                        "اسمك الجديد يا بطل؟ 🌙",
-                        color = RamadanTheme.Colors.PrimaryPurple,
+                        "اسمك الجديد يا بطل؟ ☀️",
+                        color = Color(0xFF37474F),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -250,10 +252,10 @@ fun SettingsScreen(
                         value = tempName,
                         onValueChange = { tempName = it },
                         label = { Text("الاسم الجديد 🌟") },
-                        shape = RamadanTheme.Shapes.MediumRounded,
+                        shape = SummerTheme.Shapes.MediumRounded,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = RamadanTheme.Colors.PrimaryGold,
-                            unfocusedBorderColor = RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.5f)
+                            focusedBorderColor = SummerTheme.Colors.PrimaryGold,
+                            unfocusedBorderColor = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.5f)
                         )
                     )
                 },
@@ -266,11 +268,11 @@ fun SettingsScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = RamadanTheme.Colors.PrimaryGold
+                            containerColor = SummerTheme.Colors.PrimaryGold
                         ),
-                        shape = RamadanTheme.Shapes.SmallRounded
+                        shape = SummerTheme.Shapes.SmallRounded
                     ) {
-                        Text("حفظ 🌙", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("حفظ ☀️", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 },
                 dismissButton = {
@@ -285,18 +287,18 @@ fun SettingsScreen(
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
                 containerColor = Color(0xFFFFF5F5),
-                shape = RamadanTheme.Shapes.ExtraRounded,
+                shape = SummerTheme.Shapes.ExtraRounded,
                 icon = { Text("⚠️", fontSize = 48.sp) },
                 title = {
                     Text(
                         "متأكد يا بطل؟",
-                        color = RamadanTheme.Colors.LanternRed,
+                        color = SummerTheme.Colors.FlowerCoral,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 text = {
                     Text(
-                        "كل النجوم والشجرة هيرجعوا للصفر كأنك لسه بادئ التطبيق دلوقتي حالاً. الرحلة الرمضانية هتبدأ من جديد! 🌱",
+                        "كل النجوم والشجرة هيرجعوا للصفر كأنك لسه بادئ التطبيق دلوقتي حالاً. رحلتك الجميلة هتبدأ من جديد! 🌱",
                         fontSize = 15.sp,
                         color = Color(0xFF455A64),
                         lineHeight = 22.sp
@@ -310,10 +312,10 @@ fun SettingsScreen(
                             onLogout()
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = RamadanTheme.Colors.LanternRed.copy(alpha = 0.2f),
-                            contentColor = RamadanTheme.Colors.LanternRed
+                            containerColor = SummerTheme.Colors.FlowerCoral.copy(alpha = 0.2f),
+                            contentColor = SummerTheme.Colors.FlowerCoral
                         ),
-                        shape = RamadanTheme.Shapes.SmallRounded
+                        shape = SummerTheme.Shapes.SmallRounded
                     ) {
                         Text("نعم، امسح وابدأ من جديد", fontWeight = FontWeight.Bold)
                     }
@@ -329,7 +331,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun RamadanSettingsBackground() {
+fun SummerSettingsBackground() {
     val starPositions = remember {
         listOf(
             Offset(0.10f, 0.15f),
@@ -343,15 +345,15 @@ fun RamadanSettingsBackground() {
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    RamadanTheme.Colors.BackgroundMoon,
+                    Color(0xFFFFFDE7),
                     Color(0xFFFFF9E6),
-                    Color(0xFFFFECB3).copy(alpha = 0.3f)
+                    Color(0xFFF9FBE7).copy(alpha = 0.3f)
                 )
             )
         )
         starPositions.forEach { pos ->
             drawCircle(
-                color = RamadanTheme.Colors.StarGold.copy(alpha = 0.4f),
+                color = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.4f),
                 radius = 3.dp.toPx(),
                 center = Offset(size.width * pos.x, size.height * pos.y)
             )
@@ -360,11 +362,11 @@ fun RamadanSettingsBackground() {
 }
 
 @Composable
-fun RamadanSectionTitle(text: String) {
+fun SummerSectionTitle(text: String) {
     Card(
-        shape = RamadanTheme.Shapes.SmallRounded,
+        shape = SummerTheme.Shapes.SmallRounded,
         colors = CardDefaults.cardColors(
-            containerColor = RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.1f)
+            containerColor = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.15f)
         ),
         modifier = Modifier.padding(bottom = 12.dp)
     ) {
@@ -372,25 +374,25 @@ fun RamadanSectionTitle(text: String) {
             text = text,
             fontSize = 16.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = RamadanTheme.Colors.PrimaryPurple,
+            color = Color(0xFFE65100),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }
 
 @Composable
-fun RamadanSettingsItem(
+fun SummerSettingsItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    iconColor: Color = RamadanTheme.Colors.PrimaryPurple,
+    iconColor: Color = SummerTheme.Colors.PrimarySummerBlue,
     hasSwitch: Boolean = false,
     isSwitchChecked: Boolean = false,
     onSwitchChange: ((Boolean) -> Unit)? = null,
     onClick: () -> Unit
 ) {
     Card(
-        shape = RamadanTheme.Shapes.MediumRounded,
+        shape = SummerTheme.Shapes.MediumRounded,
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp),
         border = BorderStroke(2.dp, iconColor.copy(alpha = 0.2f)),
@@ -414,7 +416,7 @@ fun RamadanSettingsItem(
                             colors = listOf(
                                 iconColor.copy(alpha = 0.2f),
                                 iconColor.copy(alpha = 0.1f)
-                            )
+                              )
                         )
                     ),
                 contentAlignment = Alignment.Center
@@ -451,7 +453,7 @@ fun RamadanSettingsItem(
                     onCheckedChange = onSwitchChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = RamadanTheme.Colors.TaskCompletedGreen,
+                        checkedTrackColor = SummerTheme.Colors.TaskCompletedGreen,
                         uncheckedThumbColor = Color.White,
                         uncheckedTrackColor = Color.LightGray
                     )

@@ -5,15 +5,28 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.FirebaseFirestore
 import com.menna.nabata_7asena.data.PrayerTimesApi
+import dagger.hilt.android.qualifiers.ApplicationContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import com.menna.nabata_7asena.core.audio.QuranAudioPlayer
+import com.menna.nabata_7asena.core.audio.QuranAudioPlayerImpl
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class AudioModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindQuranAudioPlayer(
+        impl: QuranAudioPlayerImpl
+    ): QuranAudioPlayer
+}
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {

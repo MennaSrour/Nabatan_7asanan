@@ -26,21 +26,19 @@ class UnifiedAlarmReceiver : BroadcastReceiver() {
         val soundId = intent.getIntExtra("SOUND_ID", R.raw.sound_normal)
         val destination = intent.getStringExtra("DESTINATION")
 
-        
-        audioPlayerManager.playSequence(context, soundId)
+        audioPlayerManager.playAlarmSound(soundId)
 
-        
         showNotification(context, title, message, destination)
     }
 
     private fun showNotification(context: Context, title: String, message: String, destination: String?) {
-        val channelId = "nabata_unified_v2" 
+        val channelId = "nabata_unified_v2"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(channelId, "تنبيهات التطبيق", NotificationManager.IMPORTANCE_HIGH).apply {
                 enableVibration(true)
-                setSound(null, null) 
+                setSound(null, null)
             }
             notificationManager.createNotificationChannel(channel)
         }

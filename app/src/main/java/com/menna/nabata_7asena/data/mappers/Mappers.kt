@@ -22,7 +22,6 @@ fun DailyPlanDto.toEntity(dayId: Int): DailyPlanEntity {
     )
 }
 
-// في ملف Mappers.kt
 fun UserStatsEntity.toDomain(): User {
     return User(
         name = this.name,

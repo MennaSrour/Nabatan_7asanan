@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +21,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -49,13 +52,22 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabata_7asena.R
 import com.menna.nabata_7asena.domain.entity.User
-import com.menna.nabata_7asena.ui.theme.RamadanTheme
+
+
+private val ColorForestDeep = Color(0xFF1F4B3F)
+private val ColorForestMid = Color(0xFF4C7A63)
+private val ColorSkyLight = Color(0xFFE3F2F4)
+private val ColorGreenLight = Color(0xFFEAF3E7)
+private val ColorAccent = Color(0xFFE7B84F)
+private val ShapeMedium = RoundedCornerShape(20.dp)
+private val ShapeSmall = RoundedCornerShape(16.dp)
 
 @Composable
 fun LoginScreen(
@@ -88,22 +100,20 @@ fun LoginScreen(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
                 Card(
-                    shape = RamadanTheme.Shapes.MediumRounded,
+                    shape = ShapeMedium,
                     colors = CardDefaults.cardColors(
-                        containerColor = RamadanTheme.Colors.BackgroundMoon
+                        containerColor = Color.White
                     ),
-                    border = BorderStroke(2.dp, RamadanTheme.Colors.PrimaryGold),
+                    border = BorderStroke(2.dp, ColorAccent),
                     elevation = CardDefaults.cardElevation(8.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("🌙", fontSize = 20.sp)
-                        Spacer(Modifier.width(8.dp))
                         Text(
                             text = data.visuals.message,
-                            color = RamadanTheme.Colors.PrimaryPurple,
+                            color = ColorForestDeep,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -116,7 +126,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            RamadanLoginBackground()
+            NabatanLoginBackground()
 
             Column(
                 modifier = Modifier
@@ -130,23 +140,17 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🌙", fontSize = 32.sp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "أهلاً بيك يا بطل!",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = RamadanTheme.Colors.PrimaryPurple
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("⭐", fontSize = 32.sp)
-                    }
+                    Text(
+                        "أهلاً بيك يا بطل!",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = ColorForestDeep
+                    )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "عرّفنا بنفسك عشان نبدأ الرحلة الرمضانية",
+                        "عرّفنا بنفسك عشان نبدأ رحلتنا مع بعض",
                         fontSize = 16.sp,
-                        color = RamadanTheme.Colors.PrimaryPurple.copy(alpha = 0.7f),
+                        color = ColorForestMid,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -155,12 +159,12 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RamadanGenderCard(
+                    NabatanGenderCard(
                         gender = User.Gender.BOY,
                         isSelected = state.selectedGender == User.Gender.BOY,
                         onClick = { viewModel.onGenderSelected(User.Gender.BOY) }
                     )
-                    RamadanGenderCard(
+                    NabatanGenderCard(
                         gender = User.Gender.GIRL,
                         isSelected = state.selectedGender == User.Gender.GIRL,
                         onClick = { viewModel.onGenderSelected(User.Gender.GIRL) }
@@ -168,21 +172,18 @@ fun LoginScreen(
                 }
 
                 Card(
-                    shape = RamadanTheme.Shapes.MediumRounded,
+                    shape = ShapeMedium,
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(6.dp),
                     border = BorderStroke(
                         2.dp,
-                        if (state.name.isNotBlank())
-                            RamadanTheme.Colors.PrimaryGold
-                        else
-                            Color.LightGray
+                        if (state.name.isNotBlank()) ColorAccent else Color.LightGray
                     )
                 ) {
                     OutlinedTextField(
                         value = state.name,
                         onValueChange = { viewModel.onNameChange(it) },
-                        label = { Text("اكتب اسمك هنا 🌟") },
+                        label = { Text("اكتب اسمك هنا") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -191,11 +192,11 @@ fun LoginScreen(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White
                         ),
-                        shape = RamadanTheme.Shapes.MediumRounded
+                        shape = ShapeMedium
                     )
                 }
 
-                val buttonPulse = RamadanTheme.rememberPulseAnimation()
+                val buttonPulse = rememberGentlePulse()
 
                 Button(
                     onClick = { viewModel.onStartClicked() },
@@ -203,9 +204,9 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(56.dp)
                         .scale(if (!state.isLoading) buttonPulse else 1f),
-                    shape = RamadanTheme.Shapes.SmallRounded,
+                    shape = ShapeSmall,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = RamadanTheme.Colors.PrimaryGold
+                        containerColor = ColorForestDeep
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 8.dp,
@@ -219,15 +220,11 @@ fun LoginScreen(
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "ابدأ الرحلة الرمضانية",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("🌙", fontSize = 20.sp)
-                        }
+                        Text(
+                            "ابدأ الرحلة",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -235,76 +232,57 @@ fun LoginScreen(
     }
 }
 
+/** A calm sky-to-green gradient — no stars, no gold-night motif. */
 @Composable
-fun RamadanLoginBackground() {
-    val starAlpha = RamadanTheme.rememberStarTwinkleAnimation()
-
+fun NabatanLoginBackground() {
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawRect(
             brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFFFFF9E6),
-                    Color(0xFFFFECB3),
-                    Color(0xFFFFE082)
-                )
+                colors = listOf(ColorSkyLight, ColorGreenLight)
             )
         )
-
-        val stars = listOf(
-            androidx.compose.ui.geometry.Offset(size.width * 0.15f, size.height * 0.20f),
-            androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.15f),
-            androidx.compose.ui.geometry.Offset(size.width * 0.50f, size.height * 0.10f),
-            androidx.compose.ui.geometry.Offset(size.width * 0.30f, size.height * 0.25f),
-            androidx.compose.ui.geometry.Offset(size.width * 0.70f, size.height * 0.30f),
-        )
-
-        stars.forEach { offset ->
-            drawCircle(
-                color = RamadanTheme.Colors.StarGold,
-                radius = 4.dp.toPx(),
-                center = offset,
-                alpha = starAlpha
-            )
-        }
     }
 }
 
 @Composable
-fun RamadanGenderCard(
+private fun rememberGentlePulse(): Float {
+    val infiniteTransition = rememberInfiniteTransition(label = "button_pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+    return scale
+}
+
+@Composable
+fun NabatanGenderCard(
     gender: User.Gender,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
     val scale by animateFloatAsState(
-        if (isSelected) 1.1f else 1f,
+        if (isSelected) 1.08f else 1f,
         label = "scale"
     )
 
     val label = if (gender == User.Gender.BOY) "ولد" else "بنت"
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = if (isSelected) 1.05f else 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_scale"
-    )
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .scale(scale)
-            .scale(pulseScale)
             .clickable { onClick() }
     ) {
         Card(
             shape = CircleShape,
             colors = CardDefaults.cardColors(
                 containerColor = if (isSelected)
-                    RamadanTheme.Colors.PrimaryGold.copy(alpha = 0.2f)
+                    ColorAccent.copy(alpha = 0.18f)
                 else
                     Color.White
             ),
@@ -312,11 +290,8 @@ fun RamadanGenderCard(
                 defaultElevation = if (isSelected) 8.dp else 4.dp
             ),
             border = BorderStroke(
-                width = if (isSelected) 4.dp else 2.dp,
-                color = if (isSelected)
-                    RamadanTheme.Colors.PrimaryGold
-                else
-                    Color.LightGray
+                width = if (isSelected) 3.dp else 2.dp,
+                color = if (isSelected) ColorAccent else Color.LightGray
             ),
             modifier = Modifier.size(110.dp)
         ) {
@@ -324,17 +299,8 @@ fun RamadanGenderCard(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                if (isSelected) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(
-                            color = RamadanTheme.Colors.StarGold.copy(alpha = 0.3f),
-                            radius = size.width * 0.5f
-                        )
-                    }
-                }
-
                 Image(
-                    painter = androidx.compose.ui.res.painterResource(
+                    painter = painterResource(
                         id = if (gender == User.Gender.BOY)
                             R.drawable.boy_avatar
                         else
@@ -347,13 +313,20 @@ fun RamadanGenderCard(
                 )
 
                 if (isSelected) {
-                    Text(
-                        "⭐",
-                        fontSize = 24.sp,
+                    Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .offset(x = (-8).dp, y = 8.dp)
-                    )
+                            .size(26.dp)
+                            .background(color = ColorForestDeep, shape = CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -363,28 +336,17 @@ fun RamadanGenderCard(
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isSelected)
-                    RamadanTheme.Colors.PrimaryGold
-                else
-                    Color.White
+                containerColor = if (isSelected) ColorForestDeep else Color.White
             ),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    label,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = if (isSelected) Color.White else Color.Gray
-                )
-                if (isSelected) {
-                    Spacer(Modifier.width(4.dp))
-                    Text("🌙", fontSize = 14.sp)
-                }
-            }
+            Text(
+                label,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = if (isSelected) Color.White else Color.Gray,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
         }
     }
 }

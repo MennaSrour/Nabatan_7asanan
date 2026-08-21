@@ -46,12 +46,6 @@ class StartViewModel @Inject constructor(
                 _uiEvent.emit(SplashEvent.NavigateToOnboarding)
                 return@launch
             }
-            val hasPermissions = areAllPermissionsGranted()
-
-            if (!hasPermissions) {
-                _uiEvent.emit(SplashEvent.NavigateToOnboarding)
-                return@launch
-            }
 
             val isLoggedIn = isUserLoggedIn()
 

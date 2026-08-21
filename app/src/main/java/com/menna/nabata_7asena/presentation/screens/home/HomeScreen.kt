@@ -1,73 +1,60 @@
 package com.menna.nabata_7asena.presentation.screens.home
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.menna.nabata_7asena.presentation.screens.home.component.AddTaskBottomSheetRamadan
-import com.menna.nabata_7asena.presentation.screens.home.component.CelebrationOverlayRamadan
-import com.menna.nabata_7asena.presentation.screens.home.component.ColorfulHeaderRamadan
-import com.menna.nabata_7asena.presentation.screens.home.component.DailyChallengeDialogRamadan
-import com.menna.nabata_7asena.presentation.screens.home.component.TasksListRamadan
-import com.menna.nabata_7asena.ui.theme.RamadanTheme
+import com.menna.nabata_7asena.domain.entity.TaskCategory
+import com.menna.nabata_7asena.presentation.screens.home.component.AddTaskBottomSheet
+import com.menna.nabata_7asena.presentation.screens.home.component.BentoStatsGrid
+import com.menna.nabata_7asena.presentation.screens.home.component.CelebrationOverlay
+import com.menna.nabata_7asena.presentation.screens.home.component.ColorfulHeader
+import com.menna.nabata_7asena.presentation.screens.home.component.DailyChallengeDialog
+import com.menna.nabata_7asena.presentation.screens.home.component.DailyWisdomCard
+import com.menna.nabata_7asena.presentation.screens.home.component.NightBackgroundGradient
+import com.menna.nabata_7asena.presentation.screens.home.component.PrayerTimesRow
+import com.menna.nabata_7asena.presentation.screens.home.component.TaskBubbleCard
+import com.menna.nabata_7asena.presentation.screens.home.component.TreasureChestCard
+import com.menna.nabata_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToQuran: () -> Unit,
+    onNavigateToSebha: () -> Unit,
+    completedExternalTaskId: Int? = null
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val showChallenge by viewModel.showChallengeDialog.collectAsState()
-    val currentRiddle by viewModel.currentRiddle.collectAsState()
-
-    var showAddSheet by remember { mutableStateOf(false) }
     val suggestions by viewModel.suggestedTasks.collectAsState()
 
+    var showAddSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(completedExternalTaskId) {
+        completedExternalTaskId?.let { viewModel.markTaskCompletedExternally(it) }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiMessage.collect { msg ->
@@ -75,21 +62,25 @@ fun HomeScreen(
         }
     }
 
+    val backgroundGradient = if (uiState.isNightTheme) {
+        NightBackgroundGradient
+    } else {
+        Brush.verticalGradient(listOf(SummerTheme.colors.dayBackground, SummerTheme.colors.dayBackground))
+    }
+
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = SummerTheme.colors.transparent,
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.padding(bottom = 100.dp)
             ) { data ->
                 Card(
-                    shape = RamadanTheme.Shapes.MediumRounded,
-                    colors = CardDefaults.cardColors(
-                        containerColor = RamadanTheme.Colors.BackgroundMoon
-                    ),
-                    border = BorderStroke(2.dp, RamadanTheme.Colors.PrimaryGold),
+                    shape = SummerTheme.shapes.taskCard,
+                    colors = CardDefaults.cardColors(containerColor = SummerTheme.colors.backgroundLight),
+                    border = BorderStroke(2.dp, SummerTheme.colors.goldWarm),
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal)
                         .fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
@@ -98,17 +89,26 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(RamadanTheme.Emojis.SPARKLES, fontSize = 20.sp)
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = SummerTheme.colors.goldWarm,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = data.visuals.message,
-                            color = RamadanTheme.Colors.PrimaryPurple,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
+                            color = SummerTheme.colors.textDarkBrown,
+                            style = SummerTheme.typography.snackbarText,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(RamadanTheme.Emojis.SPARKLES, fontSize = 20.sp)
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = SummerTheme.colors.goldWarm,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
@@ -117,71 +117,195 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .background(backgroundGradient)
         ) {
-            RamadanSkyBackgroundAnimated()
+            val prayers = uiState.tasks.filter { it.category == TaskCategory.PRAYER }
+            val dailyTasks = uiState.tasks.filter { it.category != TaskCategory.PRAYER }
+            val sectionTitleColor =
+                if (uiState.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = paddingValues.calculateBottomPadding() + 90.dp)
             ) {
-                ColorfulHeaderRamadan(
-                    user = uiState.user,
-                    hijriDate = uiState.hijriDate,
-                    onSettingsClick = onNavigateToSettings
-                )
-
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = RamadanTheme.Colors.PrimaryGold)
-                    }
-                } else {
-                    TasksListRamadan(
-                        tasks = uiState.tasks,
-                        onTaskClick = { viewModel.onTaskChecked(it) },
-                        onTreasureClick = { viewModel.openDailyChallenge() },
-                        onPlaySound = { task ->
-                            viewModel.playTaskSound(context, task)
-                        },
-                        wisdom = uiState.dailyWisdom
+                item {
+                    ColorfulHeader(
+                        user = uiState.user,
+                        hijriDate = uiState.hijriDate,
+                        onSettingsClick = onNavigateToSettings,
+                        onAvatarClick = { viewModel.playWelcomeSound() },
+                        isNight = uiState.isNightTheme
                     )
                 }
-            }
 
-            FloatingActionButton(
-                onClick = {
-                    showAddSheet = true
-                    viewModel.loadSuggestions()
-                },
-                containerColor = RamadanTheme.Colors.PrimaryGold,
-                contentColor = Color.White,
-                shape = RamadanTheme.Shapes.SmallRounded,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(top = 24.dp, end = 24.dp, start = 24.dp, bottom = 100.dp)
-                    .size(70.dp)
-                    .shadow(
-                        12.dp,
-                        RamadanTheme.Shapes.SmallRounded,
-                        spotColor = RamadanTheme.Colors.StarGold
-                    )
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = "Add",
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Text("🌙", fontSize = 12.sp)
+                if (uiState.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = SummerTheme.colors.goldWarm)
+                        }
+                    }
+                } else {
+                    item {
+                        BentoStatsGrid(
+                            user = uiState.user,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    item {
+                        DailyWisdomCard(
+                            wisdom = uiState.dailyWisdom,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Schedule,
+                                contentDescription = null,
+                                tint = sectionTitleColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "الصلوات",
+                                style = SummerTheme.typography.sectionTitle,
+                                color = sectionTitleColor
+                            )
+                        }
+                    }
+
+                    item {
+                        PrayerTimesRow(
+                            prayers = prayers,
+                            onPrayerClick = { viewModel.onTaskChecked(it) },
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MenuBook,
+                                contentDescription = null,
+                                tint = sectionTitleColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "المهام اليومية",
+                                style = SummerTheme.typography.sectionTitle,
+                                color = sectionTitleColor
+                            )
+                        }
+                    }
+
+                    items(items = dailyTasks, key = { it.id }) { item ->
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                .animateItem(
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessMediumLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
+                        ) {
+                            TaskBubbleCard(
+                                item = item,
+                                hasBookmark = uiState.hasBookmark,
+                                onClick = {
+                                    when (item.category) {
+                                        TaskCategory.QURAN -> onNavigateToQuran()
+                                        TaskCategory.AZKAR -> onNavigateToSebha()
+                                        TaskCategory.CHALLENGE -> viewModel.openDailyChallenge()
+                                        else -> viewModel.onTaskChecked(item)
+                                    }
+                                },
+                                onCheckClick = { viewModel.onTaskChecked(item) },
+                                onPlaySound = { viewModel.playTaskSound(item) }
+                            )
+                        }
+                    }
+
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            val allTasksDone =
+                                dailyTasks.isNotEmpty() && dailyTasks.all { it.isCompleted }
+                            val allPrayersDone =
+                                prayers.isNotEmpty() && prayers.all { it.isCompleted }
+                            TreasureChestCard(
+                                isUnlocked = allTasksDone && allPrayersDone,
+                                onClick = { viewModel.openDailyChallenge() }
+                            )
+                        }
+                    }
+
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            Surface(
+                                onClick = {
+                                    showAddSheet = true
+                                    viewModel.loadSuggestions()
+                                },
+                                shape = RoundedCornerShape(22.dp),
+                                color = SummerTheme.colors.white,
+                                border = BorderStroke(2.dp, SummerTheme.colors.addBtnBorder),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .shadow(
+                                        4.dp,
+                                        RoundedCornerShape(22.dp),
+                                        spotColor = SummerTheme.colors.addBtnShadow
+                                    )
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = null,
+                                        tint = SummerTheme.colors.successGreen,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "إضافة عمل صالح جديد",
+                                        color = SummerTheme.colors.addBtnText,
+                                        style = SummerTheme.typography.addButtonText
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
             if (uiState.showCelebration) {
-                CelebrationOverlayRamadan(onDismiss = { viewModel.dismissCelebration() })
+                CelebrationOverlay(onDismiss = { viewModel.dismissCelebration() })
             }
 
             if (showAddSheet) {
-                AddTaskBottomSheetRamadan(
+                AddTaskBottomSheet(
                     onDismiss = { showAddSheet = false },
                     suggestions = suggestions,
                     onTaskSelected = { taskTitle ->
@@ -191,96 +315,15 @@ fun HomeScreen(
                 )
             }
 
-            if (showChallenge && currentRiddle != null) {
-                DailyChallengeDialogRamadan(
-                    riddle = currentRiddle!!,
+            if (uiState.showChallengeDialog && uiState.currentRiddle != null) {
+                DailyChallengeDialog(
+                    riddle = uiState.currentRiddle!!,
                     onDismiss = { viewModel.closeChallenge() },
                     onAnswerSelected = { isCorrect ->
                         if (isCorrect) viewModel.onCorrectAnswer()
                     }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun RamadanSkyBackgroundAnimated() {
-    val starAlphas = RamadanTheme.rememberStarAlphas(count = 9)
-
-    val moonScale = RamadanTheme.rememberMoonGlowAnimation()
-
-    val starData = remember {
-        listOf(
-            Offset(0.10f, 0.10f) to 3f,
-            Offset(0.30f, 0.15f) to 4f,
-            Offset(0.70f, 0.08f) to 5f,
-            Offset(0.85f, 0.25f) to 3f,
-            Offset(0.50f, 0.05f) to 4f,
-            Offset(0.20f, 0.30f) to 3f,
-            Offset(0.90f, 0.12f) to 4f,
-            Offset(0.15f, 0.22f) to 3f,
-            Offset(0.60f, 0.18f) to 5f,
-        )
-    }
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF1A237E),
-                    Color(0xFF283593),
-                    Color(0xFF3949AB),
-                    Color(0xFF5C6BC0).copy(alpha = 0.5f)
-                )
-            )
-        )
-
-        starData.forEachIndexed { index, (normalizedOffset, radius) ->
-            drawCircle(
-                color = Color(0xFFFFF176),
-                radius = radius.dp.toPx(),
-                center = Offset(size.width * normalizedOffset.x, size.height * normalizedOffset.y),
-                alpha = starAlphas.getOrElse(index) { 0.8f }
-            )
-        }
-
-        val moonCenter = Offset(size.width * 0.85f, size.height * 0.15f)
-        val moonRadius = 40.dp.toPx()
-
-        drawCircle(
-            color = Color(0xFFFFF9C4).copy(alpha = 0.15f),
-            radius = moonRadius * moonScale * 1.6f,
-            center = moonCenter
-        )
-        drawCircle(
-            color = Color(0xFFFFFDE7).copy(alpha = 0.35f),
-            radius = moonRadius * moonScale * 1.3f,
-            center = moonCenter
-        )
-
-        drawCircle(
-            color = Color(0xFFFFFDE7),
-            radius = moonRadius * moonScale,
-            center = moonCenter
-        )
-    }
-}
-
-@Composable
-fun RamadanDecorationTop() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        repeat(6) {
-            Text(
-                text = if (it % 2 == 0) "🏮" else "⭐",
-                fontSize = 24.sp,
-                modifier = Modifier.offset(y = (it * 3).dp)
-            )
         }
     }
 }

@@ -14,9 +14,9 @@ android {
     defaultConfig {
         applicationId = "com.menna.nabata_7asena"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 5
-        versionName = "1.4.0"
+        targetSdk = 35 // غيريها من 36 لـ 35
+        versionCode = 7 // خليها 7 عشان تتخطي أي Draft قديم
+        versionName = "2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,12 +32,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -114,5 +114,7 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
 
 }

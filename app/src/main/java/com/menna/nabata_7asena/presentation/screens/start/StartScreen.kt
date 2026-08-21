@@ -5,22 +5,29 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,12 +39,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +60,21 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabata_7asena.R
 import kotlinx.coroutines.delay
+private val ColorSkyLight = Color(0xFFE3F2F4)
+private val ColorGreenLight = Color(0xFFEAF3E7)
+private val ColorForestDeep = Color(0xFF1F4B3F)
+private val ColorForestMid = Color(0xFF4C7A63)
+private val ColorHaloSoft = Color(0xFF9BC7AE)
+private val ColorTrunk = Color(0xFF8C6A4E)
+private val ColorLeafDeep = Color(0xFF3F7A5C)
+private val ColorLeafMid = Color(0xFF5C9575)
+private val ColorLeafLight = Color(0xFF7FAE8E)
+private val NabatanFontFamily = FontFamily(
+    Font(R.font.cairo_regular, FontWeight.Normal),
+    Font(R.font.cairo_medium, FontWeight.Medium),
+    Font(R.font.cairo_semibold, FontWeight.SemiBold),
+    Font(R.font.cairo_bold, FontWeight.Bold)
+)
 
 @Composable
 fun StartScreen(
@@ -63,31 +90,16 @@ fun StartScreen(
     var navigationReady by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
-        var player1: MediaPlayer? = null
-        var player2: MediaPlayer? = null
+        var player: MediaPlayer? = null
 
         try {
-            player1 = MediaPlayer.create(context, R.raw.kol_sana)
-            player2 = MediaPlayer.create(context, R.raw.ramadan_kareem)
+            player = MediaPlayer.create(context, R.raw.welcome_kids)
+            player?.start()
 
-            player1?.start()
-
-            player1?.setOnCompletionListener { mp1 ->
+            player?.setOnCompletionListener { mp ->
                 try {
-                    mp1.release()
-
-                    player2?.start()
-
-                    player2?.setOnCompletionListener { mp2 ->
-                        try {
-                            mp2.release()
-
-                            audioFinished = true
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            audioFinished = true
-                        }
-                    }
+                    mp.release()
+                    audioFinished = true
                 } catch (e: Exception) {
                     e.printStackTrace()
                     audioFinished = true
@@ -100,11 +112,7 @@ fun StartScreen(
 
         onDispose {
             try {
-                player1?.let {
-                    if (it.isPlaying) it.stop()
-                    it.release()
-                }
-                player2?.let {
+                player?.let {
                     if (it.isPlaying) it.stop()
                     it.release()
                 }
@@ -137,45 +145,113 @@ fun StartScreen(
         visible = isVisible,
         exit = fadeOut(animationSpec = tween(500))
     ) {
-        RamadanStartContent(
-        )
+        NabatanStartContent()
     }
 }
 
 @Composable
-fun RamadanStartContent() {
+fun NabatanStartContent() {
+
+    var trunkGrown by remember { mutableStateOf(false) }
+    var leaf1 by remember { mutableStateOf(false) }
+    var leaf2 by remember { mutableStateOf(false) }
+    var leaf3 by remember { mutableStateOf(false) }
+    var timurVisible by remember { mutableStateOf(false) }
+    var textVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        trunkGrown = true
+        delay(550)
+        leaf1 = true
+        delay(130)
+        leaf2 = true
+        delay(130)
+        leaf3 = true
+        delay(450)
+        timurVisible = true
+        delay(500)
+        textVisible = true
+    }
+
+    val trunkGrowth by animateFloatAsState(
+        targetValue = if (trunkGrown) 1f else 0f,
+        animationSpec = tween(550, easing = FastOutSlowInEasing),
+        label = "trunkGrowth"
+    )
+    val leaf1Scale by animateFloatAsState(
+        targetValue = if (leaf1) 1f else 0f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        label = "leaf1"
+    )
+    val leaf2Scale by animateFloatAsState(
+        targetValue = if (leaf2) 1f else 0f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        label = "leaf2"
+    )
+    val leaf3Scale by animateFloatAsState(
+        targetValue = if (leaf3) 1f else 0f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        label = "leaf3"
+    )
+    val timurScale by animateFloatAsState(
+        targetValue = if (timurVisible) 1f else 0f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
+        label = "timurScale"
+    )
+    val textAlpha by animateFloatAsState(
+        targetValue = if (textVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 700),
+        label = "textAlpha"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF1A237E),
-                        Color(0xFF3949AB),
-                        Color(0xFF5C6BC0)
-                    )
-                )
-            )
+                Brush.verticalGradient(colors = listOf(ColorSkyLight, ColorGreenLight))
+            ),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            HangingLightsAnimation()
+            SkyCloudsAnimation()
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(8.dp))
 
-            TimurImage()
+            GrowingTreeWithTimur(
+                trunkGrowth = trunkGrowth,
+                leaf1Scale = leaf1Scale,
+                leaf2Scale = leaf2Scale,
+                leaf3Scale = leaf3Scale,
+                timurScale = timurScale
+            )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
-            AppTitle()
+            Text(
+                text = "نباتاً حسناً",
+                fontFamily = NabatanFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 40.sp,
+                color = ColorForestDeep,
+                modifier = Modifier.alpha(textAlpha)
+            )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
-            RamadanSubtitle()
+            Text(
+                text = "أهلا يا غرس الأمة",
+                fontFamily = NabatanFontFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 18.sp,
+                color = ColorForestMid,
+                modifier = Modifier.alpha(textAlpha)
+            )
 
             Spacer(Modifier.weight(1f))
 
@@ -187,147 +263,106 @@ fun RamadanStartContent() {
 }
 
 @Composable
-private fun HangingLightsAnimation() {
-    val lightsComposition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.lights)
+private fun SkyCloudsAnimation() {
+    val cloudsComposition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.clouds)
     )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp),
+            .height(90.dp)
+            .alpha(0.7f),
         contentAlignment = Alignment.TopCenter
     ) {
         LottieAnimation(
-            composition = lightsComposition,
+            composition = cloudsComposition,
             iterations = LottieConstants.IterateForever,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp),
+                .height(90.dp),
             contentScale = ContentScale.FillWidth
         )
     }
 }
 
 @Composable
-private fun TimurImage() {
-    val infiniteTransition = rememberInfiniteTransition(label = "timur")
-
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1.4f,
-        targetValue = 1.6f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
-    )
-
-    val offsetY by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "offsetY"
-    )
-
+private fun GrowingTreeWithTimur(
+    trunkGrowth: Float,
+    leaf1Scale: Float,
+    leaf2Scale: Float,
+    leaf3Scale: Float,
+    timurScale: Float
+) {
     Box(
-        contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(200.dp)
+            .fillMaxWidth()
+            .height(260.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Box(
             modifier = Modifier
-                .size(220.dp)
+                .width(20.dp)
+                .height(78.dp)
+                .align(Alignment.BottomCenter)
+                .offset(x = 34.dp)
                 .graphicsLayer {
-                    scaleX = scale * 1.1f
-                    scaleY = scale * 1.1f
-                    alpha = 0.3f
+                    scaleY = trunkGrowth
+                    transformOrigin = TransformOrigin(0.5f, 1f)
                 }
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFFFFD54F),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = androidx.compose.foundation.shape.CircleShape
-                )
+                .background(ColorTrunk, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
         )
 
-        Image(
-            painter = painterResource(id = R.drawable.timur_ss),
-            contentDescription = "Timur",
-            contentScale = ContentScale.Fit,
+        Box(
             modifier = Modifier
-                .size(180.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationY = offsetY
-                }
+                .size(78.dp)
+                .align(Alignment.BottomCenter)
+                .offset(x = 34.dp, y = (-96).dp)
+                .scale(leaf1Scale)
+                .background(ColorLeafDeep, CircleShape)
         )
-    }
-}
-
-@Composable
-private fun AppTitle() {
-    var visible by remember { mutableStateOf(false) }
-    val textAlpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(1200),
-        label = "textAlpha"
-    )
-
-    LaunchedEffect(Unit) {
-        delay(50)
-        visible = true
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.graphicsLayer { alpha = textAlpha }
-    ) {
-
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = "\uD83C\uDF31نباتاً حسناً",
-            color = Color(0xFFFFD54F),
-            fontSize = 38.sp,
-            fontWeight = FontWeight.ExtraBold
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .align(Alignment.BottomCenter)
+                .offset(x = 6.dp, y = (-72).dp)
+                .scale(leaf2Scale)
+                .background(ColorLeafMid, CircleShape)
         )
-    }
-}
-
-@Composable
-private fun RamadanSubtitle() {
-    var visible by remember { mutableStateOf(false) }
-    val textAlpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(1200),
-        label = "subtitleAlpha"
-    )
-
-    LaunchedEffect(Unit) {
-        delay(80)
-        visible = true
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.graphicsLayer { alpha = textAlpha }
-    ) {
-        Text(
-            text = "🌙رمضان كريم",
-            color = Color.White,
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .align(Alignment.BottomCenter)
+                .offset(x = 62.dp, y = (-72).dp)
+                .scale(leaf3Scale)
+                .background(ColorLeafLight, CircleShape)
         )
 
-        Spacer(Modifier.height(12.dp))
+        Box(
+            modifier = Modifier
+                .size(190.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-6).dp)
+                .scale(timurScale),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(ColorHaloSoft.copy(alpha = 0.3f), Color.Transparent)
+                        ),
+                        shape = CircleShape
+                    )
+            )
+            Image(
+                painter = painterResource(id = R.drawable.timur_ss),
+                contentDescription = "Timur",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(170.dp)
+            )
+        }
     }
 }
 
@@ -337,9 +372,9 @@ private fun LoadingIndicator() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircularProgressIndicator(
-            color = Color(0xFFFFD54F),
-            modifier = Modifier.size(32.dp),
-            strokeWidth = 4.dp
+            color = ColorForestMid,
+            modifier = Modifier.size(30.dp),
+            strokeWidth = 3.dp
         )
     }
 }

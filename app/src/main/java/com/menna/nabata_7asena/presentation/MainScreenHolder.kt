@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -59,6 +60,7 @@ import com.menna.nabata_7asena.presentation.screens.update.DownloadState
 import com.menna.nabata_7asena.presentation.screens.update.UpdateDialog
 import com.menna.nabata_7asena.presentation.screens.update.UpdateUiState
 import com.menna.nabata_7asena.presentation.screens.update.UpdateViewModel
+import com.menna.nabata_7asena.presentation.screens.home.component.ClayAssetImage
 
 @Composable
 fun MainScreenHolder(
@@ -105,7 +107,6 @@ fun MainScreenHolder(
                         if (downloadState is DownloadState.Error) {
                             updateViewModel.resetDownloadState()
                         }
-                        updateViewModel.startDownload(state.info.downloadUrl)
                     },
                     onDismiss = {
                         updateViewModel.dismissUpdate()
@@ -128,7 +129,25 @@ fun NavigationGraph(
         navController = navController,
         startDestination = "home"
     ) {
-        composable("home") { HomeScreen(onNavigateToSettings = openSettings) }
+        composable("home") { 
+            HomeScreen(
+                onNavigateToSettings = openSettings,
+                onNavigateToQuran = {
+                    navController.navigate("quran") {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToSebha = {
+                    navController.navigate("sebha") {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }
         composable("badges") { BadgesScreen() }
@@ -145,11 +164,11 @@ fun FloatingBottomBar(
     val currentRoute = navBackStackEntry?.destination?.route
 
     val items = listOf(
-        BottomNavItem("home", Icons.Rounded.Home, Color(0xFF42A5F5)),
-        BottomNavItem("quran", Icons.AutoMirrored.Rounded.MenuBook, Color(0xFF4CAF50)),
-        BottomNavItem("sebha", Icons.Rounded.Spa, Color(0xFF66BB6A)),
-        BottomNavItem("leaderboard", Icons.Rounded.EmojiEvents, Color(0xFFFFCA28)),
-        BottomNavItem("badges", Icons.Rounded.WorkspacePremium, Color(0xFFAB47BC))
+        BottomNavItem("home", Icons.Rounded.Home, Color(0xFF22C55E)),
+        BottomNavItem("quran", Icons.AutoMirrored.Rounded.MenuBook, Color(0xFF22C55E)),
+        BottomNavItem("sebha", Icons.Rounded.Spa, Color(0xFF22C55E)),
+        BottomNavItem("leaderboard", Icons.Rounded.EmojiEvents, Color(0xFF7B4DFF)),
+        BottomNavItem("badges", Icons.Rounded.WorkspacePremium, Color(0xFF7B4DFF))
     )
 
     Surface(
@@ -159,12 +178,13 @@ fun FloatingBottomBar(
             .height(70.dp)
             .fillMaxWidth()
             .shadow(
-                elevation = 16.dp,
+                elevation = 12.dp,
                 shape = RoundedCornerShape(35.dp),
-                spotColor = Color(0xFF90A4AE).copy(alpha = 0.5f)
+                spotColor = Color(0xFF7B4DFF).copy(alpha = 0.25f)
             ),
         shape = RoundedCornerShape(35.dp),
-        color = Color.White.copy(alpha = 0.95f),
+        color = Color.White.copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, Color.White.copy(0.5f)),
         tonalElevation = 5.dp
     ) {
         Row(
@@ -217,6 +237,15 @@ fun FloatingNavItem(
         label = "iconColor"
     )
 
+    val assetName = when (item.route) {
+        "home" -> "ic_nav_home"
+        "quran" -> "ic_nav_quran"
+        "sebha" -> "ic_nav_sebha"
+        "leaderboard" -> "ic_nav_trophy"
+        "badges" -> "ic_nav_badges"
+        else -> ""
+    }
+
     Box(
         modifier = Modifier
             .size(50.dp)
@@ -229,8 +258,9 @@ fun FloatingNavItem(
             ) { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = item.icon,
+        ClayAssetImage(
+            resName = assetName,
+            fallbackIcon = item.icon,
             contentDescription = null,
             tint = iconColor,
             modifier = Modifier.size(28.dp)

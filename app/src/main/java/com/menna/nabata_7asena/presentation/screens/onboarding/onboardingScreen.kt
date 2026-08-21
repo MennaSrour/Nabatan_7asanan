@@ -23,6 +23,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -33,15 +34,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -54,7 +59,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +81,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
+private val ColorBgTop = Color(0xFF3F7A5C)      // was Color(0xFF1565C0)
+private val ColorBgBottom = Color(0xFF7FAE8E)   // was Color(0xFF42A5F5)
+private val ColorScreenBg = Color(0xFFF4F8F5)   // was Color(0xFFF5F7FA)
+private val ColorTextPrimary = Color(0xFF1F4B3F) // was Color(0xFF1565C0)
+private val ColorCardBg = Color(0xFFE7F1EA)     // was Color(0xFFE3F2FD)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -94,8 +107,12 @@ fun OnboardingScreen(
     val batteryOptimizationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-
+        // no-op: we re-check viewModel.isBatteryOptimizationDisabled() the
+        // next time "Next" is pressed, whatever the user chose.
     }
+
+
+    var showBatteryExplainDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(pagerState.currentPage) {
         viewModel.updatePageIndex(pagerState.currentPage)
@@ -119,8 +136,39 @@ fun OnboardingScreen(
         }
     }
 
+    if (showBatteryExplainDialog) {
+        AlertDialog(
+            onDismissRequest = { showBatteryExplainDialog = false },
+            title = { Text("تحسين البطارية") },
+            text = {
+                Text(
+                    "هنفتحلك دلوقتي شاشة إعدادات الهاتف عشان تسمح لتطبيق نباتاً حسناً " +
+                            "يشتغل في الخلفية، فيقدر يبعتلك الأذان والتذكيرات في وقتها. " +
+                            "الشاشة اللي هتفتح دي من النظام نفسه، فهتبان بلغة هاتفك."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBatteryExplainDialog = false
+                    val intent = Intent().apply {
+                        action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    batteryOptimizationLauncher.launch(intent)
+                }) {
+                    Text("تمام، كمّل", color = ColorTextPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatteryExplainDialog = false }) {
+                    Text("لاحقاً", color = Color.Gray)
+                }
+            }
+        )
+    }
+
     Scaffold(
-        containerColor = Color(0xFFF5F7FA)
+        containerColor = ColorScreenBg
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Box(
@@ -129,10 +177,7 @@ fun OnboardingScreen(
                     .fillMaxHeight(0.5f)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF1565C0),
-                                Color(0xFF42A5F5)
-                            )
+                            colors = listOf(ColorBgTop, ColorBgBottom)
                         )
                     )
             )
@@ -191,11 +236,7 @@ fun OnboardingScreen(
                                         viewModel.saveOnboardingCompleted()
                                         onNavigateToLogin()
                                     } else {
-                                        val intent = Intent().apply {
-                                            action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                                            data = Uri.parse("package:${context.packageName}")
-                                        }
-                                        batteryOptimizationLauncher.launch(intent)
+                                        showBatteryExplainDialog = true
                                     }
                                 }
                                 else -> {
@@ -260,70 +301,85 @@ fun OnboardingPageContent(
         label = "y_axis"
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Image(
-            painter = painterResource(page.imageRes),
-            contentDescription = null,
+        val imageSize = (maxHeight * 0.42f).coerceIn(160.dp, 300.dp)
+
+        Column(
             modifier = Modifier
-                .size(320.dp)
-                .graphicsLayer {
-                    translationY = translateY.dp.toPx()
-                }
-        )
-
-        Spacer(Modifier.height(40.dp))
-
-        Text(
-            text = page.title,
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Black,
-            color = Color(0xFF1565C0),
-            textAlign = TextAlign.Center,
-            lineHeight = 38.sp
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = page.description,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            lineHeight = 28.sp,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
-        AnimatedVisibility(
-            visible = pageIndex >= 3,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(Modifier.height(24.dp))
-
-            PermissionInfoCard(
-                icon = when (pageIndex) {
-                    3 -> Icons.Default.LocationOn
-                    4 -> Icons.Default.Notifications
-                    5 -> Icons.Default.BatteryChargingFull
-                    else -> Icons.Default.LocationOn
-                },
-                text = when (pageIndex) {
-                    3 -> "ساعد تيمور يعرف القبلة ومواقيت الصلاة في مدينتك 🌍"
-                    4 -> "مش عاوزين يفوتنا أذان ولا ذكر، اسمح لتيمور ينبهك ✨"
-                    5 -> "عشان تيمور يفضل صاحي وينبهك في الوقت الصح 🔋"
-                    else -> ""
-                }
+            Image(
+                painter = painterResource(page.imageRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(imageSize)
+                    .graphicsLayer {
+                        translationY = translateY.dp.toPx()
+                    }
             )
+
+            Spacer(Modifier.height(32.dp))
+
+            Text(
+                text = page.title,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = ColorTextPrimary,
+                textAlign = TextAlign.Center,
+                lineHeight = 36.sp,
+                modifier = Modifier.widthIn(max = 480.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = page.description,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center,
+                lineHeight = 26.sp,
+                modifier = Modifier
+                    .widthIn(max = 480.dp)
+                    .padding(horizontal = 16.dp)
+            )
+
+            AnimatedVisibility(
+                visible = pageIndex >= 3,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(modifier = Modifier.widthIn(max = 480.dp)) {
+                    Spacer(Modifier.height(24.dp))
+
+                    PermissionInfoCard(
+                        icon = when (pageIndex) {
+                            3 -> Icons.Default.LocationOn
+                            4 -> Icons.Default.Notifications
+                            5 -> Icons.Default.BatteryChargingFull
+                            else -> Icons.Default.LocationOn
+                        },
+                        text = when (pageIndex) {
+                            3 -> "ساعد تيمور يعرف القبلة ومواقيت الصلاة في مدينتك 🌍"
+                            4 -> "مش عاوزين يفوتنا أذان ولا ذكر، اسمح لتيمور ينبهك ✨"
+                            5 -> "عشان تيمور يفضل صاحي وينبهك في الوقت الصح 🔋"
+                            else -> ""
+                        }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
+
 @Composable
 fun PermissionInfoCard(
     icon: ImageVector,
@@ -335,7 +391,7 @@ fun PermissionInfoCard(
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE3F2FD)
+            containerColor = ColorCardBg
         )
     ) {
         Row(
@@ -347,7 +403,7 @@ fun PermissionInfoCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF1565C0),
+                tint = ColorTextPrimary,
                 modifier = Modifier.size(32.dp)
             )
 
@@ -356,7 +412,7 @@ fun PermissionInfoCard(
             Text(
                 text = text,
                 fontSize = 14.sp,
-                color = Color(0xFF1565C0),
+                color = ColorTextPrimary,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 20.sp
             )
@@ -379,14 +435,12 @@ fun BottomSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(
-                onClick = onSkipClicked,
-                enabled = currentPage < totalPages - 1
-            ) {
+
+            TextButton(onClick = onSkipClicked) {
                 Text(
                     text = if (currentPage >= 3) "تخطي الكل" else "تخطي",
                     color = Color.Gray,
@@ -399,7 +453,7 @@ fun BottomSection(
                 onClick = onNextClicked,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1565C0)
+                    containerColor = ColorTextPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp),
                 elevation = ButtonDefaults.buttonElevation(
