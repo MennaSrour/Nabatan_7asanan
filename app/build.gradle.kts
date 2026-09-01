@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.menna.nabata_7asena"
+    namespace = "com.menna.nabatan_7asena"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.menna.nabata_7asena"
+        applicationId = "com.menna.nabatan_7asena"
         minSdk = 24
         targetSdk = 35 // غيريها من 36 لـ 35
         versionCode = 7 // خليها 7 عشان تتخطي أي Draft قديم
