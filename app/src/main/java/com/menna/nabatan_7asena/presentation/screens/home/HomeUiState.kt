@@ -6,6 +6,7 @@ import com.menna.nabatan_7asena.domain.entity.TaskCategory
 
 data class HomeUiState(
     val isLoading: Boolean = true,
+    val suggestions: com.menna.nabatan_7asena.domain.entity.ExtraTasks = com.menna.nabatan_7asena.domain.entity.ExtraTasks(emptyList(), emptyList()),
     val user: UiUser? = null,
     val dailyWisdom: String = "جاري تحميل نور اليوم...",
     val hijriDate: String = "",

@@ -1,101 +1,67 @@
 package com.menna.nabatan_7asena.presentation.screens.onboarding
 
+import android.Manifest
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import com.menna.nabatan_7asena.R
-import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     @ApplicationContext private val context: Context
-) : ViewModel() {
+) : ViewModel(), OnboardingActions {
+    private val preferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    private val _uiState = MutableStateFlow(OnboardingUiState())
+    val uiState = _uiState.asStateFlow()
+    private val _effects = Channel<OnboardingEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-
-    private val _currentPageIndex = mutableIntStateOf(0)
-    val currentPageIndex: State<Int> = _currentPageIndex
-
-    val pages = listOf(
-        OnboardingPage(
-            title = GenderedStrings.onboardingWelcomeTitle,
-            description = GenderedStrings.onboardingWelcomeDescription,
-            imageRes = R.drawable.onboarding_home
-        ),
-        OnboardingPage(
-            title = GenderedStrings.onboardingPrayerTitle,
-            description = GenderedStrings.onboardingPrayerDescription,
-            imageRes = R.drawable.onboarding_leaderboard
-        ),
-        OnboardingPage(
-            title = GenderedStrings.onboardingAzkarTitle,
-            description = GenderedStrings.onboardingAzkarDescription,
-            imageRes = R.drawable.onboarding_sebha
-        ),
-        OnboardingPage(
-            title = GenderedStrings.onboardingLocationTitle,
-            description = GenderedStrings.onboardingLocationDescription,
-            imageRes = R.drawable.onboarding_badges
-        ),
-        OnboardingPage(
-            title = GenderedStrings.onboardingNotificationsTitle,
-            description = GenderedStrings.onboardingNotificationsDescription,
-            imageRes = R.drawable.onboarding_badges
-        ),
-        OnboardingPage(
-            title = GenderedStrings.onboardingBackgroundTitle,
-            description = GenderedStrings.onboardingBackgroundDescription,
-            imageRes = R.drawable.onboarding_badges
-        )
-    )
-
-    fun updatePageIndex(index: Int) {
-        _currentPageIndex.intValue = index
+    override fun updatePageIndex(index: Int) {
+        _uiState.update { it.copy(currentPage = index.coerceIn(it.pages.indices)) }
     }
 
-    fun saveOnboardingCompleted() {
-        prefs.edit().putBoolean("is_onboarding_completed", true).apply()
+    override fun onNextClicked() {
+        when (_uiState.value.currentPage) {
+            3 -> if (locationGranted()) updatePageIndex(4) else emit(OnboardingEffect.RequestLocationPermission)
+            4 -> if (notificationsGranted()) updatePageIndex(5) else emit(OnboardingEffect.RequestNotificationPermission)
+            5 -> if (batteryExempt()) complete() else _uiState.update { it.copy(showBatteryExplanation = true) }
+            else -> updatePageIndex(_uiState.value.currentPage + 1)
+        }
     }
 
-    fun isOnboardingCompleted(): Boolean =
-        prefs.getBoolean("is_onboarding_completed", false)
+    override fun onSkipClicked() {
+        if (_uiState.value.currentPage < 3) updatePageIndex(3) else complete()
+    }
 
-    fun isLocationPermissionGranted(): Boolean =
-        ContextCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-    fun isNotificationPermissionGranted(): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
+    fun onPermissionResult() {
+        when (_uiState.value.currentPage) {
+            3 -> if (locationGranted()) updatePageIndex(4)
+            4 -> if (notificationsGranted()) updatePageIndex(5)
         }
+    }
 
-    fun isBatteryOptimizationDisabled(context: Context): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            powerManager.isIgnoringBatteryOptimizations(context.packageName)
-        } else {
-            true
-        }
+    override fun dismissBatteryExplanation() { _uiState.update { it.copy(showBatteryExplanation = false) } }
+    override fun confirmBatteryExplanation() { dismissBatteryExplanation(); emit(OnboardingEffect.RequestBatteryExemption) }
 
-    fun areAllPermissionsGranted(context: Context): Boolean =
-        isLocationPermissionGranted() &&
-                isNotificationPermissionGranted() &&
-                isBatteryOptimizationDisabled(context)
+    private fun complete() {
+        preferences.edit().putBoolean("is_onboarding_completed", true).apply()
+        emit(OnboardingEffect.NavigateToLogin)
+    }
+
+    private fun emit(effect: OnboardingEffect) { viewModelScope.launch { _effects.send(effect) } }
+    private fun locationGranted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    private fun notificationsGranted() = Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    private fun batteryExempt() = context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true
 }

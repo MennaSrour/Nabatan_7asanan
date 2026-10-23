@@ -3,16 +3,15 @@ package com.menna.nabatan_7asena.presentation.screens.leaderboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.domain.Resource
-import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.domain.usecase.GetCurrentUserUseCase
 import com.menna.nabatan_7asena.domain.usecase.GetLeaderboardUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
@@ -20,8 +19,8 @@ class LeaderboardViewModel @Inject constructor(
     getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    private val _uiMessage = MutableSharedFlow<String>()
-    val uiMessage = _uiMessage.asSharedFlow()
+    private val _uiMessage = Channel<LeaderboardEffect>(Channel.BUFFERED)
+    val effects = _uiMessage.receiveAsFlow()
 
     val uiState = combine(
         getLeaderboardUseCase(),
@@ -38,15 +37,13 @@ class LeaderboardViewModel @Inject constructor(
                 )
             }
             is Resource.Error -> {
-                _uiMessage.emit(leaderboardRes.throwable?.message ?: "فشل تحميل البيانات")
+                sendMessage(leaderboardRes.throwable?.message ?: "فشل تحميل البيانات")
                 LeaderboardUiState(isLoading = false)
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LeaderboardUiState())
-}
+    private suspend fun sendMessage(message: String) {
+        _uiMessage.send(LeaderboardEffect.ShowMessage(message))
+    }
 
-data class LeaderboardUiState(
-    val list: List<LeaderboardEntry> = emptyList(),
-    val currentUserId: String = "",
-    val isLoading: Boolean = false
-)
+}

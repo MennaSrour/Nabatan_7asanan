@@ -8,12 +8,13 @@ import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.usecase.ResetAppUseCase
 import com.menna.nabatan_7asena.domain.usecase.UpdateUserNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -21,16 +22,19 @@ class SettingsViewModel @Inject constructor(
     private val resetAppUseCase: ResetAppUseCase,
     private val updateUserNameUseCase: UpdateUserNameUseCase,
     private val globalAlarmManager: GlobalAlarmManager
-) : ViewModel() {
+) : ViewModel(), SettingsActions {
 
-    val userStats = appDao.getUserStats().stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), null
+    val uiState = appDao.getUserStats().map { stats ->
+        SettingsUiState(stats?.name.orEmpty(), stats?.prayerNotifications ?: true,
+            stats?.azkarNotifications ?: true, stats?.quranNotifications ?: true)
+    }.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState()
     )
 
-    private val _uiEvent = MutableSharedFlow<SettingsEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
+    private val _uiEvent = Channel<SettingsEffect>(Channel.BUFFERED)
+    val effects = _uiEvent.receiveAsFlow()
 
-    fun toggleNotification(category: String, isEnabled: Boolean) {
+    override fun toggleNotification(category: String, isEnabled: Boolean) {
         viewModelScope.launch {
             when (category) {
                 "prayer" -> {
@@ -50,36 +54,31 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun resetProgress() {
+    override fun resetProgress() {
         viewModelScope.launch {
             when (val res = resetAppUseCase()) {
                 is Resource.Success -> {
-                    _uiEvent.emit(SettingsEvent.ShowInfo("تم إعادة التعيين"))
+                    _uiEvent.send(SettingsEffect.NavigateToLogin)
                 }
                 is Resource.Error -> {
-                    _uiEvent.emit(SettingsEvent.ShowError(res.throwable?.message ?: "Failed to reset progress"))
+                    _uiEvent.send(SettingsEffect.ShowError(res.throwable?.message ?: "Failed to reset progress"))
                 }
                 else -> {}
             }
         }
     }
 
-    fun updateUserName(newName: String) {
+    override fun updateUserName(newName: String) {
         viewModelScope.launch {
             when (val res = updateUserNameUseCase(newName)) {
                 is Resource.Success -> {
-                    _uiEvent.emit(SettingsEvent.ShowInfo("تم تحديث الاسم"))
+                    _uiEvent.send(SettingsEffect.ShowInfo("تم تحديث الاسم"))
                 }
                 is Resource.Error -> {
-                    _uiEvent.emit(SettingsEvent.ShowError(res.throwable?.message ?: "Failed to update name"))
+                    _uiEvent.send(SettingsEffect.ShowError(res.throwable?.message ?: "Failed to update name"))
                 }
                 else -> {}
             }
         }
     }
-}
-
-sealed class SettingsEvent {
-    data class ShowError(val message: String) : SettingsEvent()
-    data class ShowInfo(val message: String) : SettingsEvent()
 }

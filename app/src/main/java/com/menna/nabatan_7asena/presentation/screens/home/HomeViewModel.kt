@@ -10,7 +10,6 @@ import com.menna.nabatan_7asena.domain.LocationTracker
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.Activity
 import com.menna.nabatan_7asena.domain.entity.DailyContent
-import com.menna.nabatan_7asena.domain.entity.ExtraTasks
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.repository.QuranRepository
@@ -22,14 +21,16 @@ import com.menna.nabatan_7asena.domain.usecase.GetSuggestedTasksUseCase
 import com.menna.nabatan_7asena.domain.usecase.IncrementQuranPartUseCase
 import com.menna.nabatan_7asena.domain.usecase.ToggleActivityStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -43,16 +44,13 @@ class HomeViewModel @Inject constructor(
     private val currentLocation: LocationTracker,
     private val audioPlayerManager: AudioPlayerManager,
     private val quranRepository: QuranRepository
-) : ViewModel() {
+) : ViewModel(), HomeActions {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _suggestedTasks = MutableStateFlow(ExtraTasks(emptyList(), emptyList()))
-    val suggestedTasks = _suggestedTasks.asStateFlow()
-
-    private val _uiMessage = MutableSharedFlow<String>()
-    val uiMessage = _uiMessage.asSharedFlow()
+    private val _uiMessage = Channel<HomeEffect>(Channel.BUFFERED)
+    val effects = _uiMessage.receiveAsFlow()
 
     private val playingTaskId = MutableStateFlow<Int?>(null)
     private val tempCompletedTaskIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
@@ -62,7 +60,15 @@ class HomeViewModel @Inject constructor(
 
     private val _hasLoadError = MutableStateFlow(false)
 
-    fun retryLoadingData() {
+    override fun onTaskClicked(item: HomeUiState.UiTaskItem) {
+        when (item.category) {
+            TaskCategory.QURAN -> _uiMessage.trySend(HomeEffect.NavigateToQuran)
+            TaskCategory.AZKAR -> _uiMessage.trySend(HomeEffect.NavigateToSebha)
+            else -> onTaskChecked(item)
+        }
+    }
+
+    override fun retryLoadingData() {
         retrySignal.update { it + 1 }
     }
     private fun currentDate() = getTodayDate()
@@ -116,49 +122,49 @@ class HomeViewModel @Inject constructor(
             Triple(domainUser, dailyContent, Pair(activitiesFlow, currentPlayingId))
         }
             .flatMapLatest { (user, dailyContent, flowPair) ->
-                val (activitiesFlow, currentPlayingId) = flowPair
+            val (activitiesFlow, currentPlayingId) = flowPair
 
-               combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { domainActivities, tempStatusMap, _ ->
-                    val currentPartToRead = user.quranPartsFinished + 1
-                    val nowMinutes = PrayerTimeline.nowMinutes()
+            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { domainActivities, tempStatusMap, _ ->
+                val currentPartToRead = user.quranPartsFinished + 1
+                val nowMinutes = PrayerTimeline.nowMinutes()
 
-                    val baseTasks = domainActivities.map { activity ->
-                        val uiModel = activity.toUiModel(currentPartToRead)
-                        val tempStatus = tempStatusMap[uiModel.id]
-                        val isDone = tempStatus ?: uiModel.isCompleted
+                val baseTasks = domainActivities.map { activity ->
+                    val uiModel = activity.toUiModel(currentPartToRead)
+                    val tempStatus = tempStatusMap[uiModel.id]
+                    val isDone = tempStatus ?: uiModel.isCompleted
 
-                        uiModel.copy(
-                            isCompleted = isDone,
-                            isPlaying = uiModel.id == currentPlayingId
-                        )
-                    }
-
-                     val prayerStatuses = PrayerTimeline.resolve(
-                        prayers = baseTasks
-                            .filter { it.category == TaskCategory.PRAYER }
-                            .map { PrayerSlot(it.id, PrayerTimeline.parseMinutes(it.subtitle)) },
-                        nowMinutes = nowMinutes
+                    uiModel.copy(
+                        isCompleted = isDone,
+                        isPlaying = uiModel.id == currentPlayingId
                     )
-                    val uiTasks = baseTasks.map { task ->
-                        val status = prayerStatuses[task.id] ?: return@map task
-                        task.copy(prayerPhase = status.phase, isPrayerFocused = status.isFocused)
-                    }
-
-                    val currentCompletedCount = uiTasks.count { it.isCompleted }
-                   val hasPrayerLoadError = !_hasLoadError.value && uiTasks.none { it.category == TaskCategory.PRAYER }
-
-                    HomeUiState(
-                        isLoading = false,
-                        user = user.toUiUser(),
-                        dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
-                        tasks = uiTasks,
-                        hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
-                        isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
-                        hasLoadError = _hasLoadError.value,
-                        hasPrayerLoadError = hasPrayerLoadError
-                    ) to currentCompletedCount
                 }
+
+                val prayerStatuses = PrayerTimeline.resolve(
+                    prayers = baseTasks
+                        .filter { it.category == TaskCategory.PRAYER }
+                        .map { PrayerSlot(it.id, PrayerTimeline.parseMinutes(it.subtitle)) },
+                    nowMinutes = nowMinutes
+                )
+                val uiTasks = baseTasks.map { task ->
+                    val status = prayerStatuses[task.id] ?: return@map task
+                    task.copy(prayerPhase = status.phase, isPrayerFocused = status.isFocused)
+                }
+
+                val currentCompletedCount = uiTasks.count { it.isCompleted }
+                val hasPrayerLoadError = !_hasLoadError.value && uiTasks.none { it.category == TaskCategory.PRAYER }
+
+                HomeUiState(
+                    isLoading = false,
+                    user = user.toUiUser(),
+                    dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
+                    tasks = uiTasks,
+                    hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
+                    isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
+                    hasLoadError = _hasLoadError.value,
+                    hasPrayerLoadError = hasPrayerLoadError
+                ) to currentCompletedCount
             }
+        }
     }
         .distinctUntilChanged { old, new -> old.first == new.first }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState() to -1)
@@ -171,7 +177,7 @@ class HomeViewModel @Inject constructor(
     private fun observeCombined() {
         viewModelScope.launch {
             combinedUiState.collect { (state, completedCount) ->
-               val allTasksCompleted = state.tasks.isNotEmpty() && state.tasks.all { it.isCompleted }
+                val allTasksCompleted = state.tasks.isNotEmpty() && state.tasks.all { it.isCompleted }
 
                 if (lastCompletedCount != -1 && completedCount > lastCompletedCount && allTasksCompleted) {
                     if (!_uiState.value.showCelebration) {
@@ -224,12 +230,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun onTaskChecked(item: HomeUiState.UiTaskItem) {
+    override fun onTaskChecked(item: HomeUiState.UiTaskItem) {
         viewModelScope.launch {
             if (item.category == TaskCategory.PRAYER) {
                 val prayerTime = item.subtitle
                 if (!item.isCompleted && prayerTime != null && !isPrayerTimeReached(prayerTime)) {
-                    _uiMessage.emit("لا يجوز الصلاة قبل دخول موعدها")
+                    sendMessage("لا يجوز الصلاة قبل دخول موعدها")
                     return@launch
                 }
             }
@@ -252,7 +258,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun playTaskSound(item: HomeUiState.UiTaskItem) {
+    override fun playTaskSound(item: HomeUiState.UiTaskItem) {
         audioPlayerManager.stopAnyPlayingSound()
         playingTaskId.value = item.id
         audioPlayerManager.playTaskSound(item) {
@@ -260,38 +266,38 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun playWelcomeSound() {
+    override fun playWelcomeSound() {
         audioPlayerManager.playWelcomeSound()
     }
 
-    fun loadSuggestions() {
+    override fun loadSuggestions() {
         viewModelScope.launch {
             when (val res = getSuggestedTasksUseCase()) {
                 is Resource.Success -> {
-                    _suggestedTasks.value = res.data
+                    _uiState.update { it.copy(suggestions = res.data) }
                 }
                 is Resource.Error -> {
-                    _uiMessage.emit(res.throwable?.message ?: "Failed to load suggestions")
+                    sendMessage(res.throwable?.message ?: "Failed to load suggestions")
                 }
                 else -> {}
             }
         }
     }
 
-    fun onAddExtraTask(title: String) {
+    override fun onAddExtraTask(title: String) {
         viewModelScope.launch {
             val res = addExtraTaskUseCase(title)
             if (res is Resource.Error) {
-                _uiMessage.emit(res.throwable?.message ?: "Failed to add task")
+                sendMessage(res.throwable?.message ?: "Failed to add task")
             }
         }
     }
 
-    fun dismissCelebration() {
+    override fun dismissCelebration() {
         _uiState.update { it.copy(showCelebration = false) }
     }
 
-    fun openDailyChallenge() {
+    override fun openDailyChallenge() {
         viewModelScope.launch {
             val todayRiddle = getDailyActivitiesUseCase.getTodayRiddle()
             if (todayRiddle != null && todayRiddle.riddle != null) {
@@ -302,11 +308,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun closeChallenge() {
+    override fun closeChallenge() {
         _uiState.update { it.copy(showChallengeDialog = false) }
     }
 
-    fun onCorrectAnswer() {
+    override fun onCorrectAnswer() {
         viewModelScope.launch {
             audioPlayerManager.playCorrectAnswerSound()
             delay(1500)
@@ -340,9 +346,9 @@ class HomeViewModel @Inject constructor(
 
     private fun computeIsNightTheme(tasks: List<HomeUiState.UiTaskItem>, nowMinutes: Int): Boolean {
         val fajrMinutes = PrayerTimeline.parseMinutes(tasks.firstOrNull { it.title == "الفجر" }?.subtitle)
-            ?: return false
+        ?: return false
         val maghribMinutes = PrayerTimeline.parseMinutes(tasks.firstOrNull { it.title == "المغرب" }?.subtitle)
-            ?: return false
+        ?: return false
 
         return if (maghribMinutes > fajrMinutes) {
             nowMinutes >= maghribMinutes || nowMinutes < fajrMinutes
@@ -372,4 +378,8 @@ class HomeViewModel @Inject constructor(
         TaskCategory.EXTRA -> "✨"
         TaskCategory.PRAYER -> "🕌"
     }
+    private suspend fun sendMessage(message: String) {
+        _uiMessage.send(HomeEffect.ShowMessage(message))
+    }
+
 }
