@@ -9,13 +9,15 @@ import com.menna.nabatan_7asena.domain.usecase.GetWeeklyCompetitionQuestionsUseC
 import com.menna.nabatan_7asena.domain.usecase.GetWeeklyStudyQuestionsUseCase
 import com.menna.nabatan_7asena.domain.usecase.IsCompetitionDayUseCase
 import com.menna.nabatan_7asena.domain.usecase.SubmitCompetitionScoreUseCase
+import com.menna.nabatan_7asena.presentation.common.GenderedString
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 enum class AnswerResult { NONE, CORRECT, WRONG }
 enum class QuizMode { NONE, STUDY, COMPETITION }
@@ -37,7 +39,7 @@ data class QuizUiState(
     val currentIndex: Int = 0,
     val competitionScore: Int = 0,
     val competitionFinished: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: GenderedString? = null,
 
     val streak: Int = 0,
     val lastAnswerCorrect: Boolean? = null,
@@ -83,7 +85,7 @@ class QuizViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "معلش، حصل خطأ في تحميل المسابقة. حاول تاني."
+                    errorMessage = GenderedStrings.quizOverviewError
                 )
             }
         }
@@ -100,7 +102,7 @@ class QuizViewModel @Inject constructor(
                     streak = 0
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "معلش، حصل خطأ في تحميل الأسئلة.")
+                _uiState.value = _uiState.value.copy(errorMessage = GenderedStrings.quizStudyError)
             }
         }
     }
@@ -116,7 +118,7 @@ class QuizViewModel @Inject constructor(
                 )
                 runPreCompetitionCountdown()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "معلش، حصل خطأ في تحميل أسئلة المسابقة.")
+                _uiState.value = _uiState.value.copy(errorMessage = GenderedStrings.quizCompetitionError)
             }
         }
     }

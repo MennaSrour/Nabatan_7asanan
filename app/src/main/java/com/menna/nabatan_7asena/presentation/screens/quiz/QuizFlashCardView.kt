@@ -71,11 +71,13 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
-import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
+import kotlinx.coroutines.delay
 
 @Composable
 fun QuizFlashCardView(
@@ -137,9 +139,9 @@ fun QuizFlashCardView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isCompetition) {
-                    StickerLabel("🏆 تحدي الجمعة — كل سؤال بنقطة", color = Candy.Orange, rotation = -2f)
+                    StickerLabel(genderedStringResource(GenderedStrings.quizCompetitionRule), color = Candy.Orange, rotation = -2f)
                 } else {
-                    StickerLabel("📖 مذاكرة — خد وقتك", color = Candy.Leaf, rotation = -2f)
+                    StickerLabel(genderedStringResource(GenderedStrings.quizTakeYourTime), color = Candy.Leaf, rotation = -2f)
                 }
                 Spacer(Modifier.weight(1f))
                 StreakBadge(streak = state.streak)
@@ -297,7 +299,7 @@ private fun QuestionFace(card: QuizCardState, number: Int, onSelectAnswer: (Int)
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        StickerLabel("سؤال $number", color = SummerTheme.colors.wisdomAccent, rotation = -3f)
+        StickerLabel(genderedStringResource(GenderedStrings.quizQuestionNumber, number), color = SummerTheme.colors.wisdomAccent, rotation = -3f)
 
         Spacer(Modifier.height(12.dp))
 
@@ -359,8 +361,8 @@ private fun QuestionFace(card: QuizCardState, number: Int, onSelectAnswer: (Int)
     }
 }
 
-private val correctPraises = listOf("برافو يا بطل! 🎉", "شاطر جدًا! 🌟", "ممتاز! كمّل كده 👏", "عبقري! 🧠✨")
-private val wrongEncouragements = listOf("قربت! 💪", "ولا يهمك، المرة الجاية! 🌈", "كل مرة بنتعلم حاجة جديدة 🌱")
+private val correctPraises = listOf(GenderedStrings.quizPraiseHero, GenderedStrings.quizPraiseClever, GenderedStrings.quizPraiseContinue, GenderedStrings.quizPraiseGenius)
+private val wrongEncouragements = listOf(GenderedStrings.quizAlmost, GenderedStrings.quizTryAgain, GenderedStrings.quizLearning)
 
 @Composable
 private fun AnswerFace(card: QuizCardState) {
@@ -370,7 +372,7 @@ private fun AnswerFace(card: QuizCardState) {
         val seed = card.question.text.length
         when {
             isCorrect -> correctPraises[seed % correctPraises.size]
-            timedOut -> "الوقت خلص! ⏰"
+            timedOut -> GenderedStrings.quizTimeOut
             else -> wrongEncouragements[seed % wrongEncouragements.size]
         }
     }
@@ -392,7 +394,7 @@ private fun AnswerFace(card: QuizCardState) {
         Spacer(Modifier.height(10.dp))
 
         KidsText(
-            headline,
+            genderedStringResource(headline),
             fontSize = 22.sp,
             color = if (isCorrect) Candy.Leaf else Candy.Coral,
             fontWeight = FontWeight.ExtraBold,
@@ -402,7 +404,7 @@ private fun AnswerFace(card: QuizCardState) {
         Spacer(Modifier.height(18.dp))
 
         KidsText(
-            "الإجابة الصح:",
+            genderedStringResource(GenderedStrings.quizCorrectAnswer),
             fontSize = 13.sp,
             color = SummerTheme.colors.textBrown,
             fontWeight = FontWeight.Medium
@@ -431,7 +433,7 @@ private fun AnswerFace(card: QuizCardState) {
         if (!isCorrect && !timedOut) {
             Spacer(Modifier.height(10.dp))
             KidsText(
-                "إنت اختارت: ${card.question.choices.getOrNull(card.selectedIndex ?: -1).orEmpty()}",
+                genderedStringResource(GenderedStrings.quizSelectedAnswer, card.question.choices.getOrNull(card.selectedIndex ?: -1).orEmpty()),
                 fontSize = 12.sp,
                 color = SummerTheme.colors.textBrown.copy(alpha = 0.75f),
                 fontWeight = FontWeight.Medium,
@@ -475,7 +477,7 @@ private fun RoundCloseButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(42.dp)
-            .bouncyClickable(onClickLabel = "خروج", onClick = onClick)
+            .bouncyClickable(onClickLabel = genderedStringResource(GenderedStrings.exit), onClick = onClick)
             .clip(CircleShape)
             .background(SummerTheme.colors.cardBackground)
             .border(2.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.55f), CircleShape),
@@ -483,7 +485,7 @@ private fun RoundCloseButton(onClick: () -> Unit) {
     ) {
         Icon(
             Icons.Rounded.Close,
-            contentDescription = "خروج",
+            contentDescription = genderedStringResource(GenderedStrings.exit),
             tint = SummerTheme.colors.textDarkBrown,
             modifier = Modifier.size(22.dp)
         )
@@ -701,9 +703,9 @@ private fun CompetitionFinishedContent(score: Int, total: Int, onDone: () -> Uni
         else -> 0
     }
     val resultMessage = when {
-        percentage >= 0.8f -> "بطل! 🏆"
-        percentage >= 0.5f -> "شغل حلو! 👏"
-        else -> "قريب المرة الجاية! 💪"
+        percentage >= 0.8f -> genderedStringResource(GenderedStrings.quizResultHero)
+        percentage >= 0.5f -> genderedStringResource(GenderedStrings.quizResultGood)
+        else -> genderedStringResource(GenderedStrings.quizResultNextTime)
     }
 
     var displayedScore by remember { mutableStateOf(0) }
@@ -770,7 +772,7 @@ private fun CompetitionFinishedContent(score: Int, total: Int, onDone: () -> Uni
                     .background(Color.White)
                     .padding(horizontal = 28.dp, vertical = 12.dp)
             ) {
-                KidsText("جبت", fontSize = 18.sp, color = Candy.InkBrown, modifier = Modifier.padding(bottom = 8.dp))
+                KidsText(genderedStringResource(GenderedStrings.quizScorePrefix), fontSize = 18.sp, color = Candy.InkBrown, modifier = Modifier.padding(bottom = 8.dp))
                 Spacer(Modifier.width(8.dp))
                 KidsText(
                     "$displayedScore",
@@ -779,7 +781,7 @@ private fun CompetitionFinishedContent(score: Int, total: Int, onDone: () -> Uni
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(Modifier.width(8.dp))
-                KidsText("من $total", fontSize = 18.sp, color = Candy.InkBrown, modifier = Modifier.padding(bottom = 8.dp))
+                KidsText(genderedStringResource(GenderedStrings.quizTotalQuestions, total), fontSize = 18.sp, color = Candy.InkBrown, modifier = Modifier.padding(bottom = 8.dp))
             }
 
             Spacer(Modifier.height(32.dp))
@@ -791,7 +793,7 @@ private fun CompetitionFinishedContent(score: Int, total: Int, onDone: () -> Uni
                 modifier = Modifier.fillMaxWidth(0.7f),
                 contentPadding = PaddingValues(vertical = 14.dp, horizontal = 16.dp)
             ) {
-                KidsText("رجوع", fontSize = 18.sp, color = Candy.OrangeEdge, fontWeight = FontWeight.ExtraBold)
+                KidsText(genderedStringResource(GenderedStrings.back), fontSize = 18.sp, color = Candy.OrangeEdge, fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -868,9 +870,9 @@ private fun NextButtonArea(
             ) {
                 KidsText(
                     text = when {
-                        !isLast -> "السؤال الجاي ←"
-                        isCompetition -> "شوف نتيجتك 🏆"
-                        else -> "خلاص 🎉"
+                        !isLast -> genderedStringResource(GenderedStrings.quizNextQuestion)
+                        isCompetition -> genderedStringResource(GenderedStrings.quizViewResult)
+                        else -> genderedStringResource(GenderedStrings.done)
                     },
                     fontSize = 18.sp,
                     color = Candy.InkBrown,

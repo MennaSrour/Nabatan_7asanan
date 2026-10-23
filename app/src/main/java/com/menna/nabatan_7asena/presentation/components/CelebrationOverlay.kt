@@ -26,6 +26,8 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 
 
 @Composable
@@ -55,7 +57,7 @@ fun CelebrationOverlaySebha(onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "أحسنت يا بطل",
+                    genderedStringResource(GenderedStrings.celebrationWellDone),
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold

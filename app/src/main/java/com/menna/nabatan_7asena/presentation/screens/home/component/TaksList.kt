@@ -38,6 +38,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
@@ -49,11 +51,12 @@ fun TaskBubbleCard(
     onCheckClick: () -> Unit,
     onPlaySound: () -> Unit
 ) {
+    val completeDescription = genderedStringResource(GenderedStrings.taskComplete, item.title)
     val icon = remember(item.category) { categoryIcon(item.category) }
     val baseColor = remember(item.category) { categoryColor(item.category) }
     val displaySubtitle = when {
         item.category == TaskCategory.QURAN && hasBookmark && !item.isCompleted ->
-            "تابعي من عند العلامة المحفوظة"
+            genderedStringResource(GenderedStrings.taskResumeBookmark)
         else -> item.subtitle
     }
 
@@ -128,7 +131,7 @@ fun TaskBubbleCard(
                 ) {
                     Icon(
                         imageVector = if (item.isPlaying) Icons.Rounded.VolumeUp else Icons.Rounded.PlayArrow,
-                        contentDescription = "استمعي",
+                        contentDescription = genderedStringResource(GenderedStrings.listen),
                         tint = SummerTheme.colors.white,
                         modifier = Modifier.size(16.dp)
                     )
@@ -148,7 +151,7 @@ fun TaskBubbleCard(
                         .clickable { onCheckClick() }
                         .semantics {
                             role = Role.Checkbox
-                            contentDescription = "اضغطي لإتمام ${item.title}"
+                            contentDescription = completeDescription
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -194,7 +197,7 @@ fun TaskBubbleCard(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Check,
-                            contentDescription = "تمت",
+                            contentDescription = genderedStringResource(GenderedStrings.completed),
                             tint = baseColor,
                             modifier = Modifier.size(20.dp)
                         )

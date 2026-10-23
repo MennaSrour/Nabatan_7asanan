@@ -70,8 +70,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +81,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.components.CelebrationOverlaySebha
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
@@ -138,9 +140,9 @@ fun ZikrSelectionMenuSummer(
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("📿", fontSize = 48.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("اختر ذكرك الآن", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SummerTheme.colors.textPrimary)
+                    Text(genderedStringResource(GenderedStrings.sebhaChoose), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SummerTheme.colors.textPrimary)
                     Spacer(Modifier.height(4.dp))
-                    Text("واكسب نجوم الأذكار البراقة", fontSize = 13.sp, color = SummerTheme.colors.goldDeep.copy(0.9f))
+                    Text(genderedStringResource(GenderedStrings.sebhaEarnStars), fontSize = 13.sp, color = SummerTheme.colors.goldDeep.copy(0.9f))
                 }
             }
 
@@ -173,7 +175,7 @@ fun FreeTasbeehEntryCard(onClick: () -> Unit) {
                 color = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.5f),
                 shape = SummerTheme.Shapes.ExtraRounded
             )
-            .clickable(onClickLabel = "تسبيحة حرة") { onClick() }
+            .clickable(onClickLabel = genderedStringResource(GenderedStrings.sebhaFree)) { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -195,13 +197,13 @@ fun FreeTasbeehEntryCard(onClick: () -> Unit) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                "تسبيحة حرة",
+                genderedStringResource(GenderedStrings.sebhaFree),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = SummerTheme.colors.textPrimary
             )
             Text(
-                "اختار ذكرك والعدد اللي يريحك",
+                genderedStringResource(GenderedStrings.sebhaCustomHint),
                 fontSize = 12.sp,
                 color = SummerTheme.colors.textPrimary.copy(alpha = 0.6f)
             )
@@ -222,7 +224,7 @@ fun FreeTasbeehDialog(
         containerColor = SummerTheme.colors.cardBackground,
         title = {
             Text(
-                text = "تسبيحة حرة",
+                text = genderedStringResource(GenderedStrings.sebhaFree),
                 fontWeight = FontWeight.Bold,
                 color = SummerTheme.colors.textPrimary
             )
@@ -230,7 +232,7 @@ fun FreeTasbeehDialog(
         text = {
             Column {
                 Text(
-                    text = "اكتب الذكر اللي هتقوله والعدد اللي عاوزه — سيب أي خانة فاضية لو مش محتاجها.",
+                    text = genderedStringResource(GenderedStrings.sebhaCustomDescription),
                     fontSize = 13.sp,
                     color = SummerTheme.colors.textPrimary.copy(alpha = 0.7f)
                 )
@@ -240,8 +242,8 @@ fun FreeTasbeehDialog(
                 OutlinedTextField(
                     value = zikrText,
                     onValueChange = { zikrText = it },
-                    label = { Text("الذكر (اختياري)") },
-                    placeholder = { Text("مثال: أستغفر الله") },
+                    label = { Text(genderedStringResource(GenderedStrings.sebhaOptionalText)) },
+                    placeholder = { Text(genderedStringResource(GenderedStrings.sebhaTextExample)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -255,8 +257,8 @@ fun FreeTasbeehDialog(
                 OutlinedTextField(
                     value = targetText,
                     onValueChange = { input -> if (input.all { it.isDigit() }) targetText = input },
-                    label = { Text("العدد (اختياري)") },
-                    placeholder = { Text("سيبها فاضية للعدّ بلا حد") },
+                    label = { Text(genderedStringResource(GenderedStrings.sebhaOptionalCount)) },
+                    placeholder = { Text(genderedStringResource(GenderedStrings.sebhaUnlimitedHint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -271,12 +273,12 @@ fun FreeTasbeehDialog(
             TextButton(onClick = {
                 onConfirm(zikrText.trim(), targetText.trim().toIntOrNull())
             }) {
-                Text("ابدأ", color = SummerTheme.Colors.PrimaryGold, fontWeight = FontWeight.Bold)
+                Text(genderedStringResource(GenderedStrings.start), color = SummerTheme.Colors.PrimaryGold, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء", color = SummerTheme.colors.textPrimary.copy(alpha = 0.7f))
+                Text(genderedStringResource(GenderedStrings.cancel), color = SummerTheme.colors.textPrimary.copy(alpha = 0.7f))
             }
         }
     )
@@ -360,7 +362,7 @@ fun ZikrCounterViewSummer(
                 }
                 Spacer(Modifier.width(8.dp))
                 Column {
-                    Text("السبحة", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SummerTheme.colors.textPrimary)
+                    Text(genderedStringResource(GenderedStrings.sebhaTitle), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SummerTheme.colors.textPrimary)
                     Text("أَلا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", fontSize = 12.sp, color = SummerTheme.colors.textPrimary.copy(0.8f))
                 }
             }
@@ -438,7 +440,7 @@ fun ZikrCounterViewSummer(
                         Spacer(Modifier.height(4.dp))
                         Text("${state.currentCount}", fontSize = 72.sp, fontWeight = FontWeight.Black, color = SummerTheme.colors.textPrimary)
                         Text(
-                            text = if (isUnlimited) "بلا حدّ" else "/ ${zikr.target}",
+                            text = if (isUnlimited) genderedStringResource(GenderedStrings.sebhaUnlimited) else "/ ${zikr.target}",
                             fontSize = 20.sp,
                             color = Color(zikr.color).copy(0.9f),
                             fontWeight = FontWeight.Bold
@@ -463,7 +465,7 @@ fun ZikrCounterViewSummer(
 
                 Spacer(Modifier.weight(1f))
 
-                Text("اضغط في أي مكان للعد ☀️", color = SummerTheme.colors.textPrimary.copy(0.5f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 100.dp))
+                Text(genderedStringResource(GenderedStrings.sebhaTapToCount), color = SummerTheme.colors.textPrimary.copy(0.5f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 100.dp))
             }
         }
     }

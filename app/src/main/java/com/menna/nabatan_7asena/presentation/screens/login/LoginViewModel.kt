@@ -5,13 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.usecase.RegisterUserUseCase
+import com.menna.nabatan_7asena.presentation.common.GenderedString
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -43,7 +45,7 @@ class LoginViewModel @Inject constructor(
     fun onStartClicked() {
         val currentState = _state.value
         if (currentState.name.isBlank()) {
-            viewModelScope.launch { _uiEvent.emit(LoginEvent.ShowError("اكتب اسمك يا بطل! ✍️")) }
+            viewModelScope.launch { _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.loginNameRequired)) }
             return
         }
 
@@ -62,10 +64,10 @@ class LoginViewModel @Inject constructor(
                     _uiEvent.emit(LoginEvent.NavigateToHome)
                 }
                 is Resource.Error -> {
-                    _uiEvent.emit(LoginEvent.ShowError(result.throwable?.message ?: "حدث خطأ أثناء التسجيل"))
+                    _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.loginRegistrationError))
                 }
                 else -> {
-                    _uiEvent.emit(LoginEvent.ShowError("حدث خطأ غير متوقع"))
+                    _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.unexpectedError))
                 }
             }
 
@@ -85,5 +87,5 @@ data class LoginState(
 
 sealed class LoginEvent {
     object NavigateToHome : LoginEvent()
-    data class ShowError(val message: String) : LoginEvent()
+    data class ShowError(val message: GenderedString) : LoginEvent()
 }

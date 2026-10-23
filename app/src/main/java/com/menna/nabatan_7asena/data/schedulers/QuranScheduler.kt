@@ -1,4 +1,4 @@
-package com.menna.nabatan_7asena.domain.schedulers
+package com.menna.nabatan_7asena.data.schedulers
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -11,12 +11,12 @@ import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.domain.entity.PrayerTimes
 import com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Calendar
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import java.util.Calendar
-import javax.inject.Inject
 
 class QuranScheduler @Inject constructor(
     @ApplicationContext private val context: Context,

@@ -50,6 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
+import com.menna.nabatan_7asena.presentation.components.NoInternetState
 import com.menna.nabatan_7asena.presentation.screens.home.component.AddTaskBottomSheet
 import com.menna.nabatan_7asena.presentation.screens.home.component.BentoStatsGrid
 import com.menna.nabatan_7asena.presentation.screens.home.component.CelebrationOverlay
@@ -57,7 +60,6 @@ import com.menna.nabatan_7asena.presentation.screens.home.component.ColorfulHead
 import com.menna.nabatan_7asena.presentation.screens.home.component.DailyChallengeDialog
 import com.menna.nabatan_7asena.presentation.screens.home.component.DailyWisdomCard
 import com.menna.nabatan_7asena.presentation.screens.home.component.NightBackgroundGradient
-import com.menna.nabatan_7asena.presentation.components.NoInternetState
 import com.menna.nabatan_7asena.presentation.screens.home.component.PrayerTimesRow
 import com.menna.nabatan_7asena.presentation.screens.home.component.TaskBubbleCard
 import com.menna.nabatan_7asena.presentation.screens.home.component.TreasureChestCard
@@ -194,7 +196,7 @@ fun HomeScreen(
                     if (uiState.hasLoadError && uiState.tasks.isEmpty()) {
                         item {
                             NoInternetState(
-                                title = "معلش، مقدرناش نجيب مهام وصلوات النهارده",
+                                title = genderedStringResource(GenderedStrings.homeLoadError),
                                 onRetry = { viewModel.retryLoadingData() }
                             )
                         }
@@ -202,7 +204,7 @@ fun HomeScreen(
                         item {
                             HomeSectionHeader(
                                 icon = R.drawable.time,
-                                title = "الصلوات",
+                                title = genderedStringResource(GenderedStrings.homePrayers),
                                 tint = sectionTitleColor
                             )
                         }
@@ -212,7 +214,7 @@ fun HomeScreen(
                             // بقى معزول عن باقي المهام) — نستبدل صف الصلوات بس، مش الشاشة كلها
                             item {
                                 NoInternetState(
-                                    title = "معلش، مقدرناش نجيب مواقيت الصلاة",
+                                    title = genderedStringResource(GenderedStrings.homePrayerError),
                                     onRetry = { viewModel.retryLoadingData() },
                                     compact = true,
                                     modifier = Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal)
@@ -234,13 +236,13 @@ fun HomeScreen(
                         item {
                             HomeSectionHeader(
                                 icon = R.drawable.todo,
-                                title = "المهام اليومية",
+                                title = genderedStringResource(GenderedStrings.homeDailyTasks),
                                 tint = sectionTitleColor
                             )
                         }
 
                         if (dailyTasks.isEmpty()) {
-                            // حالة فارغة صريحة بدل ما تظهر عنوان "المهام اليومية" وبعده
+                            // حالة فارغة صريحة بدل ما تظهر عنوان genderedStringResource(GenderedStrings.homeDailyTasks) وبعده
                             // فراغ مفاجئ يوصل إحساس إن فيه حاجة متحملتش صح.
                             item {
                                 EmptyDailyTasksHint(tint = sectionTitleColor)
@@ -324,7 +326,7 @@ fun HomeScreen(
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = "إضافة عمل صالح جديد",
+                                        text = genderedStringResource(GenderedStrings.homeAddTask),
                                         color = SummerTheme.colors.addBtnText,
                                         style = SummerTheme.typography.addButtonText
                                     )
@@ -365,7 +367,7 @@ fun HomeScreen(
 
 /**
  * عنوان قسم موحّد (أيقونة + نص) — كان مكرر حرفيًا مرتين جوه HomeScreen
- * (فوق "الصلوات" وفوق "المهام اليومية"). استخراجه لمكان واحد يضمن إن أي
+ * (فوق genderedStringResource(GenderedStrings.homePrayers) وفوق genderedStringResource(GenderedStrings.homeDailyTasks)). استخراجه لمكان واحد يضمن إن أي
  * تعديل مستقبلي في التباعد أو الحجم يتطبق تلقائيًا على كل الأقسام،
  * ومينفعش قسم يتنسى تحديثه لوحده.
  */
@@ -406,7 +408,7 @@ private fun EmptyDailyTasksHint(tint: Color) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "لسه مفيش مهام إضافية النهارده \"إضافة عمل صالح جديد\" بالأسفل",
+            text = genderedStringResource(GenderedStrings.homeNoTasks),
             style = SummerTheme.typography.taskSubtitle,
             color = tint.copy(alpha = 0.75f),
             textAlign = TextAlign.Center

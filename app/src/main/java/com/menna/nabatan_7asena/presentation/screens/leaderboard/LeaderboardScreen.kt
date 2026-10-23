@@ -60,6 +60,8 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
@@ -123,7 +125,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                                             .background(SummerTheme.colors.textBrown.copy(0.25f))
                                     )
                                     Text(
-                                        "وما زال الغرس يزهر",
+                                        genderedStringResource(GenderedStrings.leaderboardGrowing),
                                         fontSize = 12.sp,
                                         color = SummerTheme.colors.textBrown,
                                         fontWeight = FontWeight.Bold
@@ -188,7 +190,7 @@ fun LeaderboardHeader() {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "أطيب ثمار غرس أمتنا",
+                genderedStringResource(GenderedStrings.leaderboardTitle),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
                 color = SummerTheme.colors.textPrimary
@@ -204,7 +206,7 @@ fun LeaderboardHeader() {
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        "في سباق الخير... تزهر خطانا",
+                        genderedStringResource(GenderedStrings.leaderboardSubtitle),
                         fontSize = 13.sp,
                         color = SummerTheme.colors.goldDeep,
                         fontWeight = FontWeight.Bold
@@ -346,7 +348,7 @@ fun PodiumMember(
                         .zIndex(3f)
                 ) {
                     Text(
-                        "أنت ✨",
+                        genderedStringResource(GenderedStrings.currentUserHighlight),
                         color = Color.White,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -503,7 +505,7 @@ fun LeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
                             border = BorderStroke(1.dp, SummerTheme.colors.highlightAccent.copy(0.5f))
                         ) {
                             Text(
-                                "أنت",
+                                genderedStringResource(GenderedStrings.currentUser),
                                 fontSize = 9.sp,
                                 color = SummerTheme.colors.highlightAccent,
                                 fontWeight = FontWeight.Bold,
@@ -561,14 +563,14 @@ fun LeaderboardEmptyState() {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-              "كن أنت أول نجم يلمع اليوم!",
+              genderedStringResource(GenderedStrings.leaderboardFirstStar),
                 fontSize = 22.sp,
                 color = SummerTheme.colors.textPrimary,
                 fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "اجمع نجومك من كل عمل صالح تعمله ✨",
+                genderedStringResource(GenderedStrings.leaderboardEarnStars),
                 fontSize = 14.sp,
                 color = SummerTheme.colors.textBrown
             )

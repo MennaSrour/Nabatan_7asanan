@@ -11,9 +11,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +27,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieAnimatable
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
@@ -150,7 +152,7 @@ fun TreasureChestCard(
             }
 
             Text(
-                text = if (isUnlocked) "الكنز اتفتح" else "كملي مهامك وصلواتك",
+                text = if (isUnlocked) genderedStringResource(GenderedStrings.treasureUnlocked) else genderedStringResource(GenderedStrings.treasureCompleteTasks),
                 style = SummerTheme.typography.chestTitle,
                 color = if (isUnlocked) SummerTheme.colors.white else SummerTheme.colors.chestLockedText,
                 modifier = Modifier.padding(top = 14.dp)
@@ -158,7 +160,7 @@ fun TreasureChestCard(
 
             if (!isUnlocked && totalCount > 0) {
                 Text(
-                    text = "$completedCount من $totalCount",
+                    text = genderedStringResource(GenderedStrings.treasureProgress, completedCount, totalCount),
                     style = SummerTheme.typography.chestSubtitle,
                     color = SummerTheme.colors.chestLockedText.copy(alpha = 0.85f),
                     modifier = Modifier.padding(top = 2.dp)
@@ -166,7 +168,7 @@ fun TreasureChestCard(
             }
 
             Text(
-                text = if (isUnlocked) "اضغطي وشوفي مفاجأتك" else "عشان تفتحي الكنز",
+                text = if (isUnlocked) genderedStringResource(GenderedStrings.treasureOpen) else genderedStringResource(GenderedStrings.treasureUnlockHint),
                 style = SummerTheme.typography.chestSubtitle,
                 color = if (isUnlocked) SummerTheme.colors.white.copy(alpha = 0.85f) else SummerTheme.colors.chestLockedText.copy(alpha = 0.75f),
                 modifier = Modifier.padding(top = 2.dp)

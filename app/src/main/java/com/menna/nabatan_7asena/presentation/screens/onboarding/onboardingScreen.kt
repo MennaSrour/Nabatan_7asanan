@@ -90,6 +90,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedString
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
@@ -157,16 +160,14 @@ private fun OnboardingContent(
             containerColor = SummerTheme.colors.cardBackground,
             title = {
                 Text(
-                    text = "تحسين البطارية",
+                    text = genderedStringResource(GenderedStrings.onboardingBatteryTitle),
                     color = SummerTheme.colors.textDarkBrown,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "هنفتحلك شاشة إعدادات الهاتف علشان تسمح للتطبيق يشتغل في الخلفية، " +
-                            "فيقدر يبعتلك الأذان والتذكيرات في وقتها. الشاشة دي من النظام نفسه، " +
-                            "فهتظهر بلغة هاتفك.",
+                    text = genderedStringResource(GenderedStrings.onboardingBatteryExplanation),
                     color = SummerTheme.colors.textBrown
                 )
             },
@@ -180,7 +181,7 @@ private fun OnboardingContent(
                     batteryOptimizationLauncher.launch(intent)
                 }) {
                     Text(
-                        text = "تمام، كمّل",
+                        text = genderedStringResource(GenderedStrings.onboardingContinue),
                         color = SummerTheme.colors.wisdomAccent,
                         fontWeight = FontWeight.Bold
                     )
@@ -188,7 +189,7 @@ private fun OnboardingContent(
             },
             dismissButton = {
                 TextButton(onClick = { showBatteryExplainDialog = false }) {
-                    Text("لاحقاً", color = SummerTheme.colors.textBrown)
+                    Text(genderedStringResource(GenderedStrings.later), color = SummerTheme.colors.textBrown)
                 }
             }
         )
@@ -394,7 +395,7 @@ fun OnboardingPageContent(
             Spacer(Modifier.height(32.dp))
 
             Text(
-                text = page.title,
+                text = genderedStringResource(page.title),
                 style = SummerTheme.typography.overlayTitle,
                 color = SummerTheme.colors.textDarkBrown,
                 textAlign = TextAlign.Center,
@@ -405,7 +406,7 @@ fun OnboardingPageContent(
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = page.description,
+                text = genderedStringResource(page.description),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 color = SummerTheme.colors.textBrown,
@@ -432,9 +433,9 @@ fun OnboardingPageContent(
                             else -> Icons.Default.LocationOn
                         },
                         text = when (pageIndex) {
-                            3 -> "الموقع بيتستخدم لحساب مواقيت الصلاة واتجاه القبلة بس، ومش بيتشارك مع حد."
-                            4 -> "التنبيهات بتوصلك بالأذان ووقت الصلاة والأذكار، وتقدر تظبطها بعدين."
-                            5 -> "السماح بالعمل في الخلفية بيخلي التنبيه يوصل في ميعاده من غير تأخير."
+                            3 -> genderedStringResource(GenderedStrings.onboardingLocationHint)
+                            4 -> genderedStringResource(GenderedStrings.onboardingNotificationHint)
+                            5 -> genderedStringResource(GenderedStrings.onboardingBatteryHint)
                             else -> ""
                         }
                     )
@@ -506,7 +507,7 @@ fun BottomSection(
         ) {
             TextButton(onClick = onSkipClicked) {
                 Text(
-                    text = if (currentPage >= 3) "تخطي الكل" else "تخطي",
+                    text = if (currentPage >= 3) genderedStringResource(GenderedStrings.onboardingSkipAll) else genderedStringResource(GenderedStrings.onboardingSkip),
                     color = SummerTheme.colors.textBrown,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
@@ -524,11 +525,11 @@ fun BottomSection(
             ) {
                 Text(
                     text = when (currentPage) {
-                        totalPages - 1 -> "ابدأ الرحلة"
-                        3 -> "السماح بالموقع"
-                        4 -> "السماح بالإشعارات"
-                        5 -> "تحسين البطارية"
-                        else -> "التالي"
+                        totalPages - 1 -> genderedStringResource(GenderedStrings.startJourney)
+                        3 -> genderedStringResource(GenderedStrings.onboardingAllowLocation)
+                        4 -> genderedStringResource(GenderedStrings.onboardingAllowNotifications)
+                        5 -> genderedStringResource(GenderedStrings.onboardingBatteryTitle)
+                        else -> genderedStringResource(GenderedStrings.next)
                     },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -540,7 +541,7 @@ fun BottomSection(
 }
 
 data class OnboardingPage(
-    val title: String,
-    val description: String,
+    val title: GenderedString,
+    val description: GenderedString,
     val imageRes: Int
 )

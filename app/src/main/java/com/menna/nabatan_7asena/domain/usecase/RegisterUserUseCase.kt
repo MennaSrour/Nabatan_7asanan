@@ -3,16 +3,18 @@ package com.menna.nabatan_7asena.domain.usecase
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.repository.UserRepository
-import java.util.UUID
 import javax.inject.Inject
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class RegisterUserUseCase @Inject constructor(
     private val repository: UserRepository
 ) {
     suspend operator fun invoke(name: String, gender: User.Gender, avatarIndex: Int): Resource<Unit> {
         if (name.isBlank()) return Resource.Error(IllegalArgumentException("Name cannot be empty"))
         val newUser = User(
-            id = UUID.randomUUID().toString(),
+            id = Uuid.random().toString(),
             name = name,
             gender = gender,
             totalStars = 0,

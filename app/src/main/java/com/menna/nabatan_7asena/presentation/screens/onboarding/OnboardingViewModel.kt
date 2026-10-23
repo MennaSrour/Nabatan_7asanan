@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -27,33 +28,33 @@ class OnboardingViewModel @Inject constructor(
 
     val pages = listOf(
         OnboardingPage(
-            title = "أهلاً بيك",
-            description = "أنا تيمور، رفيقك في رحلة الصلاة والأذكار. هنمشي سوا خطوة بخطوة.",
+            title = GenderedStrings.onboardingWelcomeTitle,
+            description = GenderedStrings.onboardingWelcomeDescription,
             imageRes = R.drawable.onboarding_home
         ),
         OnboardingPage(
-            title = "الصلاة عماد الدين",
-            description = "هفكّرك بكل صلاة في ميعادها المظبوط، علشان ميفوتكش أجرها.",
+            title = GenderedStrings.onboardingPrayerTitle,
+            description = GenderedStrings.onboardingPrayerDescription,
             imageRes = R.drawable.onboarding_leaderboard
         ),
         OnboardingPage(
-            title = "أذكار يومية",
-            description = "تسبيح وذكر بعد كل صلاة، مع أذكار الصباح والمساء في مكان واحد.",
+            title = GenderedStrings.onboardingAzkarTitle,
+            description = GenderedStrings.onboardingAzkarDescription,
             imageRes = R.drawable.onboarding_sebha
         ),
         OnboardingPage(
-            title = "محتاجين نعرف مكانك",
-            description = "علشان نحسب مواقيت الصلاة واتجاه القبلة بدقة حسب مدينتك.",
+            title = GenderedStrings.onboardingLocationTitle,
+            description = GenderedStrings.onboardingLocationDescription,
             imageRes = R.drawable.onboarding_badges
         ),
         OnboardingPage(
-            title = "الإشعارات",
-            description = "هنبعتلك تنبيه بالأذان ووقت الصلاة والأذكار في وقتها بالظبط.",
+            title = GenderedStrings.onboardingNotificationsTitle,
+            description = GenderedStrings.onboardingNotificationsDescription,
             imageRes = R.drawable.onboarding_badges
         ),
         OnboardingPage(
-            title = "تحسين استهلاك البطارية",
-            description = "محتاجين نشتغل في الخلفية علشان التنبيهات توصلك من غير تأخير.",
+            title = GenderedStrings.onboardingBackgroundTitle,
+            description = GenderedStrings.onboardingBackgroundDescription,
             imageRes = R.drawable.onboarding_badges
         )
     )

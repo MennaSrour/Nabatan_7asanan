@@ -64,10 +64,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.domain.entity.QuizWinner
 import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 private val GoldMedal = Color(0xFFFFC83D)
 private val SilverMedal = Color(0xFFB0BEC5)
 private val BronzeMedal = Color(0xFFD7A86E)
@@ -122,7 +124,7 @@ private fun PreCompetitionCountdownScreen(value: Int) {
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             KidsText(
-                "جاهز؟",
+                genderedStringResource(GenderedStrings.quizReady),
                 fontSize = 34.sp,
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
@@ -184,7 +186,7 @@ private fun PreCompetitionCountdownScreen(value: Int) {
 
             Spacer(Modifier.height(24.dp))
             KidsText(
-                "اتحدى نفسك يا بطل! 💪",
+                genderedStringResource(GenderedStrings.quizChallenge),
                 fontSize = 18.sp,
                 color = Color.White,
                 shadow = ButtonTextShadow
@@ -225,8 +227,8 @@ private fun QuizOverviewContent(
             if (state.isLoading) {
                 LoadingSprout()
             } else {
-                state.errorMessage?.let {
-                    ErrorNote(it)
+                state.errorMessage?.let { errorMessage ->
+                    ErrorNote(genderedStringResource(errorMessage))
                     Spacer(Modifier.height(16.dp))
                 }
 
@@ -291,10 +293,10 @@ private fun MascotHeader(isCompetitionDay: Boolean) {
                 .border(2.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.6f), bubbleShape)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            KidsText("تحدي الجمعة", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            KidsText(genderedStringResource(GenderedStrings.quizFridayChallenge), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
             KidsText(
-                if (isCompetitionDay) "النهارده يوم التحدي! يلا نورنا 🔥"
-                else "ذاكر النهارده وكون بطل الجمعة 💪",
+                if (isCompetitionDay) genderedStringResource(GenderedStrings.quizCompetitionDay)
+                else genderedStringResource(GenderedStrings.quizStudyToday),
                 fontSize = 13.sp,
                 color = SummerTheme.colors.textBrown,
                 fontWeight = FontWeight.Medium
@@ -315,7 +317,7 @@ private fun LoadingSprout() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("🌱", fontSize = 60.sp, modifier = Modifier.offset(y = bounce.dp))
             Spacer(Modifier.height(8.dp))
-            KidsText("ثانية واحدة...", fontSize = 15.sp, color = SummerTheme.colors.textBrown)
+            KidsText(genderedStringResource(GenderedStrings.quizLoading), fontSize = 15.sp, color = SummerTheme.colors.textBrown)
         }
     }
 }
@@ -347,7 +349,7 @@ private fun WinnersSection(winners: List<QuizWinner>) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        StickerLabel("👑 أبطال آخر جمعة", color = Candy.Orange, rotation = -2f)
+        StickerLabel(genderedStringResource(GenderedStrings.quizLastWinners), color = Candy.Orange, rotation = -2f)
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
@@ -453,7 +455,7 @@ private fun PodiumSpot(
                 maxLines = 1
             )
             KidsText(
-                "${winner.score} نقطة",
+                genderedStringResource(GenderedStrings.quizWinnerScore, winner.score),
                 fontSize = 11.sp,
                 color = SummerTheme.colors.textBrown.copy(alpha = 0.8f),
                 fontWeight = FontWeight.Medium
@@ -499,7 +501,7 @@ private fun EmptyWinnersHint() {
             Text("🏆", fontSize = 46.sp, modifier = Modifier.offset(y = bounce.dp))
             Spacer(Modifier.height(8.dp))
             KidsText(
-                "لسه محدش خاض تحدي الجمعة — يلا كن أول بطل!",
+                genderedStringResource(GenderedStrings.quizFirstWinner),
                 fontSize = 14.sp,
                 color = SummerTheme.colors.textBrown,
                 textAlign = TextAlign.Center
@@ -559,7 +561,7 @@ private fun StudyEntryCard(onClick: () -> Unit) {
         onClick = onClick,
         color = Candy.Leaf,
         edgeColor = Candy.LeafEdge,
-        onClickLabel = "ذاكر أسئلة الأسبوع",
+        onClickLabel = genderedStringResource(GenderedStrings.quizStudyAction),
         modifier = Modifier
             .fillMaxWidth()
             .rotate(-1.2f),
@@ -567,8 +569,8 @@ private fun StudyEntryCard(onClick: () -> Unit) {
     ) {
         EntryCardContent(
             emoji = "📖",
-            title = "ذاكر أسئلة الأسبوع",
-            subtitle = "20 سؤال، اتعلم منهم قبل يوم المسابقة",
+            title = genderedStringResource(GenderedStrings.quizStudyAction),
+            subtitle = genderedStringResource(GenderedStrings.quizStudyHint),
             titleColor = Color.White,
             subtitleColor = Color.White.copy(alpha = 0.92f)
         )
@@ -612,15 +614,15 @@ private fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit)
             },
             color = if (isCompetitionDay) Candy.Orange else colors.chestLockedStart,
             edgeColor = if (isCompetitionDay) Candy.OrangeEdge else colors.chestLockedEnd,
-            onClickLabel = "ابدأ تحدي الجمعة",
+            onClickLabel = genderedStringResource(GenderedStrings.quizStartCompetition),
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp)
         ) {
             if (isCompetitionDay) {
                 EntryCardContent(
                     emoji = "🏆",
-                    title = "ابدأ تحدي الجمعة!",
-                    subtitle = "5 أسئلة، وبعدها هتشوف اسمك في البوديوم",
+                    title = genderedStringResource(GenderedStrings.quizStartCompetitionTitle),
+                    subtitle = genderedStringResource(GenderedStrings.quizCompetitionHint),
                     titleColor = Color.White,
                     subtitleColor = Color.White.copy(alpha = 0.92f),
                     emojiModifier = Modifier.rotate(trophyTilt)
@@ -628,8 +630,8 @@ private fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit)
             } else {
                 EntryCardContent(
                     emoji = "🔒",
-                    title = "تحدي الجمعة",
-                    subtitle = "التحدي بيفتح يوم الجمعة — ذاكر لحد ما تيجي",
+                    title = genderedStringResource(GenderedStrings.quizFridayChallenge),
+                    subtitle = genderedStringResource(GenderedStrings.quizCompetitionClosed),
                     titleColor = colors.chestLockedText,
                     subtitleColor = colors.chestLockedText.copy(alpha = 0.85f),
                     useShadow = false
@@ -639,7 +641,7 @@ private fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit)
 
         if (isCompetitionDay) {
             StickerLabel(
-                text = "النهارده! 🔥",
+                text = genderedStringResource(GenderedStrings.quizToday),
                 color = Candy.Coral,
                 rotation = 6f,
                 modifier = Modifier

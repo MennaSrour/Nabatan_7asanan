@@ -38,6 +38,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.entity.DailyContent
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 private enum class QuizOptionState { IDLE, CORRECT, WRONG }
@@ -81,7 +83,7 @@ fun DailyChallengeDialog(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "سؤال اليوم",
+                        text = genderedStringResource(GenderedStrings.challengeQuestion),
                         style = SummerTheme.typography.dialogTitle,
                         color = SummerTheme.colors.textPrimary
                     )
@@ -168,7 +170,7 @@ fun DailyChallengeDialog(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "ما شاء الله أحسنت",
+                            text = genderedStringResource(GenderedStrings.challengeWellDone),
                             color = SummerTheme.colors.successGreen,
                             style = SummerTheme.typography.taskTitle
                         )

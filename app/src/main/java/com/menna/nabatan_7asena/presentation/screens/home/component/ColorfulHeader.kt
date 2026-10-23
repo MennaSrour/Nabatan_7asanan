@@ -43,6 +43,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedString
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
@@ -189,7 +192,7 @@ fun ColorfulHeader(
                 }
                 Column(horizontalAlignment = Alignment.Start) {
                     Text(
-                        text = "أهلاً يا ${user?.name ?: "بطلنا"}",
+                        text = genderedStringResource(GenderedStrings.homeWelcome, user?.name ?: genderedStringResource(GenderedStrings.homeDefaultName)),
                         style = SummerTheme.typography.headerWelcome,
                         color = headerTextColor
                     )
@@ -229,7 +232,7 @@ fun ColorfulHeader(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
-                       contentDescription = "الإعدادات",
+                       contentDescription = genderedStringResource(GenderedStrings.settings),
                         tint = settingsIconTint,
                         modifier = Modifier.size(22.dp)
                     )

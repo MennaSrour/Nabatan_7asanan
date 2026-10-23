@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
@@ -37,14 +39,14 @@ fun CelebrationOverlay(onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "ما شاء الله عليك",
+                    text = genderedStringResource(GenderedStrings.celebrationBlessing),
                     color = SummerTheme.colors.white,
                     style = SummerTheme.typography.overlayTitle,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "حصلت على نجمة البطل الذهبية",
+                    text = genderedStringResource(GenderedStrings.celebrationStar),
                     color = SummerTheme.colors.goldWarm,
                     style = SummerTheme.typography.overlaySubtitle
                 )
