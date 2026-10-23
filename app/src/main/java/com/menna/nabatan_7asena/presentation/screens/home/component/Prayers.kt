@@ -38,6 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.menna.nabatan_7asena.core.util.PrayerPhase
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 
 private val PRAYER_ORDER = listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء")
@@ -194,7 +196,7 @@ private fun PrayerCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        if (prayer.prayerPhase == PrayerPhase.CURRENT) "الآن" else "القادمة",
+                        if (prayer.prayerPhase == PrayerPhase.CURRENT) genderedStringResource(GenderedStrings.prayerCurrent) else genderedStringResource(GenderedStrings.prayerNext),
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         color = sky.labelAccent
@@ -222,7 +224,7 @@ private fun PrayerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Check,
-                        contentDescription = "تمت",
+                        contentDescription = genderedStringResource(GenderedStrings.completed),
                         tint = sky.labelAccent,
                         modifier = Modifier.size(if (isFocused) 26.dp else 20.dp)
                     )

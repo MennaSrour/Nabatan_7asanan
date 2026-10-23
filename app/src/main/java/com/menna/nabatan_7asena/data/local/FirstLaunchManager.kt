@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.menna.nabatan_7asena.domain.repository.FirstLaunchRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -9,7 +10,7 @@ import javax.inject.Singleton
 @Singleton
 class FirstLaunchManager @Inject constructor(
     @ApplicationContext context: Context
-) {
+) : FirstLaunchRepository {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
@@ -23,7 +24,7 @@ class FirstLaunchManager @Inject constructor(
     }
 
     
-    fun resetToFirstLaunch() {
+    override fun resetToFirstLaunch() {
         
         prefs.edit().clear().apply()
     }

@@ -25,6 +25,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 /**
@@ -37,8 +39,8 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 @Composable
 fun NoInternetState(
     modifier: Modifier = Modifier,
-    title: String = "يحتاج هذا الجزء إتصال بالإنترنت",
-    subtitle: String = "يرجي التأكد من اتصال الإنترنت والمحاولة مجدداً",
+    title: String = genderedStringResource(GenderedStrings.internetRequired),
+    subtitle: String = genderedStringResource(GenderedStrings.internetRetryHint),
     onRetry: (() -> Unit)? = null,
     // مقاس مضغوط لما بنستخدمها بدل قسم واحد بس (زي صف الصلوات) مش الشاشة كلها،
     // عشان ميبقاش عندنا رسمة كبيرة قد الشاشة مكان صف كان طوله سطرين
@@ -96,7 +98,7 @@ fun NoInternetState(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "المحاولة مجدداً",
+                        text = genderedStringResource(GenderedStrings.retry),
                         style = SummerTheme.typography.buttonText,
                         color = SummerTheme.colors.white
                     )

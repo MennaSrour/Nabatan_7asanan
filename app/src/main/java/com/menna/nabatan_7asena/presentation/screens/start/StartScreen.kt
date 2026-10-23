@@ -61,6 +61,8 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.delay
 
@@ -287,7 +289,7 @@ fun NabatanStartContent() {
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "أهلا يا غرس الأمة",
+                text = genderedStringResource(GenderedStrings.startWelcome),
                 fontFamily = NabatanFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 18.sp,

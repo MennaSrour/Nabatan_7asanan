@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
@@ -33,8 +35,8 @@ fun BentoStatsGrid(user: HomeUiState.UiUser?, modifier: Modifier = Modifier) {
             iconAsset = "daily_tracker_planet",
             fallbackIcon = Icons.Rounded.LocalFlorist,
             valueText = streakDigits,
-            label1 = "يوم",
-            label2 = "استمرارية"
+            label1 = genderedStringResource(GenderedStrings.day),
+            label2 = genderedStringResource(GenderedStrings.streak)
         )
         StatCard(
             modifier = Modifier.weight(1f),
@@ -42,8 +44,8 @@ fun BentoStatsGrid(user: HomeUiState.UiUser?, modifier: Modifier = Modifier) {
             iconAsset = "star_points",
             fallbackIcon = Icons.Rounded.Star,
             valueText = starsDigits,
-            label1 = "نجمة",
-            label2 = "إجمالي النجوم"
+            label1 = genderedStringResource(GenderedStrings.star),
+            label2 = genderedStringResource(GenderedStrings.totalStars)
         )
     }
 }

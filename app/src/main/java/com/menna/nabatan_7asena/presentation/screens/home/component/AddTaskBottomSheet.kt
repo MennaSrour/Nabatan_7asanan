@@ -24,6 +24,8 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.domain.entity.ExtraTasks
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +64,7 @@ fun AddTaskBottomSheet(
                 )
                 Spacer(Modifier.width(SummerTheme.dimensions.paddingSmall))
                 Text(
-                    text = "إضافة عمل صالح",
+                    text = genderedStringResource(GenderedStrings.taskSheetTitle),
                     style = SummerTheme.typography.bottomSheetTitle,
                     color = SummerTheme.colors.textPrimary
                 )
@@ -120,9 +122,9 @@ fun AddTaskBottomSheet(
                 )
                 "قرآن" -> suggestions.werd
                 "مهمات" -> listOf(
-                    "تعلم دعاء جديد", "ساعد والديك اليوم", "ابتسم وتحدث بلين",
-                    "تصدق بصدقة بسيطة", "اقرأ حديثاً شريفاً", "تأمل في نعم الله عليك",
-                    "احفظ آية جديدة", "اقرأ قصة إسلامية"
+                    genderedStringResource(GenderedStrings.taskLearnDua), genderedStringResource(GenderedStrings.taskHelpParents), genderedStringResource(GenderedStrings.taskSpeakKindly),
+                    genderedStringResource(GenderedStrings.taskCharity), genderedStringResource(GenderedStrings.taskReadHadith), genderedStringResource(GenderedStrings.taskReflect),
+                    genderedStringResource(GenderedStrings.taskMemorizeAyah), genderedStringResource(GenderedStrings.taskReadStory)
                 )
                 else -> listOf(
                     "أذكار الصباح", "أذكار المساء", "أذكار النوم",
@@ -140,7 +142,7 @@ fun AddTaskBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "لا توجد اقتراحات متاحة دلوقتي",
+                        text = genderedStringResource(GenderedStrings.taskNoSuggestions),
                         style = SummerTheme.typography.taskTitle,
                         color = SummerTheme.colors.textBrown
                     )

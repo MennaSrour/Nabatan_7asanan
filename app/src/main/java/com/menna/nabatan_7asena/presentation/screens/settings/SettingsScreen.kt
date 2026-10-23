@@ -61,6 +61,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
 
@@ -126,7 +128,7 @@ fun SettingsScreen(
                             Text("⚙️", fontSize = 24.sp)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "إعدادات رحلتي",
+                                genderedStringResource(GenderedStrings.settingsTitle),
                                 fontWeight = FontWeight.Bold,
                                 color = SummerTheme.colors.textPrimary
                             )
@@ -136,7 +138,7 @@ fun SettingsScreen(
                         IconButton(onClick = onBack) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = genderedStringResource(GenderedStrings.back),
                                 tint = SummerTheme.colors.textPrimary
                             )
                         }
@@ -156,23 +158,23 @@ fun SettingsScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    SummerSectionTitle("الحساب 👤")
+                    SummerSectionTitle(genderedStringResource(GenderedStrings.settingsAccount))
                     SummerSettingsItem(
                         icon = Icons.Rounded.Edit,
-                        title = "تعديل الاسم",
-                        subtitle = "غير اسمك اللي بيظهر",
+                        title = genderedStringResource(GenderedStrings.settingsEditName),
+                        subtitle = genderedStringResource(GenderedStrings.settingsChangeName),
                         iconColor = SummerTheme.Colors.PrimaryGold,
                         onClick = { showEditNameDialog = true }
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    SummerSectionTitle("تنبيهات العبادات 🔔")
+                    SummerSectionTitle(genderedStringResource(GenderedStrings.settingsNotifications))
 
                     SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
-                        title = "مواقيت الصلاة",
-                        subtitle = "تنبيه عند كل أذان",
+                        title = genderedStringResource(GenderedStrings.settingsPrayerTimes),
+                        subtitle = genderedStringResource(GenderedStrings.settingsPrayerHint),
                         iconColor = SummerTheme.colors.wisdomAccent,
                         hasSwitch = true,
                         isSwitchChecked = stats?.prayerNotifications ?: true,
@@ -187,8 +189,8 @@ fun SettingsScreen(
 
                     SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
-                        title = "الأذكار",
-                        subtitle = "تذكير بورد الذكر اليومي",
+                        title = genderedStringResource(GenderedStrings.settingsAzkar),
+                        subtitle = genderedStringResource(GenderedStrings.settingsAzkarHint),
                         iconColor = SummerTheme.colors.goldDeep,
                         hasSwitch = true,
                         isSwitchChecked = stats?.azkarNotifications ?: true,
@@ -203,8 +205,8 @@ fun SettingsScreen(
 
                     SummerSettingsItem(
                         icon = Icons.Rounded.Notifications,
-                        title = "ورد القرآن",
-                        subtitle = "تذكير بقراءة ورد القرآن",
+                        title = genderedStringResource(GenderedStrings.settingsQuran),
+                        subtitle = genderedStringResource(GenderedStrings.settingsQuranHint),
                         iconColor = SummerTheme.Colors.TaskCompletedGreen,
                         hasSwitch = true,
                         isSwitchChecked = stats?.quranNotifications ?: true,
@@ -219,11 +221,11 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    SummerSectionTitle("التحكم ⚙️")
+                    SummerSectionTitle(genderedStringResource(GenderedStrings.settingsControls))
                     SummerSettingsItem(
                         icon = Icons.Rounded.DeleteForever,
-                        title = "بدء رحلة جديدة",
-                        subtitle = "مسح كل النجوم والبدء من الصفر",
+                        title = genderedStringResource(GenderedStrings.settingsNewJourney),
+                        subtitle = genderedStringResource(GenderedStrings.settingsResetHint),
                         iconColor = SummerTheme.colors.errorRed,
                         onClick = { showResetDialog = true }
                     )
@@ -240,7 +242,7 @@ fun SettingsScreen(
                 icon = { Text("✏️", fontSize = 48.sp) },
                 title = {
                     Text(
-                        "اسمك الجديد يا بطل؟ ☀️",
+                        genderedStringResource(GenderedStrings.settingsNewName),
                         color = SummerTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold
                     )
@@ -249,7 +251,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = tempName,
                         onValueChange = { tempName = it },
-                        label = { Text("الاسم الجديد 🌟") },
+                        label = { Text(genderedStringResource(GenderedStrings.settingsNameLabel)) },
                         shape = SummerTheme.Shapes.MediumRounded,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = SummerTheme.Colors.PrimaryGold,
@@ -270,12 +272,12 @@ fun SettingsScreen(
                         ),
                         shape = SummerTheme.Shapes.SmallRounded
                     ) {
-                        Text("حفظ ☀️", fontWeight = FontWeight.Bold, color = SummerTheme.colors.white)
+                        Text(genderedStringResource(GenderedStrings.save), fontWeight = FontWeight.Bold, color = SummerTheme.colors.white)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showEditNameDialog = false }) {
-                        Text("إلغاء", color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
+                        Text(genderedStringResource(GenderedStrings.cancel), color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -289,14 +291,14 @@ fun SettingsScreen(
                 icon = { Text("⚠️", fontSize = 48.sp) },
                 title = {
                     Text(
-                        "متأكد يا بطل؟",
+                        genderedStringResource(GenderedStrings.settingsResetConfirmation),
                         color = SummerTheme.colors.errorRed,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 text = {
                     Text(
-                        "كل النجوم والشجرة هيرجعوا للصفر كأنك لسه بادئ التطبيق دلوقتي حالاً. رحلتك الجميلة هتبدأ من جديد! 🌱",
+                        genderedStringResource(GenderedStrings.settingsResetDescription),
                         fontSize = 15.sp,
                         color = SummerTheme.colors.wisdomTextSecondary,
                         lineHeight = 22.sp
@@ -315,12 +317,12 @@ fun SettingsScreen(
                         ),
                         shape = SummerTheme.Shapes.SmallRounded
                     ) {
-                        Text("نعم، امسح وابدأ من جديد", fontWeight = FontWeight.Bold)
+                        Text(genderedStringResource(GenderedStrings.settingsResetAction), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
-                        Text("إلغاء", color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
+                        Text(genderedStringResource(GenderedStrings.cancel), color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
                     }
                 }
             )

@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.presentation
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -10,15 +11,26 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.menna.nabatan_7asena.core.worker.DailyManagerWorker
+import com.menna.nabatan_7asena.domain.entity.User
+import com.menna.nabatan_7asena.domain.usecase.GetCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    @ApplicationContext private val context: Context 
+    @ApplicationContext private val context: Context,
+    getCurrentUser: GetCurrentUserUseCase
 ) : ViewModel() {
+
+    val uiState = getCurrentUser()
+        .map { MainUiState(gender = it.gender) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState())
+
 
     
     fun enableDailyAutoScheduling() {
@@ -52,3 +64,5 @@ class MainViewModel @Inject constructor(
         )
     }
 }
+
+data class MainUiState(val gender: User.Gender = User.Gender.BOY)

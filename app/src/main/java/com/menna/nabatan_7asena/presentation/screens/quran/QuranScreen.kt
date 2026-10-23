@@ -82,8 +82,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -94,6 +94,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.QuranConstants
 import com.menna.nabatan_7asena.domain.entity.AyahModel
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.QuranColors
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.flow.filterNotNull
@@ -109,7 +111,7 @@ private val DownloadLabelFont = FontFamily(Font(R.font.cairo_semibold))
 private fun DownloadIcon(tint: Color, size: androidx.compose.ui.unit.Dp = 16.dp) {
     Icon(
         painter = painterResource(id = R.drawable.ic_quran_download),
-        contentDescription = "تنزيل",
+        contentDescription = genderedStringResource(GenderedStrings.quranDownload),
         tint = tint,
         modifier = Modifier.size(size)
     )
@@ -150,6 +152,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
     val bookmarkedSurahId by viewModel.bookmarkedSurah.collectAsState()
     val bookmarkedAyahNo  by viewModel.bookmarkedAyah.collectAsState()
     val snackbarState     = remember { SnackbarHostState() }
+    val bookmarkSavedMessage = genderedStringResource(GenderedStrings.quranBookmarkSaved)
     var activeJuz         by remember { mutableStateOf(1) }
     var currentPageNumber by remember { mutableStateOf(1) }
 
@@ -206,7 +209,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "الفهرس",
+                                genderedStringResource(GenderedStrings.quranIndex),
                                 style      = MaterialTheme.typography.titleMedium,
                                 color      = q.textPrimary,
                                 fontWeight = FontWeight.Black
@@ -226,7 +229,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 onClick  = { indexTab = 0 },
                                 text     = {
                                     Text(
-                                        "السور",
+                                        genderedStringResource(GenderedStrings.quranSurahs),
                                         fontWeight = if (indexTab == 0) FontWeight.Black else FontWeight.Medium,
                                         fontSize   = 14.sp
                                     )
@@ -237,7 +240,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 onClick  = { indexTab = 1 },
                                 text     = {
                                     Text(
-                                        "الأجزاء",
+                                        genderedStringResource(GenderedStrings.quranParts),
                                         fontWeight = if (indexTab == 1) FontWeight.Black else FontWeight.Medium,
                                         fontSize   = 14.sp
                                     )
@@ -312,7 +315,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         NavigationDrawerItem(
                                             label = {
                                                 Text(
-                                                    "الجزء ${formatJuzNumber(juz)}",
+                                                    genderedStringResource(GenderedStrings.quranJuz, formatJuzNumber(juz)),
                                                     fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
                                                     fontSize   = 15.sp
                                                 )
@@ -351,7 +354,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            "بينزّل ${fullDownloadState.currentSurahName} (${fullDownloadState.completedSurahs}/${fullDownloadState.totalSurahs})",
+                                            genderedStringResource(GenderedStrings.quranDownloadProgress, fullDownloadState.currentSurahName, fullDownloadState.completedSurahs, fullDownloadState.totalSurahs),
                                             color = q.textMuted,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
@@ -360,7 +363,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 }
                                 fullDownloadState.isComplete -> {
                                     Text(
-                                        "✓ المصحف كامل متاح أوفلاين",
+                                        genderedStringResource(GenderedStrings.quranOfflineReady),
                                         color = q.accentStrong,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
@@ -382,7 +385,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         ) {
                                             DownloadIcon(tint = q.accentStrong)
                                             Text(
-                                                "تنزيل صوت المصحف كامل",
+                                                genderedStringResource(GenderedStrings.quranDownloadAll),
                                                 color      = q.accentStrong,
                                                 fontSize   = 14.sp,
                                                 fontWeight = FontWeight.SemiBold,
@@ -409,16 +412,16 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                         title = {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    "الجزء ${formatJuzNumber(activeJuz)}",
+                                    genderedStringResource(GenderedStrings.quranActiveJuz, formatJuzNumber(activeJuz)),
                                     fontWeight = FontWeight.Black,
                                     color      = q.accentStrong,
                                     fontSize   = 20.sp
                                 )
                                 if (audioState !is QuranAudioState.Idle) {
                                     val label = when (audioState) {
-                                        is QuranAudioState.Loading -> "جاري التحميل..."
-                                        is QuranAudioState.Playing -> " يعمل الأن..."
-                                        is QuranAudioState.Paused  -> "⏸ متوقف"
+                                        is QuranAudioState.Loading -> genderedStringResource(GenderedStrings.loading)
+                                        is QuranAudioState.Playing -> genderedStringResource(GenderedStrings.quranPlaying)
+                                        is QuranAudioState.Paused  -> genderedStringResource(GenderedStrings.quranPaused)
                                         else -> ""
                                     }
                                     if (label.isNotEmpty()) {
@@ -562,7 +565,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         onBookmarkClick = {
                                             viewModel.saveBookmark(ayah.suraNo, ayah.ayaNo)
                                             scope.launch {
-                                                snackbarState.showSnackbar("تم حفظ العلامة بنجاح 🔖")
+                                                snackbarState.showSnackbar(bookmarkSavedMessage)
                                             }
                                         }
                                     )
@@ -621,10 +624,10 @@ private fun SurahDownloadRow(state: SurahDownloadState, onClick: () -> Unit, q: 
 
             Text(
                 text = when {
-                    state.isDownloading -> "يتم تنزيل صوت السورة... (${state.downloadedAyahs}/${state.totalAyahs})"
-                    state.isComplete    -> "صوت السورة متاح بدون الحاجة للإنترنت"
-                    state.error != null -> "${state.error} — الضغط للمحاولة تاني"
-                    else                -> "تنزيل صوت السورة"
+                    state.isDownloading -> genderedStringResource(GenderedStrings.quranAyahDownloadProgress, state.downloadedAyahs, state.totalAyahs)
+                    state.isComplete    -> genderedStringResource(GenderedStrings.quranSurahOfflineReady)
+                    state.error != null -> genderedStringResource(GenderedStrings.quranDownloadRetry, state.error.orEmpty())
+                    else                -> genderedStringResource(GenderedStrings.quranDownloadSurah)
                 },
                 color      = q.accentStrong,
                 fontSize   = 14.sp,
@@ -673,7 +676,7 @@ fun SurahHeaderCard(
                     verticalAlignment     = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val type = if (surah.id in listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)) "سورة مدنية" else "سورة مكية"
+                    val type = if (surah.id in listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)) genderedStringResource(GenderedStrings.quranMedinan) else genderedStringResource(GenderedStrings.quranMeccan)
                     Surface(
                         color  = q.accent.copy(0.15f),
                         shape  = RoundedCornerShape(50)
@@ -688,7 +691,7 @@ fun SurahHeaderCard(
                     }
 
                     Text(
-                        text  = "صفحة $currentPage",
+                        text  = genderedStringResource(GenderedStrings.quranPage, currentPage),
                         color = q.textMuted,
                         fontSize   = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -703,13 +706,13 @@ fun SurahHeaderCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text       = "سُورَةُ ${surah.name}",
+                        text       = genderedStringResource(GenderedStrings.quranSurahName, surah.name),
                         color      = q.accentStrong,
                         fontSize   = 24.sp,
                         fontWeight = FontWeight.Black
                     )
                     Text(
-                        text       = "$ayahsCount آية",
+                        text       = genderedStringResource(GenderedStrings.quranAyahCount, ayahsCount),
                         color      = q.accent,
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.ExtraBold

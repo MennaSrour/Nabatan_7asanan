@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -54,6 +54,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 data class Achievement(
@@ -76,15 +78,15 @@ fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
         val colors = SummerTheme.colors
 
         val achievements = listOf(
-            Achievement("بداية بطل",     "التزام 3 أيام",        "🥉", stats.currentStreak >= 3,   MedalBronze),
-            Achievement("الأسبوع الذهبي","التزام 7 أيام",        "🥈", stats.currentStreak >= 7,   MedalSilver),
-            Achievement("العشرة الأوائل","التزام 10 أيام",       "🥇", stats.currentStreak >= 10,  colors.goldWarm),
-            Achievement("الأسطورة",      "التزام 30 يوم",        "👑", stats.currentStreak >= 30,  colors.goldWarm),
-            Achievement("فاتحة الخير",   "ختم الجزء 30",         "📖", stats.quranPartsFinished >= 1,  colors.statGreenStart),
-            Achievement("نصف الطريق",   "ختم 15 جزء",           "🌱", stats.quranPartsFinished >= 15, colors.secondaryAccent),
-            Achievement("حافظ القرآن",   "ختم المصحف كاملاً",    "🌳", stats.quranPartsFinished >= 30, colors.highlightAccent),
-            Achievement("نبتة صغيرة",    "جمع 50 نجمة",          "🌱", stats.totalStars >= 50,     colors.leafGreen),
-            Achievement("شجرة مثمرة",    "جمع 150 نجمة",         "🌳", stats.totalStars >= 150,    colors.statGreenEnd),
+            Achievement(genderedStringResource(GenderedStrings.badgeHeroBeginning),     genderedStringResource(GenderedStrings.badgeThreeDays),        "🥉", stats.currentStreak >= 3,   MedalBronze),
+            Achievement(genderedStringResource(GenderedStrings.badgeGoldenWeek),genderedStringResource(GenderedStrings.badgeSevenDays),        "🥈", stats.currentStreak >= 7,   MedalSilver),
+            Achievement(genderedStringResource(GenderedStrings.badgeFirstTen),genderedStringResource(GenderedStrings.badgeTenDays),       "🥇", stats.currentStreak >= 10,  colors.goldWarm),
+            Achievement(genderedStringResource(GenderedStrings.badgeLegend),      genderedStringResource(GenderedStrings.badgeThirtyDays),        "👑", stats.currentStreak >= 30,  colors.goldWarm),
+            Achievement(genderedStringResource(GenderedStrings.badgeOpeningGood),   genderedStringResource(GenderedStrings.badgeFirstPart),         "📖", stats.quranPartsFinished >= 1,  colors.statGreenStart),
+            Achievement(genderedStringResource(GenderedStrings.badgeHalfWay),   genderedStringResource(GenderedStrings.badgeFifteenParts),           "🌱", stats.quranPartsFinished >= 15, colors.secondaryAccent),
+            Achievement(genderedStringResource(GenderedStrings.badgeQuranKeeper),   genderedStringResource(GenderedStrings.badgeFullQuran),    "🌳", stats.quranPartsFinished >= 30, colors.highlightAccent),
+            Achievement(genderedStringResource(GenderedStrings.badgeSmallPlant),    genderedStringResource(GenderedStrings.badgeFiftyStars),          "🌱", stats.totalStars >= 50,     colors.leafGreen),
+            Achievement(genderedStringResource(GenderedStrings.badgeFruitfulTree),    genderedStringResource(GenderedStrings.badgeHundredFiftyStars),         "🌳", stats.totalStars >= 150,    colors.statGreenEnd),
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -110,7 +112,7 @@ fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
                         Text("🌟", fontSize = 28.sp)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "إنجازاتي",
+                            genderedStringResource(GenderedStrings.badgesTitle),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = colors.textPrimary
@@ -138,7 +140,7 @@ fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "مكتبة الأوسمة",
+                            genderedStringResource(GenderedStrings.badgesLibrary),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = colors.textPrimary.copy(alpha = 0.8f)
@@ -242,16 +244,16 @@ fun SummerTreeCard(totalStars: Int) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("شجرتك بتكبر! 🌱", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.white)
+                    Text(genderedStringResource(GenderedStrings.badgesTreeGrowing), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.white)
                     Spacer(Modifier.height(4.dp))
-                    Text("كل نجمة بتسقي شجرتك", fontSize = 13.sp, color = colors.white.copy(0.9f))
+                    Text(genderedStringResource(GenderedStrings.badgesWaterTree), fontSize = 13.sp, color = colors.white.copy(0.9f))
                     Spacer(Modifier.height(12.dp))
                     Surface(
                         color = colors.overlayDark.copy(alpha = 0.18f),
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            "$totalStars ⭐ مجمعة",
+                            genderedStringResource(GenderedStrings.badgesCollectedStars, totalStars),
                             color = colors.overlayDark,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -333,8 +335,8 @@ fun SummerStreakCard(streak: Int) {
                     Spacer(Modifier.width(16.dp))
 
                     Column {
-                        Text("حماس متواصل!", fontWeight = FontWeight.Bold, color = colors.textBrown, fontSize = 13.sp)
-                        Text("$streak أيام", fontSize = 28.sp, fontWeight = FontWeight.Black, color = colors.textDarkBrown)
+                        Text(genderedStringResource(GenderedStrings.badgesStreakTitle), fontWeight = FontWeight.Bold, color = colors.textBrown, fontSize = 13.sp)
+                        Text(genderedStringResource(GenderedStrings.streakDays, streak), fontSize = 28.sp, fontWeight = FontWeight.Black, color = colors.textDarkBrown)
                     }
                 }
 
@@ -343,7 +345,7 @@ fun SummerStreakCard(streak: Int) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        "خير الأعمال أدومها!",
+                        genderedStringResource(GenderedStrings.badgesStreakHint),
                         fontSize = 12.sp,
                         color = colors.textDarkBrown,
                         fontWeight = FontWeight.Bold,

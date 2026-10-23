@@ -66,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlin.random.Random
 
@@ -312,13 +314,13 @@ private fun ScreenHeader() {
 
             Column {
                 Text(
-                    "الأذكار والأدعية",
+                    genderedStringResource(GenderedStrings.duaTitle),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = SummerTheme.colors.textDarkBrown
                 )
                 Text(
-                    "رحلة يومية مع أدعية الأنبياء وحصن المسلم",
+                    genderedStringResource(GenderedStrings.duaDescription),
                     fontSize = 12.sp,
                     color = SummerTheme.colors.textBrown.copy(alpha = 0.75f)
                 )
@@ -348,14 +350,14 @@ private fun SectionSwitcher(selectedSection: Int, onSectionSelected: (Int) -> Un
             horizontalArrangement = Arrangement.Center
         ) {
             SectionButton(
-                text = "أدعية الأنبياء",
+                text = genderedStringResource(GenderedStrings.duaProphets),
                 icon = R.drawable.prayer,
                 isSelected = selectedSection == 0,
                 onClick = { onSectionSelected(0) },
                 modifier = Modifier.weight(1f)
             )
             SectionButton(
-                text = "حصن المسلم",
+                text = genderedStringResource(GenderedStrings.duaFortress),
                 icon = R.drawable.hisn,
                 isSelected = selectedSection == 1,
                 onClick = { onSectionSelected(1) },
@@ -572,7 +574,7 @@ private fun ProphetPlayButton(isPlaying: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 6.dp)
             .size(28.dp)
             .background(backgroundColor, CircleShape)
-            .clickable(onClickLabel = if (isPlaying) "إيقاف القصة" else "استمع للقصة") { onClick() },
+            .clickable(onClickLabel = if (isPlaying) genderedStringResource(GenderedStrings.duaStopStory) else genderedStringResource(GenderedStrings.duaListenStory)) { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -674,7 +676,7 @@ fun DuaCard(zekr: Zekr, order: Int, isPlaying: Boolean, onClick: () -> Unit) {
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Stop else Icons.Rounded.VolumeUp,
-                        contentDescription = if (isPlaying) "إيقاف ${zekr.title}" else "استماع لـ ${zekr.title}",
+                        contentDescription = if (isPlaying) genderedStringResource(GenderedStrings.duaStopAudio, zekr.title) else genderedStringResource(GenderedStrings.duaListenAudio, zekr.title),
                         tint = iconTint,
                         modifier = Modifier.size(17.dp)
                     )

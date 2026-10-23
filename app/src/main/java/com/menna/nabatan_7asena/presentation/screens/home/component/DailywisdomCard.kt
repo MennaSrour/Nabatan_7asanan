@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
@@ -25,7 +27,7 @@ fun DailyWisdomCard(wisdom: String, modifier: Modifier = Modifier) {
             modifier = Modifier.wrapContentSize()
         ) {
             Text(
-                text = "نور اليوم",
+                text = genderedStringResource(GenderedStrings.dailyWisdomTitle),
                 style = SummerTheme.typography.wisdomTitle,
                 color = SummerTheme.colors.wisdomTextPrimary
             )

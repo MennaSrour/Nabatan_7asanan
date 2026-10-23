@@ -1,8 +1,8 @@
 package com.menna.nabatan_7asena.domain
 
-import android.util.Log
 import com.menna.nabatan_7asena.domain.entity.PrayerTimes
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class GetPrayerTimesUseCase @Inject constructor(
     private val repository: PrayerTimesRepository
@@ -10,8 +10,9 @@ class GetPrayerTimesUseCase @Inject constructor(
     suspend operator fun invoke(city: String, country: String, date: String): PrayerTimes? {
         return try {
             repository.getPrayerTimes(city, country, date)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Log.e("GetPrayerTimesUseCase", "Error fetching prayer times: ${e.message}")
             null
         }
     }

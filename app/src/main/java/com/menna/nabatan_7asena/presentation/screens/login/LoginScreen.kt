@@ -51,12 +51,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +69,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +85,10 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
+import com.menna.nabatan_7asena.presentation.common.GenderedString
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.LocalUserGender
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.LocalIsNight
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
@@ -95,162 +102,168 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    var showAvatarSheet by remember { mutableStateOf(false) }
+    CompositionLocalProvider(LocalUserGender provides state.selectedGender) {
+        val snackbarHostState = remember { SnackbarHostState() }
+        val context = LocalContext.current
+        val resources = LocalResources.current
+        var showAvatarSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(true) {
-        viewModel.uiEvent.collect { event ->
-            when (event) {
-                is LoginEvent.NavigateToHome -> onNavigateToHome()
-                is LoginEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+        val resolveError by rememberUpdatedState<(GenderedString) -> String> { message ->
+            resources.getString(message.resourceId(state.selectedGender))
+        }
+        LaunchedEffect(viewModel) {
+            viewModel.uiEvent.collect { event ->
+                when (event) {
+                    is LoginEvent.NavigateToHome -> onNavigateToHome()
+                    is LoginEvent.ShowError -> snackbarHostState.showSnackbar(resolveError(event.message))
+                }
             }
         }
-    }
 
-    DisposableEffect(Unit) {
-        val mediaPlayer = MediaPlayer.create(context, R.raw.name)
-        mediaPlayer.start()
-        onDispose {
-            mediaPlayer.stop()
-            mediaPlayer.release()
+        DisposableEffect(Unit) {
+            val mediaPlayer = MediaPlayer.create(context, R.raw.name)
+            mediaPlayer.start()
+            onDispose {
+                mediaPlayer.stop()
+                mediaPlayer.release()
+            }
         }
-    }
 
-    val currentAvatarList = AvatarCatalog.listFor(state.selectedGender)
-    val currentAvatarIndex = if (state.selectedGender == User.Gender.BOY)
-        state.selectedBoyAvatarIndex else state.selectedGirlAvatarIndex
-    val currentAvatarRes = currentAvatarList.getOrElse(currentAvatarIndex) { currentAvatarList.first() }
+        val currentAvatarList = AvatarCatalog.listFor(state.selectedGender)
+        val currentAvatarIndex = if (state.selectedGender == User.Gender.BOY)
+            state.selectedBoyAvatarIndex else state.selectedGirlAvatarIndex
+        val currentAvatarRes = currentAvatarList.getOrElse(currentAvatarIndex) { currentAvatarList.first() }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                Card(
-                    shape = ShapeMedium,
-                    colors = CardDefaults.cardColors(
-                        containerColor = SummerTheme.colors.cardBackground
-                    ),
-                    border = BorderStroke(2.dp, SummerTheme.colors.goldWarm),
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) { data ->
+                    Card(
+                        shape = ShapeMedium,
+                        colors = CardDefaults.cardColors(
+                            containerColor = SummerTheme.colors.cardBackground
+                        ),
+                        border = BorderStroke(2.dp, SummerTheme.colors.goldWarm),
+                        elevation = CardDefaults.cardElevation(8.dp)
                     ) {
-                        Text(
-                            text = data.visuals.message,
-                            color = SummerTheme.colors.textPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = data.visuals.message,
+                                color = SummerTheme.colors.textPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            NabatanLoginBackground()
-
-            Column(
+        ) { padding ->
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
+                NabatanLoginBackground()
+
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Text(
-                        "أهلاً بيك يا بطل!",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = SummerTheme.colors.wisdomAccent
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            genderedStringResource(GenderedStrings.loginWelcome),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = SummerTheme.colors.wisdomAccent
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            genderedStringResource(GenderedStrings.loginIntroduction),
+                            fontSize = 16.sp,
+                            color = SummerTheme.colors.textBrown,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    AvatarPreview(
+                        avatarRes = currentAvatarRes,
+                        onEditClick = { showAvatarSheet = true }
                     )
-                    Spacer(Modifier.height(8.dp))
+
                     Text(
-                        "عرّفنا بنفسك عشان نبدأ رحلتنا مع بعض",
-                        fontSize = 16.sp,
-                        color = SummerTheme.colors.textBrown,
-                        fontWeight = FontWeight.Bold
+                        genderedStringResource(GenderedStrings.loginChooseAvatarHint),
+                        fontSize = 13.sp,
+                        color = SummerTheme.colors.wisdomAccent,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { showAvatarSheet = true }
+                    )
+
+                    GenderToggleRow(
+                        selectedGender = state.selectedGender,
+                        onGenderSelected = { viewModel.onGenderSelected(it) }
+                    )
+
+                    Card(
+                        shape = ShapeMedium,
+                        colors = CardDefaults.cardColors(containerColor = SummerTheme.colors.cardBackground),
+                        elevation = CardDefaults.cardElevation(6.dp),
+                        border = BorderStroke(
+                            2.dp,
+                            if (state.name.isNotBlank()) SummerTheme.colors.goldWarm else SummerTheme.colors.chipUnselected
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = state.name,
+                            onValueChange = { viewModel.onNameChange(it) },
+                            label = { Text(genderedStringResource(GenderedStrings.loginNameHint)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = LocalTextStyle.current.copy(
+                                textDirection = TextDirection.ContentOrRtl
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedContainerColor = SummerTheme.colors.cardBackground,
+                                unfocusedContainerColor = SummerTheme.colors.cardBackground,
+                               focusedTextColor = SummerTheme.colors.textPrimary,
+                                unfocusedTextColor = SummerTheme.colors.textPrimary,
+                                cursorColor = SummerTheme.colors.wisdomAccent,
+                                focusedLabelColor = SummerTheme.colors.wisdomAccent,
+                                unfocusedLabelColor = SummerTheme.colors.textBrown
+                            ),
+                            shape = ShapeMedium
+                        )
+                    }
+
+                    StartJourneyButton(
+                        isLoading = state.isLoading,
+                        onClick = { viewModel.onStartClicked() }
                     )
                 }
-
-                AvatarPreview(
-                    avatarRes = currentAvatarRes,
-                    onEditClick = { showAvatarSheet = true }
-                )
-
-                Text(
-                    "اضغط عشان تختار شخصيتك",
-                    fontSize = 13.sp,
-                    color = SummerTheme.colors.wisdomAccent,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { showAvatarSheet = true }
-                )
-
-                GenderToggleRow(
-                    selectedGender = state.selectedGender,
-                    onGenderSelected = { viewModel.onGenderSelected(it) }
-                )
-
-                Card(
-                    shape = ShapeMedium,
-                    colors = CardDefaults.cardColors(containerColor = SummerTheme.colors.cardBackground),
-                    elevation = CardDefaults.cardElevation(6.dp),
-                    border = BorderStroke(
-                        2.dp,
-                        if (state.name.isNotBlank()) SummerTheme.colors.goldWarm else SummerTheme.colors.chipUnselected
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = state.name,
-                        onValueChange = { viewModel.onNameChange(it) },
-                        label = { Text("اكتب اسمك هنا") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = LocalTextStyle.current.copy(
-                            textDirection = TextDirection.ContentOrRtl
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = SummerTheme.colors.cardBackground,
-                            unfocusedContainerColor = SummerTheme.colors.cardBackground,
-                           focusedTextColor = SummerTheme.colors.textPrimary,
-                            unfocusedTextColor = SummerTheme.colors.textPrimary,
-                            cursorColor = SummerTheme.colors.wisdomAccent,
-                            focusedLabelColor = SummerTheme.colors.wisdomAccent,
-                            unfocusedLabelColor = SummerTheme.colors.textBrown
-                        ),
-                        shape = ShapeMedium
-                    )
-                }
-
-                StartJourneyButton(
-                    isLoading = state.isLoading,
-                    onClick = { viewModel.onStartClicked() }
-                )
             }
         }
-    }
 
-    if (showAvatarSheet) {
-        AvatarPickerSheet(
-            gender = state.selectedGender,
-            avatars = currentAvatarList,
-            selectedIndex = currentAvatarIndex,
-            onAvatarPicked = { index ->
-                viewModel.onAvatarSelected(index)
-                showAvatarSheet = false
-            },
-            onDismiss = { showAvatarSheet = false }
-        )
+        if (showAvatarSheet) {
+            AvatarPickerSheet(
+                gender = state.selectedGender,
+                avatars = currentAvatarList,
+                selectedIndex = currentAvatarIndex,
+                onAvatarPicked = { index ->
+                    viewModel.onAvatarSelected(index)
+                    showAvatarSheet = false
+                },
+                onDismiss = { showAvatarSheet = false }
+            )
+        }
     }
 }
 @Composable
@@ -284,7 +297,7 @@ private fun AvatarPreview(avatarRes: Int, onEditClick: () -> Unit) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Rounded.Edit,
-                    contentDescription = "تغيير الشخصية",
+                    contentDescription = genderedStringResource(GenderedStrings.loginChangeAvatar),
                     tint = SummerTheme.colors.white,
                     modifier = Modifier.size(18.dp)
                 )
@@ -302,12 +315,12 @@ private fun GenderToggleRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         GenderPill(
-            label = "ولد",
+            label = genderedStringResource(GenderedStrings.genderBoy),
             isSelected = selectedGender == User.Gender.BOY,
             onClick = { onGenderSelected(User.Gender.BOY) }
         )
         GenderPill(
-            label = "بنت",
+            label = genderedStringResource(GenderedStrings.genderGirl),
             isSelected = selectedGender == User.Gender.GIRL,
             onClick = { onGenderSelected(User.Gender.GIRL) }
         )
@@ -364,7 +377,7 @@ private fun AvatarPickerSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             Text(
-                text = if (gender == User.Gender.BOY) "اختار شخصيتك يا بطل 👦" else "اختاري شخصيتك يا بطلة 👧",
+                text = genderedStringResource(GenderedStrings.loginChooseAvatar, gender = gender),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 color = SummerTheme.colors.textDarkBrown,
@@ -473,7 +486,7 @@ private fun StartJourneyButton(isLoading: Boolean, onClick: () -> Unit) {
                 )
             } else {
                 Text(
-                    "ابدأ الرحلة",
+                    genderedStringResource(GenderedStrings.startJourney),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = SummerTheme.colors.overlayDark,

@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.menna.nabatan_7asena.domain.entity.UpdateInfo
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 
 @Composable
 fun UpdateDialog(
@@ -74,9 +76,9 @@ fun UpdateDialog(
                     ) {
                         Text(
                             text = if (info.isForceUpdate)
-                                "تحديث مهم جدًا 🌟"
+                                genderedStringResource(GenderedStrings.updateRequired)
                             else
-                                "في إصدار جديد 🎉",
+                                genderedStringResource(GenderedStrings.updateAvailable),
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -85,7 +87,7 @@ fun UpdateDialog(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "الإصدار ${info.latestVersionName}",
+                            text = genderedStringResource(GenderedStrings.updateVersion, info.latestVersionName),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -112,7 +114,7 @@ fun UpdateDialog(
                                     modifier = Modifier.padding(12.dp)
                                 ) {
                                     Text(
-                                        text = "ما الجديد:",
+                                        text = genderedStringResource(GenderedStrings.updateNotes),
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
@@ -138,7 +140,7 @@ fun UpdateDialog(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                text = "تحميل التحديث ⬇️",
+                                text = genderedStringResource(GenderedStrings.updateDownload),
                                 fontSize = 16.sp
                             )
                         }
@@ -150,7 +152,7 @@ fun UpdateDialog(
                                 onClick = onDismiss,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("لاحقًا")
+                                Text(genderedStringResource(GenderedStrings.laterAlternative))
                             }
                         }
                     }
@@ -166,7 +168,7 @@ fun UpdateDialog(
                         modifier = Modifier.padding(vertical = 16.dp)
                     ) {
                         Text(
-                            text = "جاري تحميل التحديث...",
+                            text = genderedStringResource(GenderedStrings.updateDownloading),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -215,7 +217,7 @@ fun UpdateDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "❌ فشل التحميل",
+                            text = genderedStringResource(GenderedStrings.updateDownloadFailed),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.error
@@ -242,7 +244,7 @@ fun UpdateDialog(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("إلغاء")
+                                Text(genderedStringResource(GenderedStrings.cancel))
                             }
 
                             Button(
@@ -250,7 +252,7 @@ fun UpdateDialog(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("إعادة المحاولة")
+                                Text(genderedStringResource(GenderedStrings.retryAlternative))
                             }
                         }
                     }

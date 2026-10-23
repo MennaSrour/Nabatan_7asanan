@@ -8,9 +8,12 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,6 +24,7 @@ import androidx.work.WorkManager
 import com.menna.nabatan_7asena.core.worker.DailyManagerWorker
 import com.menna.nabatan_7asena.presentation.MainScreenHolder
 import com.menna.nabatan_7asena.presentation.MainViewModel
+import com.menna.nabatan_7asena.presentation.common.LocalUserGender
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
 import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
 import com.menna.nabatan_7asena.presentation.screens.settings.SettingsScreen
@@ -84,59 +88,62 @@ class MainActivity : ComponentActivity() {
             }
 
             // 3. تمرير حالة الليل والنهار لغلاف الثيم الأساسي
-            NabataAppTheme(isNight = isNight) {
-                NavHost(navController = navController, startDestination = "splash") {
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            CompositionLocalProvider(LocalUserGender provides uiState.gender) {
+                NabataAppTheme(isNight = isNight) {
+                    NavHost(navController = navController, startDestination = "splash") {
 
-                    composable("splash") {
-                        StartScreen(
-                            onNavigateToHome = {
-                                navController.navigate("home") { popUpTo("splash") { inclusive = true } }
-                            },
-                            onNavigateToOnboarding = {
-                                navController.navigate("onboarding") { popUpTo("splash") { inclusive = true } }
-                            },
-                            onNavigateToLogin = {
-                                navController.navigate("login") { popUpTo("splash") { inclusive = true } }
-                            }
-                        )
-                    }
-
-                    composable("onboarding") {
-                        com.menna.nabatan_7asena.presentation.screens.onboarding.OnboardingScreen(
-                            onNavigateToLogin = {
-                                startManagerWorkerImmediately()
-                                navController.navigate("login") {
-                                    popUpTo("onboarding") { inclusive = true }
+                        composable("splash") {
+                            StartScreen(
+                                onNavigateToHome = {
+                                    navController.navigate("home") { popUpTo("splash") { inclusive = true } }
+                                },
+                                onNavigateToOnboarding = {
+                                    navController.navigate("onboarding") { popUpTo("splash") { inclusive = true } }
+                                },
+                                onNavigateToLogin = {
+                                    navController.navigate("login") { popUpTo("splash") { inclusive = true } }
                                 }
-                            }
-                        )
-                    }
+                            )
+                        }
 
-                    composable("login") {
-                        com.menna.nabatan_7asena.presentation.screens.login.LoginScreen(
-                            onNavigateToHome = {
-                                navController.navigate("home") { popUpTo("login") { inclusive = true } }
-                            }
-                        )
-                    }
+                        composable("onboarding") {
+                            com.menna.nabatan_7asena.presentation.screens.onboarding.OnboardingScreen(
+                                onNavigateToLogin = {
+                                    startManagerWorkerImmediately()
+                                    navController.navigate("login") {
+                                        popUpTo("onboarding") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
 
-                    composable("settings") {
-                        SettingsScreen(
-                            onBack = { navController.popBackStack() },
-                            onLogout = {
-                                navController.navigate("splash") { popUpTo(0) { inclusive = true } }
-                            }
-                        )
-                    }
+                        composable("login") {
+                            com.menna.nabatan_7asena.presentation.screens.login.LoginScreen(
+                                onNavigateToHome = {
+                                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                                }
+                            )
+                        }
 
-                    composable("home") {
-                        MainScreenHolder(
-                            openSettings = { navController.navigate("settings") }
-                        )
-                    }
+                        composable("settings") {
+                            SettingsScreen(
+                                onBack = { navController.popBackStack() },
+                                onLogout = {
+                                    navController.navigate("splash") { popUpTo(0) { inclusive = true } }
+                                }
+                            )
+                        }
 
-                    composable("sebha") { SebhaScreen() }
-                    composable("quran") { QuranScreen() }
+                        composable("home") {
+                            MainScreenHolder(
+                                openSettings = { navController.navigate("settings") }
+                            )
+                        }
+
+                        composable("sebha") { SebhaScreen() }
+                        composable("quran") { QuranScreen() }
+                    }
                 }
             }
         }
