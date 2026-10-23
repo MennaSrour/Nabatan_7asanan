@@ -2,39 +2,43 @@ package com.menna.nabatan_7asena.presentation.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.usecase.RegisterUserUseCase
-import com.menna.nabatan_7asena.presentation.common.GenderedString
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val registerUserUseCase: RegisterUserUseCase
-) : ViewModel() {
+    private val registerUserUseCase: RegisterUserUseCase,
+    private val audioPlayer: ScreenAudioPlayer
+) : ViewModel(), LoginActions {
 
-    private val _state = MutableStateFlow(LoginState())
+    private val _state = MutableStateFlow(LoginUiState())
     val state = _state.asStateFlow()
 
-    private val _uiEvent = MutableSharedFlow<LoginEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
+    private val _uiEvent = Channel<LoginEffect>(Channel.BUFFERED)
+    val effects = _uiEvent.receiveAsFlow()
 
-    fun onNameChange(name: String) {
+    override fun onNameChange(name: String) {
         _state.value = _state.value.copy(name = name)
     }
 
-    fun onGenderSelected(gender: User.Gender) {
+    override fun onGenderSelected(gender: User.Gender) {
         _state.value = _state.value.copy(selectedGender = gender)
     }
 
-    fun onAvatarSelected(index: Int) {
+    override fun onAvatarSelected(index: Int) {
         _state.value = if (_state.value.selectedGender == User.Gender.BOY) {
             _state.value.copy(selectedBoyAvatarIndex = index)
         } else {
@@ -42,50 +46,46 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun onStartClicked() {
+    override fun onStartClicked() {
         val currentState = _state.value
+        if (currentState.isLoading) return
         if (currentState.name.isBlank()) {
-            viewModelScope.launch { _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.loginNameRequired)) }
+            viewModelScope.launch { _uiEvent.send(LoginEffect.ShowError(GenderedStrings.loginNameRequired)) }
             return
         }
 
         // ⬅️ الأفاتار المختار فعليًا حسب النوع المختار، بدل ما يتمسح عند التسجيل
-        val avatarIndex = if (currentState.selectedGender == User.Gender.BOY)
+        val avatarIndex = if (currentState.selectedGender == User.Gender.BOY) {
             currentState.selectedBoyAvatarIndex
-        else
+        } else {
             currentState.selectedGirlAvatarIndex
+        }
 
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            _state.value = currentState.copy(isLoading = true)
+            try {
+                val result = registerUserUseCase(currentState.name, currentState.selectedGender, avatarIndex)
+                when (result) {
+                    is Resource.Success -> {
+                        _uiEvent.send(LoginEffect.NavigateToHome)
+                    }
+                    is Resource.Error -> {
+                        _uiEvent.send(LoginEffect.ShowError(GenderedStrings.loginRegistrationError))
+                    }
+                    else -> {
+                        _uiEvent.send(LoginEffect.ShowError(GenderedStrings.unexpectedError))
+                    }
+                }
 
-            val result = registerUserUseCase(currentState.name, currentState.selectedGender, avatarIndex)
-            when (result) {
-                is Resource.Success -> {
-                    _uiEvent.emit(LoginEvent.NavigateToHome)
-                }
-                is Resource.Error -> {
-                    _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.loginRegistrationError))
-                }
-                else -> {
-                    _uiEvent.emit(LoginEvent.ShowError(GenderedStrings.unexpectedError))
-                }
+            } catch (e: CancellationException) {
+                throw e
+            } finally {
+                _state.update { it.copy(isLoading = false) }
             }
-
-            _state.value = _state.value.copy(isLoading = false)
         }
     }
-}
+    fun onScreenEntered() = audioPlayer.play(R.raw.name)
+    fun onScreenLeft() = audioPlayer.stop()
+    override fun onCleared() { audioPlayer.stop() }
 
-
-data class LoginState(
-    val name: String = "",
-    val selectedGender: User.Gender = User.Gender.BOY,
-    val selectedBoyAvatarIndex: Int = 0,
-    val selectedGirlAvatarIndex: Int = 0,
-    val isLoading: Boolean = false
-)
-
-sealed class LoginEvent {
-    object NavigateToHome : LoginEvent()
-    data class ShowError(val message: GenderedString) : LoginEvent()
 }

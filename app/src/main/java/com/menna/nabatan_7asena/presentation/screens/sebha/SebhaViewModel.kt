@@ -1,39 +1,19 @@
 package com.menna.nabatan_7asena.presentation.screens.sebha
 
-import android.content.Context
-import android.media.MediaPlayer
 import androidx.lifecycle.ViewModel
 import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import javax.inject.Inject
-
-data class ZikrItem(
-    val id: Int,
-    val text: String,
-    val target: Int = 33,
-    val audioResId: Int = 0,
-    val color: Long = 0xFF42A5F5,
-    val isCustom: Boolean = false
-)
-
-data class AzkarState(
-    val isSelectionMode: Boolean = true,
-    val currentZikr: ZikrItem? = null,
-    val currentCount: Int = 0,
-    val totalCycles: Int = 0,
-    val isPlayingAudio: Boolean = false,
-    val showCelebration: Boolean = false
-)
 
 @HiltViewModel
 class SebhaViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
-) : ViewModel() {
+    private val audioPlayer: ScreenAudioPlayer
+) : ViewModel(), SebhaActions {
 
-    val azkarList = listOf(
+    private val azkarList = listOf(
         ZikrItem(1, "سبحان الله", 100, R.raw.sub7an__100, 0xFFEF5350),
         ZikrItem(2, "الحمد لله", 100, R.raw.alhamd, 0xFF66BB6A),
         ZikrItem(3, "الله أكبر", 100, R.raw.allah_akbar, 0xFFFFA726),
@@ -50,12 +30,10 @@ class SebhaViewModel @Inject constructor(
         ZikrItem(8, "أستغفر الله", 100, R.raw.yala_zekr, 0xFFFFA726)
     )
 
-    private val _state = MutableStateFlow(AzkarState())
+    private val _state = MutableStateFlow(SebhaUiState(azkarList = azkarList))
     val state = _state.asStateFlow()
 
-    private var mediaPlayer: MediaPlayer? = null
-
-    fun selectZikr(zikr: ZikrItem) {
+    override fun selectZikr(zikr: ZikrItem) {
         stopAudio()
         _state.value = _state.value.copy(
             isSelectionMode = false,
@@ -66,8 +44,7 @@ class SebhaViewModel @Inject constructor(
         )
     }
 
-
-    fun startFreeTasbeeh(text: String, targetCount: Int?) {
+    override fun startFreeTasbeeh(text: String, targetCount: Int?) {
         stopAudio()
         val zikr = ZikrItem(
             id = -1,
@@ -77,7 +54,8 @@ class SebhaViewModel @Inject constructor(
             color = 0xFF8D6E63,
             isCustom = true
         )
-        _state.value = AzkarState(
+        _state.value = SebhaUiState(
+            azkarList = azkarList,
             isSelectionMode = false,
             currentZikr = zikr,
             currentCount = 0,
@@ -87,12 +65,12 @@ class SebhaViewModel @Inject constructor(
         )
     }
 
-    fun backToMenu() {
+    override fun backToMenu() {
         stopAudio()
         _state.value = _state.value.copy(isSelectionMode = true)
     }
 
-    fun onTasbeehClick() {
+    override fun onTasbeehClick() {
         val currentState = _state.value
         val zikr = currentState.currentZikr ?: return
 
@@ -109,6 +87,9 @@ class SebhaViewModel @Inject constructor(
         }
 
         if (newCount >= zikr.target) {
+            stopAudio()
+            audioPlayer.play(R.raw.good)
+
             _state.value = currentState.copy(
                 currentCount = zikr.target,
                 totalCycles = currentState.totalCycles + 1,
@@ -119,11 +100,11 @@ class SebhaViewModel @Inject constructor(
         }
     }
 
-    fun resetCounter() {
+    override fun resetCounter() {
         _state.value = _state.value.copy(currentCount = 0, showCelebration = false)
     }
 
-    fun toggleAudio() {
+    override fun toggleAudio() {
         val currentState = _state.value
         val zikr = currentState.currentZikr ?: return
 
@@ -134,7 +115,8 @@ class SebhaViewModel @Inject constructor(
         }
     }
 
-    fun dismissCelebration() {
+    override fun dismissCelebration() {
+        stopAudio()
         _state.value = _state.value.copy(
             showCelebration = false,
             currentCount = 0
@@ -143,23 +125,16 @@ class SebhaViewModel @Inject constructor(
 
     private fun playAudio(resId: Int) {
         if (resId == 0) return
-        stopAudio()
-        try {
-            mediaPlayer = MediaPlayer.create(context, resId)
-            mediaPlayer?.setOnCompletionListener {
-                _state.value = _state.value.copy(isPlayingAudio = false)
-            }
-            mediaPlayer?.start()
-            _state.value = _state.value.copy(isPlayingAudio = true)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        _state.value = _state.value.copy(isPlayingAudio = true)
+        audioPlayer.play(resId) {
+            _state.value = _state.value.copy(isPlayingAudio = false)
         }
     }
 
+    fun onScreenLeft() = stopAudio()
+
     private fun stopAudio() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
+        audioPlayer.stop()
         _state.value = _state.value.copy(isPlayingAudio = false)
     }
 

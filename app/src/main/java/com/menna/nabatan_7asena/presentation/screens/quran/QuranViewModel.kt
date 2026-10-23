@@ -13,42 +13,18 @@ import com.menna.nabatan_7asena.domain.repository.QuranRepository
 import com.menna.nabatan_7asena.domain.usecase.GetQuranProgressUseCase
 import com.menna.nabatan_7asena.domain.usecase.SaveQuranProgressUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-
-sealed class QuranAudioState {
-    data object Idle : QuranAudioState()
-
-    data class Loading(val suraNo: Int, val ayaNo: Int) : QuranAudioState()
-    data class Playing(val suraNo: Int, val ayaNo: Int) : QuranAudioState()
-
-    data class Paused(val suraNo: Int, val ayaNo: Int) : QuranAudioState()
-
-    data class Error(val message: String) : QuranAudioState()
-}
-
-data class SurahDownloadState(
-    val downloadedAyahs: Int = 0,
-    val totalAyahs: Int = 0,
-    val isDownloading: Boolean = false,
-    val isComplete: Boolean = false,
-    val error: String? = null
-)
-
-data class FullQuranDownloadState(
-    val isDownloading: Boolean = false,
-    val completedSurahs: Int = 0,
-    val totalSurahs: Int = 114,
-    val currentSurahName: String = "",
-    val isComplete: Boolean = false,
-    val error: String? = null
-)
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class QuranViewModel @Inject constructor(
@@ -58,28 +34,52 @@ class QuranViewModel @Inject constructor(
     private val audioPlayer: QuranAudioPlayer,
     private val downloadManager: QuranAudioDownloadManager,
     private val bookmarkStore: QuranBookmarkStore
-) : ViewModel() {
+) : ViewModel(), QuranActions {
 
-    val lastSavedPage = getUseCase.getLastPage()
+    private val lastSavedPage = getUseCase.getLastPage()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     private val _bookmarkedSurah = MutableStateFlow(-1)
-    val bookmarkedSurah = _bookmarkedSurah.asStateFlow()
 
     private val _bookmarkedAyah = MutableStateFlow(-1)
-    val bookmarkedAyah = _bookmarkedAyah.asStateFlow()
 
-   data class QuranScrollTarget(val surahIndex: Int, val ayaNo: Int)
-
-    private val _scrollTarget = MutableSharedFlow<QuranScrollTarget>(extraBufferCapacity = 1)
-    val scrollTarget = _scrollTarget.asSharedFlow()
+    private val _effects = Channel<QuranEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
     private val _audioState = MutableStateFlow<QuranAudioState>(QuranAudioState.Idle)
-    val audioState = _audioState.asStateFlow()
     private val _surahDownloadStates = MutableStateFlow<Map<Int, SurahDownloadState>>(emptyMap())
-    val surahDownloadStates = _surahDownloadStates.asStateFlow()
 
     private val _fullDownloadState = MutableStateFlow(FullQuranDownloadState())
-    val fullDownloadState = _fullDownloadState.asStateFlow()
+
+    private val _ayahsBySurah = MutableStateFlow<Map<Int, List<AyahModel>>>(emptyMap())
+    private val _position = MutableStateFlow(QuranReadingPosition())
+    private val loadingSurahs = mutableSetOf<Int>()
+    private val playbackState = combine(lastSavedPage, _audioState, _surahDownloadStates, _fullDownloadState) { page, audio, downloads, full ->
+        QuranUiState(savedPage = page, audioState = audio, downloadStates = downloads, fullDownloadState = full)
+    }
+    val uiState = combine(playbackState, _bookmarkedSurah, _bookmarkedAyah, _ayahsBySurah, _position) { playback, surah, ayah, content, position ->
+        playback.copy(bookmarkedSurahId = surah, bookmarkedAyahNo = ayah, ayahsBySurah = content,
+            activeJuz = position.juz, currentPageNumber = position.page)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), QuranUiState())
+
+    override fun onSurahVisible(surahId: Int) {
+        if (_ayahsBySurah.value.containsKey(surahId) || !loadingSurahs.add(surahId)) return
+        viewModelScope.launch {
+            try {
+                val ayahs = withContext(Dispatchers.IO) { repository.getSurahAyahs(surahId) }
+                _ayahsBySurah.update { it + (surahId to ayahs) }
+                withContext(Dispatchers.IO) { refreshSurahDownloadState(surahId) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effects.send(QuranEffect.LoadFailed)
+            } finally { loadingSurahs.remove(surahId) }
+        }
+    }
+
+    fun onVisibleAyahChanged(surahId: Int, visibleIndex: Int) {
+        val ayahs = _ayahsBySurah.value[surahId].orEmpty()
+        readingPosition(ayahs, surahId, visibleIndex)?.let { _position.value = it }
+    }
 
     init {
         loadBookmark()
@@ -91,19 +91,17 @@ class QuranViewModel @Inject constructor(
         _audioState.value = QuranAudioState.Idle
     }
 
-    fun onSurahChanged(surahId: Int) {
+    override fun onSurahChanged(surahId: Int) {
+        onSurahVisible(surahId)
         val surah = QuranConstants.surahs.getOrNull(surahId - 1) ?: return
         viewModelScope.launch {
             saveUseCase.invoke(surah.startPage)
         }
     }
 
-    fun getSurahAyahs(suraNumber: Int): List<AyahModel> = repository.getSurahAyahs(suraNumber)
+    private fun getSurahAyahs(suraNumber: Int): List<AyahModel> = repository.getSurahAyahs(suraNumber)
 
-    fun getSurahInfo(suraNumber: Int) =
-        QuranConstants.surahs.getOrNull(suraNumber - 1) ?: QuranConstants.surahs.first()
-
-    fun getStartPageForJuz(juz: Int): Int {
+    private fun getStartPageForJuz(juz: Int): Int {
         val juzStartPages = listOf(
             1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
             202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
@@ -112,10 +110,11 @@ class QuranViewModel @Inject constructor(
         return juzStartPages.getOrNull(juz - 1) ?: 1
     }
 
-    fun saveBookmark(surahId: Int, ayahNo: Int) {
+    override fun saveBookmark(surahId: Int, ayahNo: Int) {
         bookmarkStore.saveBookmark(surahId, ayahNo)
         _bookmarkedSurah.value = surahId
         _bookmarkedAyah.value = ayahNo
+        _effects.trySend(QuranEffect.BookmarkSaved)
     }
 
     fun loadBookmark() {
@@ -124,32 +123,32 @@ class QuranViewModel @Inject constructor(
         _bookmarkedAyah.value = bookmark?.ayahNo ?: -1
     }
 
-     fun goToJuz(juz: Int) {
+    override fun goToJuz(juz: Int) {
         val startPage = getStartPageForJuz(juz)
         val surah = QuranConstants.getSurahByPage(startPage)
         viewModelScope.launch {
-            val ayahs = repository.getSurahAyahs(surah.id)
+            val ayahs = withContext(Dispatchers.IO) { repository.getSurahAyahs(surah.id) }
             val targetAyah = ayahs.firstOrNull { it.jozz == juz }
-                ?: ayahs.firstOrNull { it.page >= startPage }
+            ?: ayahs.firstOrNull { it.page >= startPage }
             val ayaNo = targetAyah?.ayaNo ?: 1
-            _scrollTarget.emit(QuranScrollTarget(surah.id - 1, ayaNo))
+            _effects.send(QuranEffect.ScrollToAyah(surah.id - 1, ayaNo))
         }
     }
 
-    fun goToBookmark() {
+    override fun goToBookmark() {
         val surah = _bookmarkedSurah.value
         val ayah  = _bookmarkedAyah.value
         if (surah > 0 && ayah > 0) {
             viewModelScope.launch {
-                _scrollTarget.emit(QuranScrollTarget(surah - 1, ayah))
+                _effects.send(QuranEffect.ScrollToAyah(surah - 1, ayah))
             }
         }
     }
 
-     fun playAyahAudio(suraNo: Int, ayaNo: Int) {
+    override fun playAyahAudio(suraNo: Int, ayaNo: Int) {
         val current = _audioState.value
 
-         if (current is QuranAudioState.Playing && current.suraNo == suraNo && current.ayaNo == ayaNo) {
+        if (current is QuranAudioState.Playing && current.suraNo == suraNo && current.ayaNo == ayaNo) {
             audioPlayer.pause()
             _audioState.value = QuranAudioState.Paused(suraNo, ayaNo)
             return
@@ -161,8 +160,8 @@ class QuranViewModel @Inject constructor(
             return
         }
 
-          val url = downloadManager.localUriIfExists(suraNo, ayaNo)
-            ?: EveryAyahUrlBuilder.buildUrl(suraNo, ayaNo)
+        val url = downloadManager.localUriIfExists(suraNo, ayaNo)
+        ?: EveryAyahUrlBuilder.buildUrl(suraNo, ayaNo)
         _audioState.value = QuranAudioState.Loading(suraNo, ayaNo)
 
         audioPlayer.play(
@@ -182,12 +181,12 @@ class QuranViewModel @Inject constructor(
         )
     }
 
-    fun stopAudio() {
+    override fun stopAudio() {
         audioPlayer.stop()
         _audioState.value = QuranAudioState.Idle
     }
 
-    fun refreshSurahDownloadState(suraId: Int) {
+    private fun refreshSurahDownloadState(suraId: Int) {
         val ayahsCount = getSurahAyahs(suraId).size
         if (ayahsCount == 0) return
         val done = downloadManager.downloadedAyahsCount(suraId, ayahsCount)
@@ -202,11 +201,9 @@ class QuranViewModel @Inject constructor(
     }
 
     private fun setSurahState(suraId: Int, state: SurahDownloadState) {
-        val current = _surahDownloadStates.value.toMutableMap()
-        current[suraId] = state
-        _surahDownloadStates.value = current
+        _surahDownloadStates.update { it + (suraId to state) }
     }
-    fun downloadSurah(suraId: Int) {
+    override fun downloadSurah(suraId: Int) {
         val ayahsCount = getSurahAyahs(suraId).size
         if (ayahsCount == 0 || downloadManager.isSurahDownloaded(suraId, ayahsCount)) return
         if (_surahDownloadStates.value[suraId]?.isDownloading == true) return
@@ -237,12 +234,7 @@ class QuranViewModel @Inject constructor(
         }
     }
 
-    fun deleteSurahDownload(suraId: Int) {
-        val ayahsCount = getSurahAyahs(suraId).size
-        downloadManager.deleteSurah(suraId, ayahsCount)
-        setSurahState(suraId, SurahDownloadState(totalAyahs = ayahsCount))
-    }
-    fun downloadFullQuran() {
+    override fun downloadFullQuran() {
         if (_fullDownloadState.value.isDownloading) return
 
         viewModelScope.launch {

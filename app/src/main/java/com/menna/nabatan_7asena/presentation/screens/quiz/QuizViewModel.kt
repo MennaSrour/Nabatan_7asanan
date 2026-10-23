@@ -2,57 +2,24 @@ package com.menna.nabatan_7asena.presentation.screens.quiz
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.menna.nabatan_7asena.domain.entity.QuizQuestion
-import com.menna.nabatan_7asena.domain.entity.QuizWinner
+import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.usecase.GetRecentQuizWinnersUseCase
 import com.menna.nabatan_7asena.domain.usecase.GetWeeklyCompetitionQuestionsUseCase
 import com.menna.nabatan_7asena.domain.usecase.GetWeeklyStudyQuestionsUseCase
 import com.menna.nabatan_7asena.domain.usecase.IsCompetitionDayUseCase
 import com.menna.nabatan_7asena.domain.usecase.SubmitCompetitionScoreUseCase
-import com.menna.nabatan_7asena.presentation.common.GenderedString
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-
-enum class AnswerResult { NONE, CORRECT, WRONG }
-enum class QuizMode { NONE, STUDY, COMPETITION }
-
-data class QuizCardState(
-    val question: QuizQuestion,
-    val selectedIndex: Int? = null,
-    val isFlipped: Boolean = false,
-    val result: AnswerResult = AnswerResult.NONE
-)
-
-data class QuizUiState(
-    val isLoading: Boolean = true,
-    val isCompetitionDay: Boolean = false,
-    val winners: List<QuizWinner> = emptyList(),
-    val studyCards: List<QuizCardState> = emptyList(),
-    val competitionCards: List<QuizCardState> = emptyList(),
-    val mode: QuizMode = QuizMode.NONE,
-    val currentIndex: Int = 0,
-    val competitionScore: Int = 0,
-    val competitionFinished: Boolean = false,
-    val errorMessage: GenderedString? = null,
-
-    val streak: Int = 0,
-    val lastAnswerCorrect: Boolean? = null,
-    val lastAnswerPoints: Int = 0,
-    val answerFeedbackToken: Int = 0,
-
-    val preCompetitionCountdown: Int? = null,
-    val questionTimeLeftMs: Long = QUESTION_TIME_MS
-) {
-    companion object {
-        const val QUESTION_TIME_MS = 15_000L
-    }
-}
 
 @HiltViewModel
 class QuizViewModel @Inject constructor(
@@ -60,11 +27,15 @@ class QuizViewModel @Inject constructor(
     private val getWeeklyCompetitionQuestions: GetWeeklyCompetitionQuestionsUseCase,
     private val isCompetitionDay: IsCompetitionDayUseCase,
     private val submitCompetitionScore: SubmitCompetitionScoreUseCase,
-    private val getRecentWinners: GetRecentQuizWinnersUseCase
-) : ViewModel() {
+    private val getRecentWinners: GetRecentQuizWinnersUseCase,
+    private val feedbackPlayer: ScreenAudioPlayer
+) : ViewModel(), QuizActions {
 
     private val _uiState = MutableStateFlow(QuizUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _effects = Channel<QuizEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
 
     private var timerJob: Job? = null
 
@@ -82,6 +53,8 @@ class QuizViewModel @Inject constructor(
                     isCompetitionDay = isCompetitionDay(),
                     winners = winners
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -91,7 +64,7 @@ class QuizViewModel @Inject constructor(
         }
     }
 
-    fun startStudyMode() {
+    override fun startStudyMode() {
         viewModelScope.launch {
             try {
                 val questions = getWeeklyStudyQuestions()
@@ -101,14 +74,15 @@ class QuizViewModel @Inject constructor(
                     currentIndex = 0,
                     streak = 0
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = GenderedStrings.quizStudyError)
             }
         }
     }
 
-
-    fun startCompetitionMode() {
+    override fun startCompetitionMode() {
         viewModelScope.launch {
             try {
                 val questions = getWeeklyCompetitionQuestions()
@@ -117,6 +91,8 @@ class QuizViewModel @Inject constructor(
                     preCompetitionCountdown = 3
                 )
                 runPreCompetitionCountdown()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = GenderedStrings.quizCompetitionError)
             }
@@ -158,7 +134,7 @@ class QuizViewModel @Inject constructor(
         }
     }
 
-    fun selectAnswer(choiceIndex: Int) {
+    override fun selectAnswer(choiceIndex: Int) {
         val state = _uiState.value
         val isCompetition = state.mode == QuizMode.COMPETITION
         val cards = if (isCompetition) state.competitionCards else state.studyCards
@@ -170,6 +146,8 @@ class QuizViewModel @Inject constructor(
         if (isCompetition) timerJob?.cancel()
 
         val isCorrect = choiceIndex == card.question.correctIndex
+        feedbackPlayer.play(if (isCorrect) R.raw.quiz_correct else R.raw.quiz_wrong)
+        _effects.trySend(QuizEffect.AnswerFeedback(isCorrect))
         val updatedCard = card.copy(
             selectedIndex = choiceIndex.takeIf { it >= 0 },
             isFlipped = true,
@@ -200,7 +178,7 @@ class QuizViewModel @Inject constructor(
         }
     }
 
-    fun goToNextCard() {
+    override fun goToNextCard() {
         val state = _uiState.value
         val isCompetition = state.mode == QuizMode.COMPETITION
         val cards = if (isCompetition) state.competitionCards else state.studyCards
@@ -220,19 +198,22 @@ class QuizViewModel @Inject constructor(
             val state = _uiState.value
             try {
                 submitCompetitionScore(state.competitionScore)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
             }
             _uiState.value = state.copy(competitionFinished = true)
         }
     }
 
-    fun exitQuiz() {
+    override fun exitQuiz() {
         timerJob?.cancel()
         _uiState.value = _uiState.value.copy(mode = QuizMode.NONE, streak = 0)
         loadOverview()
     }
 
     override fun onCleared() {
+        feedbackPlayer.stop()
         super.onCleared()
         timerJob?.cancel()
     }

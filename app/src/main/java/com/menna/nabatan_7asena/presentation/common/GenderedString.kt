@@ -19,14 +19,14 @@ data class GenderedString(
     }
 }
 
-/** Supplied from MainUiState; login overrides it with LoginState.selectedGender. */
+/** Supplied from MainUiState; login overrides it with LoginUiState.selectedGender. */
 val LocalUserGender = compositionLocalOf { User.Gender.BOY }
 
 /**
- * Resolves on every composition so gender and locale changes update visible text.
- * Pass a screen state's gender explicitly, or inherit the app/login state provider.
- * Example: genderedStringResource(GenderedStrings.taskComplete, title, gender = state.gender).
- */
+* Resolves on every composition so gender and locale changes update visible text.
+* Pass a screen state's gender explicitly, or inherit the app/login state provider.
+* Example: genderedStringResource(GenderedStrings.taskComplete, title, gender = state.gender).
+*/
 @Composable
 @ReadOnlyComposable
 fun genderedStringResource(

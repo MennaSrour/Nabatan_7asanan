@@ -1,40 +1,32 @@
 package com.menna.nabatan_7asena.presentation.screens.update
 
-import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.domain.usecase.CheckForUpdateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import androidx.core.net.toUri
 
 @HiltViewModel
 class UpdateViewModel @Inject constructor(
     private val checkForUpdateUseCase: CheckForUpdateUseCase,
-) : ViewModel() {
+) : ViewModel(), UpdateActions {
 
     private val _uiState = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
     val uiState = _uiState.asStateFlow()
 
-    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
-    val downloadState = _downloadState.asStateFlow()
+    private val _effects = Channel<UpdateEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
 
-    fun resetDownloadState() {
-        _downloadState.value = DownloadState.Idle
-    }
+    init { checkForUpdates() }
 
-    fun openPlayStore(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = "market://details?id=com.menna.nabata_7asena".toUri()
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    }
+    override fun onUpdateClicked() { viewModelScope.launch { _effects.send(UpdateEffect.OpenStore) } }
 
     fun checkForUpdates() {
         viewModelScope.launch {
@@ -53,6 +45,8 @@ class UpdateViewModel @Inject constructor(
                     _uiState.value = UpdateUiState.Idle
                     Log.d("UPDATE", "No update available")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("UPDATE", "Error checking for updates", e)
                 _uiState.value = UpdateUiState.Idle
@@ -60,7 +54,7 @@ class UpdateViewModel @Inject constructor(
         }
     }
 
-    fun dismissUpdate() {
+    override fun dismissUpdate() {
         _uiState.value = UpdateUiState.Idle
     }
 }
