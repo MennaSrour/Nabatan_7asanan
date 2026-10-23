@@ -5,9 +5,12 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.WorkspacePremium
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +46,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -51,17 +59,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.menna.nabatan_7asena.presentation.screens.badges.BadgesScreen
 import com.menna.nabatan_7asena.presentation.screens.dua.AzkarAndDuaScreen
 import com.menna.nabatan_7asena.presentation.screens.home.HomeScreen
 import com.menna.nabatan_7asena.presentation.screens.leaderboard.LeaderboardScreen
+import com.menna.nabatan_7asena.presentation.screens.quiz.QuizScreen
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
 import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
 import com.menna.nabatan_7asena.presentation.screens.update.DownloadState
 import com.menna.nabatan_7asena.presentation.screens.update.UpdateDialog
 import com.menna.nabatan_7asena.presentation.screens.update.UpdateUiState
 import com.menna.nabatan_7asena.presentation.screens.update.UpdateViewModel
-import com.menna.nabatan_7asena.presentation.screens.home.component.ClayAssetImage
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
 fun MainScreenHolder(
@@ -96,7 +104,7 @@ fun MainScreenHolder(
             navController = navController,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 8.dp)
+                .padding(bottom = 10.dp)
         )
 
         when (val state = updateUiState) {
@@ -151,7 +159,7 @@ fun NavigationGraph(
         }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }
-        composable("badges") { BadgesScreen() }
+        composable("quiz") { QuizScreen() }
         composable("dua") { AzkarAndDuaScreen() }
         composable("quran") { QuranScreen() }
     }
@@ -165,34 +173,43 @@ fun FloatingBottomBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val isDark = isSystemInDarkTheme()
+    val navAccent = SummerTheme.colors.goldWarm
+
     val items = listOf(
-        BottomNavItem("home", Icons.Rounded.Home, Color(0xFF22C55E)),
-        BottomNavItem("quran", Icons.AutoMirrored.Rounded.MenuBook, Color(0xFF22C55E)),
-        BottomNavItem("sebha", Icons.Rounded.Spa, Color(0xFF22C55E)),
-        BottomNavItem("dua", Icons.Rounded.NightsStay, Color(0xFF7B4DFF)),
-        BottomNavItem("leaderboard", Icons.Rounded.EmojiEvents, Color(0xFF7B4DFF)),
-        BottomNavItem("badges", Icons.Rounded.WorkspacePremium, Color(0xFF7B4DFF))
+        BottomNavItem("home", Icons.Rounded.Home, navAccent),
+        BottomNavItem("quran", Icons.AutoMirrored.Rounded.MenuBook, navAccent),
+        BottomNavItem("sebha", Icons.Rounded.Spa, navAccent),
+        BottomNavItem("dua", Icons.Rounded.NightsStay, navAccent),
+        BottomNavItem("leaderboard", Icons.Rounded.EmojiEvents, navAccent),
+        BottomNavItem("quiz", Icons.Rounded.WorkspacePremium, navAccent)
     )
 
     Surface(
         modifier = modifier
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-            .height(70.dp)
+            .height(58.dp)
             .fillMaxWidth()
             .shadow(
-                elevation = 12.dp,
-                shape = RoundedCornerShape(35.dp),
-                spotColor = Color(0xFF7B4DFF).copy(alpha = 0.25f)
+                elevation = if (isDark) 0.dp else 8.dp,
+                shape = RoundedCornerShape(26.dp),
+                spotColor = navAccent.copy(alpha = 0.18f)
             ),
-        shape = RoundedCornerShape(35.dp),
-        color = Color.White.copy(alpha = 0.85f),
-        border = BorderStroke(1.dp, Color.White.copy(0.5f)),
-        tonalElevation = 5.dp
+        shape = RoundedCornerShape(26.dp),
+        color = SummerTheme.colors.cardBackground.copy(alpha = if (isDark) 0.97f else 0.92f),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) SummerTheme.colors.white.copy(alpha = 0.08f)
+            else SummerTheme.colors.white.copy(alpha = 0.55f)
+        ),
+        tonalElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
@@ -222,37 +239,38 @@ fun FloatingNavItem(
     onClick: () -> Unit
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.2f else 1f,
+        targetValue = if (isSelected) 1.06f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "scale"
     )
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) item.color.copy(alpha = 0.15f) else Color.Transparent,
+        targetValue = if (isSelected) item.color.copy(alpha = 0.16f) else Color.Transparent,
         label = "bgColor"
     )
 
     val iconColor by animateColorAsState(
-        targetValue = if (isSelected) item.color else Color.Gray.copy(alpha = 0.5f),
+        targetValue = if (isSelected) item.color
+        else SummerTheme.colors.textBrown.copy(alpha = 0.55f),
         label = "iconColor"
     )
 
     val assetName = when (item.route) {
-        "home" -> "ic_nav_home"
-        "quran" -> "ic_nav_quran"
-        "sebha" -> "ic_nav_sebha"
-        "dua" -> "ic_nav_dua"
-        "leaderboard" -> "ic_nav_trophy"
-        "badges" -> "ic_nav_badges"
+        "home" -> "home"
+        "quran" -> "quran"
+        "sebha" -> "sebha"
+        "dua" -> "dua"
+        "leaderboard" -> "podium"
+        "quiz" -> "quiz"
         else -> ""
     }
 
     Box(
         modifier = Modifier
-            .size(50.dp)
+            .size(44.dp)
             .scale(scale)
             .clip(CircleShape)
             .background(backgroundColor)
@@ -262,12 +280,12 @@ fun FloatingNavItem(
             ) { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        ClayAssetImage(
+        ClayImage(
             resName = assetName,
             fallbackIcon = item.icon,
             contentDescription = null,
             tint = iconColor,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(if (isSelected) 24.dp else 22.dp)
         )
     }
 }
@@ -277,3 +295,40 @@ data class BottomNavItem(
     val icon: ImageVector,
     val color: Color
 )
+
+@Composable
+private fun ClayImage(
+    resName: String,
+    fallbackIcon: ImageVector,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = Color.Unspecified
+) {
+    val context = LocalContext.current
+    val resId = remember(resName) {
+        context.resources.getIdentifier(resName, "drawable", context.packageName)
+    }
+    if (resId != 0) {
+        Image(
+            painter = painterResource(resId),
+            contentDescription = contentDescription,
+            modifier = modifier,
+            contentScale = ContentScale.Fit,
+            colorFilter = if (tint != Color.Unspecified) ColorFilter.tint(tint) else null
+        )
+    } else {
+        Box(
+            modifier = modifier
+                .background(tint.copy(alpha = 0.12f), CircleShape)
+                .border(1.5.dp, tint.copy(alpha = 0.35f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = fallbackIcon,
+                contentDescription = contentDescription,
+                tint = tint,
+                modifier = Modifier.fillMaxSize(0.55f)
+            )
+        }
+    }
+}

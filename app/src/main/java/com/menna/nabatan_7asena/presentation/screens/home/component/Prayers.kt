@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -36,10 +37,8 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.menna.nabatan_7asena.core.util.PrayerPhase
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 private val PRAYER_ORDER = listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء")
 
@@ -59,9 +58,7 @@ private val PRAYER_SKIES = mapOf(
         labelAccent = Color(0xFFC98A2E)
     ),
     "المغرب" to PrayerSky(
-        // اللون التاني هنا يميل لعيلة wisdomAccent البنفسجي عمداً — عشان
-        // يبقى فيه انتقال بصري مريح من دفء المغرب لهدوء العشاء البنفسجي
-        gradient = listOf(Color(0xFFFFA15E), Color(0xFFE0637A), Color(0xFF7A5FD1)),
+       gradient = listOf(Color(0xFFFFA15E), Color(0xFFE0637A), Color(0xFF7A5FD1)),
         labelAccent = Color(0xFFD1476B)
     ),
     "العشاء" to PrayerSky(
@@ -84,29 +81,6 @@ private fun prayerIconRes(name: String) = when (name) {
     else -> ""
 }
 
-private fun parseTimeToMinutes(timeStr: String?): Int? {
-    if (timeStr.isNullOrBlank()) return null
-    val trimmed = timeStr.trim()
-    val cal = try {
-        val sdf = SimpleDateFormat("HH:mm", Locale.US)
-        sdf.isLenient = false
-        Calendar.getInstance().apply { time = sdf.parse(trimmed) ?: return@apply }
-    } catch (e: Exception) {
-        try {
-            val sdf = SimpleDateFormat("h:mm a", Locale.US)
-            Calendar.getInstance().apply { time = sdf.parse(trimmed.uppercase()) ?: return null }
-        } catch (e2: Exception) {
-            return null
-        }
-    }
-    return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-}
-
-private fun currentMinutesOfDay(): Int {
-    val now = Calendar.getInstance()
-    return now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-}
-
 @Composable
 fun PrayerTimesRow(
     prayers: List<HomeUiState.UiTaskItem>,
@@ -120,23 +94,15 @@ fun PrayerTimesRow(
         }
     }
 
-    val nowMinutes = currentMinutesOfDay()
-
-    val nextIndex = remember(ordered, nowMinutes) {
-        val idx = ordered.indexOfFirst { p -> (parseTimeToMinutes(p.subtitle) ?: -1) > nowMinutes }
-        if (idx == -1) 0 else idx
-    }
-
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
     ) {
         items(items = ordered, key = { it.id }) { prayer ->
-            val isNext = ordered.indexOf(prayer) == nextIndex
             PrayerCard(
                 prayer = prayer,
-                isNext = isNext,
+                isFocused = prayer.isPrayerFocused,
                 onClick = { onPrayerClick(prayer) }
             )
         }
@@ -146,14 +112,14 @@ fun PrayerTimesRow(
 @Composable
 private fun PrayerCard(
     prayer: HomeUiState.UiTaskItem,
-    isNext: Boolean,
+    isFocused: Boolean,
     onClick: () -> Unit
 ) {
     val sky = remember(prayer.title) { defaultSky(prayer.title) }
 
-    val cardWidth by animateDpAsState(if (isNext) 92.dp else 76.dp, tween(450), label = "cardWidth")
+    val cardWidth by animateDpAsState(if (isFocused) 92.dp else 76.dp, tween(450), label = "cardWidth")
     val cardHeight by animateDpAsState(
-        if (isNext) 158.dp else 138.dp,
+        if (isFocused) 158.dp else 138.dp,
         tween(450),
         label = "cardHeight"
     )
@@ -169,12 +135,12 @@ private fun PrayerCard(
             .width(cardWidth)
             .height(cardHeight)
     ) {
-        if (isNext) {
+        if (isFocused) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(2.dp)
-                    .blur(10.dp)
+                     .blur(10.dp, edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(22.dp)))
                     .background(Color.White.copy(alpha = 0.55f), RoundedCornerShape(22.dp))
             )
         }
@@ -185,7 +151,7 @@ private fun PrayerCard(
                 .clip(RoundedCornerShape(20.dp))
                 .background(Brush.verticalGradient(baseGradient))
                 .then(
-                    if (isNext) {
+                    if (isFocused) {
                         Modifier.background(Color.White.copy(alpha = 0.12f))
                     } else Modifier
                 )
@@ -194,7 +160,7 @@ private fun PrayerCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier.size(if (isNext) 34.dp else 28.dp),
+                modifier = Modifier.size(if (isFocused) 34.dp else 28.dp),
                 contentAlignment = Alignment.Center
             ) {
                 ClayAssetImage(
@@ -209,18 +175,18 @@ private fun PrayerCard(
             Text(
                 text = prayer.subtitle ?: "",
                 color = Color.White,
-                fontSize = if (isNext) 14.sp else 13.sp,
+                fontSize = if (isFocused) 14.sp else 13.sp,
                 fontWeight = FontWeight.Black
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = prayer.title,
                 color = Color.White,
-                fontSize = if (isNext) 13.5.sp else 12.sp,
+                fontSize = if (isFocused) 13.5.sp else 12.sp,
                 fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(6.dp))
-            if (isNext && !prayer.isCompleted) {
+            if (isFocused && !prayer.isCompleted) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
@@ -228,7 +194,7 @@ private fun PrayerCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        "القادمة",
+                        if (prayer.prayerPhase == PrayerPhase.CURRENT) "الآن" else "القادمة",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         color = sky.labelAccent
@@ -249,7 +215,7 @@ private fun PrayerCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(if (isNext) 46.dp else 38.dp)
+                        .size(if (isFocused) 46.dp else 38.dp)
                         .clip(RoundedCornerShape(50))
                         .background(Color.White.copy(alpha = 0.9f)),
                     contentAlignment = Alignment.Center
@@ -258,7 +224,7 @@ private fun PrayerCard(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = "تمت",
                         tint = sky.labelAccent,
-                        modifier = Modifier.size(if (isNext) 26.dp else 20.dp)
+                        modifier = Modifier.size(if (isFocused) 26.dp else 20.dp)
                     )
                 }
             }

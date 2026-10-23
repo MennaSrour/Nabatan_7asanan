@@ -1,6 +1,5 @@
 package com.menna.nabatan_7asena.presentation.screens.leaderboard
 
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -8,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,11 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,17 +58,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
-import com.menna.nabatan_7asena.domain.entity.User
-import com.menna.nabatan_7asena.ui.theme.GalaxyTheme
-import kotlin.random.Random
+import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
+
+private val SilverBase = Color(0xFFB0BEC5)
+private val SilverDark = Color(0xFF78909C)
+private val BronzeBase = Color(0xFFD7A86E)
+private val BronzeDark = Color(0xFFA9744F)
 
 @Composable
 fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
-    val twinkleAlphas = GalaxyTheme.rememberTwinkleAlphas(count = 14)
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -84,7 +82,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        GalaxyBackground(twinkleAlphas)
+        LeaderboardBackground()
 
         Scaffold(
             containerColor = Color.Transparent,
@@ -95,14 +93,14 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                GalaxyHeader()
+                LeaderboardHeader()
 
                 if (state.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = GalaxyTheme.Colors.StarGold)
+                        CircularProgressIndicator(color = SummerTheme.colors.goldWarm)
                     }
                 } else if (state.list.isEmpty()) {
-                    GalaxyEmptyState()
+                    LeaderboardEmptyState()
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(bottom = 100.dp),
@@ -112,7 +110,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                             val topThree = state.list.take(3)
                             if (topThree.isNotEmpty()) {
                                 Spacer(Modifier.height(24.dp))
-                                GalaxyPodiumView(topThree, state.currentUserId)
+                                PodiumView(topThree, state.currentUserId)
                                 Spacer(Modifier.height(20.dp))
 
                                 Row(
@@ -122,18 +120,18 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
                                     Box(
                                         Modifier
                                             .weight(1f).height(1.dp)
-                                            .background(GalaxyTheme.Colors.TextMuted.copy(0.25f))
+                                            .background(SummerTheme.colors.textBrown.copy(0.25f))
                                     )
                                     Text(
                                         "وما زال الغرس يزهر",
                                         fontSize = 12.sp,
-                                        color = GalaxyTheme.Colors.TextMuted,
+                                        color = SummerTheme.colors.textBrown,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Box(
                                         Modifier
                                             .weight(1f).height(1.dp)
-                                            .background(GalaxyTheme.Colors.TextMuted.copy(0.25f))
+                                            .background(SummerTheme.colors.textBrown.copy(0.25f))
                                     )
                                 }
                             }
@@ -141,7 +139,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
 
                         val restOfList = state.list.drop(3)
                         itemsIndexed(restOfList) { index, user ->
-                            GalaxyLeaderboardItem(
+                            LeaderboardItem(
                                 user = user,
                                 rank = index + 4,
                                 isCurrentUser = user.userId == state.currentUserId
@@ -154,128 +152,26 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = hiltViewModel()) {
     }
 }
 
-/**
- * خلفية فضاء متدرجة الظلام + نجوم متلألئة + كواكب عائمة زخرفية + مذنّب متحرك.
- * كل شيء مرسوم بالكود، من غير أي صور خارجية.
- */
+
 @Composable
-fun GalaxyBackground(twinkleAlphas: List<Float>) {
-    val stars = remember {
-        List(46) {
-            Triple(
-                Offset(Random.nextFloat(), Random.nextFloat()),
-                (1.2f + Random.nextFloat() * 1.8f),
-                Random.nextInt(twinkleAlphas.size.coerceAtLeast(1))
-            )
-        }
-    }
-    val ringAngle = GalaxyTheme.rememberSlowRotation(durationMillis = 18000)
-
-    val comet = rememberInfiniteTransitionOffset()
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // تدرّج سماء الفضاء
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        GalaxyTheme.Colors.DeepSpace,
-                        GalaxyTheme.Colors.SpaceIndigo,
-                        GalaxyTheme.Colors.SpaceNavy
+fun LeaderboardBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        SummerTheme.colors.dialogBackground,
+                        SummerTheme.colors.backgroundLight
                     )
                 )
             )
-
-            // سحابة "نيبولا" خفيفة في الخلفية
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(GalaxyTheme.Colors.NebulaPurple.copy(alpha = 0.22f), Color.Transparent),
-                    radius = size.width * 0.6f,
-                    center = Offset(size.width * 0.15f, size.height * 0.1f)
-                ),
-                radius = size.width * 0.6f,
-                center = Offset(size.width * 0.15f, size.height * 0.1f)
-            )
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(GalaxyTheme.Colors.NebulaPink.copy(alpha = 0.18f), Color.Transparent),
-                    radius = size.width * 0.5f,
-                    center = Offset(size.width * 0.9f, size.height * 0.18f)
-                ),
-                radius = size.width * 0.5f,
-                center = Offset(size.width * 0.9f, size.height * 0.18f)
-            )
-
-            // كوكب زخرفي بحلقة (زاوية علوية يمين)
-            val planetCenter = Offset(size.width * 0.86f, size.height * 0.09f)
-            val planetRadius = size.width * 0.10f
-            rotate(ringAngle, pivot = planetCenter) {
-                drawOval(
-                    color = GalaxyTheme.Colors.CometCyan.copy(alpha = 0.35f),
-                    topLeft = Offset(planetCenter.x - planetRadius * 1.7f, planetCenter.y - planetRadius * 0.35f),
-                    size = Size(planetRadius * 3.4f, planetRadius * 0.7f)
-                )
-            }
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(GalaxyTheme.Colors.MarsOrange, GalaxyTheme.Colors.NebulaPurple)
-                ),
-                radius = planetRadius,
-                center = planetCenter
-            )
-
-            // كوكب صغير تاني (يسار تحت الهيدر)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(GalaxyTheme.Colors.CometCyan, GalaxyTheme.Colors.SpaceIndigo)
-                ),
-                radius = size.width * 0.045f,
-                center = Offset(size.width * 0.08f, size.height * 0.22f)
-            )
-
-            // نجوم متلألئة
-            stars.forEach { (offsetFraction, radiusDp, alphaIndex) ->
-                drawCircle(
-                    color = GalaxyTheme.Colors.MoonSilver,
-                    radius = radiusDp.dp.toPx(),
-                    center = Offset(size.width * offsetFraction.x, size.height * offsetFraction.y),
-                    alpha = twinkleAlphas.getOrElse(alphaIndex) { 0.8f }
-                )
-            }
-
-            // مذنّب بذيل خفيف يعبر أعلى الشاشة
-            val cometStart = Offset(size.width * (comet - 0.15f), size.height * 0.06f)
-            drawLine(
-                brush = Brush.linearGradient(
-                    colors = listOf(Color.Transparent, GalaxyTheme.Colors.MoonSilver.copy(alpha = 0.9f))
-                ),
-                start = Offset(cometStart.x - 60f, cometStart.y - 30f),
-                end = cometStart,
-                strokeWidth = 3f
-            )
-        }
-    }
-}
-
-/** حركة أفقية بطيئة متكررة من 0 إلى 1، تُستخدم لتحريك المذنّب */
-@Composable
-private fun rememberInfiniteTransitionOffset(): Float {
-    val infinite = rememberInfiniteTransition(label = "cometTravel")
-    val value by infinite.animateFloat(
-        initialValue = -0.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(4200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "cometX"
     )
-    return value
 }
 
 @Composable
-fun GalaxyHeader() {
-    val floatOffset = GalaxyTheme.rememberFloatingAnimation()
+fun LeaderboardHeader() {
+    val floatOffset = SummerTheme.rememberFloatingAnimation()
 
     Box(
         modifier = Modifier
@@ -286,7 +182,7 @@ fun GalaxyHeader() {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "🚀",
+                "🏆",
                 fontSize = 40.sp,
                 modifier = Modifier.offset(y = floatOffset.dp)
             )
@@ -295,21 +191,22 @@ fun GalaxyHeader() {
                 "أطيب ثمار غرس أمتنا",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
-                color = GalaxyTheme.Colors.TextLight
+                color = SummerTheme.colors.textPrimary
             )
             Spacer(Modifier.height(6.dp))
             Surface(
-                color = GalaxyTheme.Colors.NebulaPurple.copy(alpha = 0.35f),
+                color = SummerTheme.colors.goldWarm.copy(alpha = 0.16f),
                 shape = RoundedCornerShape(50),
-                border = BorderStroke(1.5.dp, GalaxyTheme.Colors.CometCyan.copy(0.6f))
+                border = BorderStroke(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.5f))
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                ) { Text(
+                ) {
+                    Text(
                         "في سباق الخير... تزهر خطانا",
                         fontSize = 13.sp,
-                        color = GalaxyTheme.Colors.StarGold,
+                        color = SummerTheme.colors.goldDeep,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -319,7 +216,7 @@ fun GalaxyHeader() {
 }
 
 @Composable
-fun GalaxyPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
+fun PodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
     val first = users.firstOrNull()
     val second = users.getOrNull(1)
     val third = users.getOrNull(2)
@@ -333,31 +230,31 @@ fun GalaxyPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
         horizontalArrangement = Arrangement.Center
     ) {
         if (second != null) {
-            GalaxyPodiumMember(
+            PodiumMember(
                 user = second, rank = 2, height = 130.dp,
-                baseColor = GalaxyTheme.Colors.CometCyan,
-                darkerColor = Color(0xFF0091EA),
-                badgeEmoji = "🛰️", isWinner = false,
+                baseColor = SilverBase,
+                darkerColor = SilverDark,
+                badgeEmoji = "🥈", isWinner = false,
                 isCurrentUser = second.userId == currentUserId,
                 modifier = Modifier.weight(1f).zIndex(1f)
             )
         }
         if (first != null) {
-            GalaxyPodiumMember(
+            PodiumMember(
                 user = first, rank = 1, height = 175.dp,
-                baseColor = GalaxyTheme.Colors.StarGold,
-                darkerColor = GalaxyTheme.Colors.MarsOrange,
+                baseColor = SummerTheme.colors.goldWarm,
+                darkerColor = SummerTheme.colors.goldDeep,
                 badgeEmoji = "👑", isWinner = true,
                 isCurrentUser = first.userId == currentUserId,
                 modifier = Modifier.weight(1.2f).zIndex(2f).offset(y = (-10).dp)
             )
         }
         if (third != null) {
-            GalaxyPodiumMember(
+            PodiumMember(
                 user = third, rank = 3, height = 100.dp,
-                baseColor = GalaxyTheme.Colors.NebulaPurple,
-                darkerColor = Color(0xFF5B21B6),
-                badgeEmoji = "🪐", isWinner = false,
+                baseColor = BronzeBase,
+                darkerColor = BronzeDark,
+                badgeEmoji = "🥉", isWinner = false,
                 isCurrentUser = third.userId == currentUserId,
                 modifier = Modifier.weight(1f).zIndex(1f)
             )
@@ -366,7 +263,7 @@ fun GalaxyPodiumView(users: List<LeaderboardEntry>, currentUserId: String) {
 }
 
 @Composable
-fun GalaxyPodiumMember(
+fun PodiumMember(
     user: LeaderboardEntry,
     rank: Int,
     height: Dp,
@@ -377,21 +274,19 @@ fun GalaxyPodiumMember(
     isCurrentUser: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val badgeScale = if (isWinner) {
-        val infinite = rememberInfiniteTransition(label = "badgePulse")
-        val scale by infinite.animateFloat(
-            initialValue = 1f,
-            targetValue = 1.15f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(700, easing = LinearOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "badgeScale"
-        )
-        scale
-    } else 1f
+    val infinite = rememberInfiniteTransition(label = "badgePulse")
+    val winningScale by infinite.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "badgeScale"
+    )
+    val badgeScale = if (isWinner) winningScale else 1f
 
-    val ringGlowColor = if (isCurrentUser) GalaxyTheme.Colors.NebulaPink else baseColor
+    val ringGlowColor = if (isCurrentUser) SummerTheme.colors.highlightAccent else baseColor
 
     Column(
         modifier = modifier,
@@ -399,7 +294,6 @@ fun GalaxyPodiumMember(
         verticalArrangement = Arrangement.Bottom
     ) {
         Box(contentAlignment = Alignment.TopCenter) {
-            // هالة توهج خلف الخوذة
             Box(
                 modifier = Modifier
                     .size(if (isWinner) 104.dp else 82.dp)
@@ -419,11 +313,11 @@ fun GalaxyPodiumMember(
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.background(GalaxyTheme.Colors.SpaceIndigo)
+                    modifier = Modifier.background(SummerTheme.colors.backgroundLight)
                 ) {
                     Image(
                         painter = painterResource(
-                            id = if (user.gender == User.Gender.BOY) R.drawable.boy_avatar else R.drawable.girl_avatar
+                            id = AvatarCatalog.resFor(user.gender, user.avatarIndex)
                         ),
                         contentDescription = null,
                         modifier = Modifier
@@ -444,7 +338,7 @@ fun GalaxyPodiumMember(
 
             if (isCurrentUser) {
                 Surface(
-                    color = GalaxyTheme.Colors.NebulaPink,
+                    color = SummerTheme.colors.highlightAccent,
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -469,21 +363,21 @@ fun GalaxyPodiumMember(
                 user.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
-                color = GalaxyTheme.Colors.TextLight,
+                color = SummerTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Surface(
-                color = GalaxyTheme.Colors.SpaceNavy.copy(alpha = 0.8f),
-                shape = GalaxyTheme.Shapes.SmallRounded,
+                color = SummerTheme.colors.dialogBackground.copy(alpha = 0.8f),
+                shape = SummerTheme.Shapes.SmallRounded,
                 modifier = Modifier.padding(top = 3.dp),
-                border = BorderStroke(1.dp, GalaxyTheme.Colors.StarGold.copy(0.5f))
+                border = BorderStroke(1.dp, SummerTheme.colors.goldWarm.copy(0.5f))
             ) {
                 Text(
                     "${user.totalStars} ⭐",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    color = GalaxyTheme.Colors.StarGold,
+                    color = SummerTheme.colors.goldWarm,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
@@ -491,8 +385,7 @@ fun GalaxyPodiumMember(
 
         Spacer(Modifier.height(8.dp))
 
-        // القاعدة (منصة التتويج) بشكل "قطاع كوكب" مع نقاط تُحاكي الفوهات
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth().height(height)
@@ -507,21 +400,6 @@ fun GalaxyPodiumMember(
                     .background(Brush.verticalGradient(listOf(baseColor, darkerColor))),
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val craterSpots = listOf(
-                        Offset(0.25f, 0.3f) to 5f,
-                        Offset(0.7f, 0.55f) to 4f,
-                        Offset(0.45f, 0.75f) to 3f,
-                        Offset(0.15f, 0.65f) to 3f
-                    )
-                    craterSpots.forEach { (frac, radius) ->
-                        drawCircle(
-                            color = Color.White.copy(alpha = 0.10f),
-                            radius = radius.dp.toPx(),
-                            center = Offset(size.width * frac.x, size.height * frac.y)
-                        )
-                    }
-                }
                 Text(
                     "$rank",
                     fontSize = 50.sp,
@@ -534,28 +412,28 @@ fun GalaxyPodiumMember(
 }
 
 @Composable
-fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
+fun LeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
     val cardBg = if (isCurrentUser)
         Brush.horizontalGradient(
-            listOf(GalaxyTheme.Colors.NebulaPink.copy(0.22f), GalaxyTheme.Colors.NebulaPurple.copy(0.22f))
+            listOf(SummerTheme.colors.highlightAccent.copy(0.18f), SummerTheme.colors.goldWarm.copy(0.14f))
         )
     else
         Brush.horizontalGradient(
-            listOf(GalaxyTheme.Colors.SpaceIndigo.copy(0.75f), GalaxyTheme.Colors.SpaceNavy.copy(0.75f))
+            listOf(SummerTheme.colors.backgroundLight.copy(0.75f), SummerTheme.colors.dialogBackground.copy(0.75f))
         )
 
-    val contentColor = if (isCurrentUser) GalaxyTheme.Colors.NebulaPink else GalaxyTheme.Colors.TextLight
+    val contentColor = if (isCurrentUser) SummerTheme.colors.highlightAccent else SummerTheme.colors.textPrimary
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clip(GalaxyTheme.Shapes.MediumRounded)
+            .clip(SummerTheme.Shapes.MediumRounded)
             .background(cardBg)
             .border(
                 width = if (isCurrentUser) 1.5.dp else 1.dp,
-                color = if (isCurrentUser) GalaxyTheme.Colors.NebulaPink.copy(0.7f) else GalaxyTheme.Colors.CometCyan.copy(0.18f),
-                shape = GalaxyTheme.Shapes.MediumRounded
+                color = if (isCurrentUser) SummerTheme.colors.highlightAccent.copy(0.7f) else SummerTheme.colors.textBrown.copy(0.15f),
+                shape = SummerTheme.Shapes.MediumRounded
             )
     ) {
         Row(
@@ -567,19 +445,19 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(GalaxyTheme.Shapes.SmallRounded)
+                    .clip(SummerTheme.Shapes.SmallRounded)
                     .background(
                         if (isCurrentUser)
-                            GalaxyTheme.Colors.StarGold.copy(alpha = 0.25f)
+                            SummerTheme.colors.goldWarm.copy(alpha = 0.25f)
                         else
-                            GalaxyTheme.Colors.CometCyan.copy(alpha = 0.12f)
+                            SummerTheme.colors.textBrown.copy(alpha = 0.08f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     "$rank",
                     fontWeight = FontWeight.Black,
-                    color = if (isCurrentUser) GalaxyTheme.Colors.StarGold else GalaxyTheme.Colors.TextMuted,
+                    color = if (isCurrentUser) SummerTheme.colors.goldWarm else SummerTheme.colors.textBrown,
                     fontSize = 15.sp
                 )
             }
@@ -590,18 +468,19 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
                 shape = CircleShape,
                 border = BorderStroke(
                     1.5.dp,
-                    if (isCurrentUser) GalaxyTheme.Colors.StarGold.copy(0.7f) else GalaxyTheme.Colors.CometCyan.copy(0.25f)
+                    if (isCurrentUser) SummerTheme.colors.goldWarm.copy(0.7f) else SummerTheme.colors.textBrown.copy(0.2f)
                 ),
-                color = GalaxyTheme.Colors.SpaceIndigo,
+                color = SummerTheme.colors.backgroundLight,
                 modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(
-                            if (user.gender == User.Gender.BOY) R.drawable.boy_avatar else R.drawable.girl_avatar
+                            AvatarCatalog.resFor(user.gender, user.avatarIndex)
                         ),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize().padding(4.dp)
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -619,14 +498,14 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
                     if (isCurrentUser) {
                         Spacer(Modifier.width(6.dp))
                         Surface(
-                            color = GalaxyTheme.Colors.NebulaPink.copy(alpha = 0.22f),
+                            color = SummerTheme.colors.highlightAccent.copy(alpha = 0.22f),
                             shape = RoundedCornerShape(4.dp),
-                            border = BorderStroke(1.dp, GalaxyTheme.Colors.NebulaPink.copy(0.5f))
+                            border = BorderStroke(1.dp, SummerTheme.colors.highlightAccent.copy(0.5f))
                         ) {
                             Text(
                                 "أنت",
                                 fontSize = 9.sp,
-                                color = GalaxyTheme.Colors.NebulaPink,
+                                color = SummerTheme.colors.highlightAccent,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -637,8 +516,8 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (user.quranPartsFinished > 0) {
-                    Surface(
-                        color = GalaxyTheme.Colors.CometCyan.copy(alpha = 0.18f),
+                   Surface(
+                        color = SummerTheme.colors.primaryTeal.copy(alpha = 0.16f),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
@@ -646,7 +525,7 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
                             "${user.quranPartsFinished} 📖",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GalaxyTheme.Colors.CometCyan,
+                            color = SummerTheme.colors.primaryTeal,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                         )
                     }
@@ -654,14 +533,14 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
                 Text(
                     "${user.totalStars}",
                     fontWeight = FontWeight.Black,
-                    color = GalaxyTheme.Colors.StarGold,
+                    color = SummerTheme.colors.goldWarm,
                     fontSize = 18.sp
                 )
                 Spacer(Modifier.width(3.dp))
                 Icon(
                     Icons.Rounded.Star,
                     contentDescription = null,
-                    tint = GalaxyTheme.Colors.StarGold,
+                    tint = SummerTheme.colors.goldWarm,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -670,28 +549,28 @@ fun GalaxyLeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Bool
 }
 
 @Composable
-fun GalaxyEmptyState() {
-    val floatOffset = GalaxyTheme.rememberFloatingAnimation()
+fun LeaderboardEmptyState() {
+    val floatOffset = SummerTheme.rememberFloatingAnimation()
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "🧑‍🚀",
+                "🌟",
                 fontSize = 64.sp,
                 modifier = Modifier.offset(y = floatOffset.dp)
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "كن أنت أول نجم في المجرة!",
+              "كن أنت أول نجم يلمع اليوم!",
                 fontSize = 22.sp,
-                color = GalaxyTheme.Colors.TextLight,
+                color = SummerTheme.colors.textPrimary,
                 fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "ابدأ رحلتك واجمع النجوم من كل الكواكب 🪐✨",
+                "اجمع نجومك من كل عمل صالح تعمله ✨",
                 fontSize = 14.sp,
-                color = GalaxyTheme.Colors.TextMuted
+                color = SummerTheme.colors.textBrown
             )
         }
     }

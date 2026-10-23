@@ -31,6 +31,7 @@ fun UserStatsEntity.toDomain(): User {
         treeStage = this.treeStage,
         quranPartsFinished = this.quranPartsFinished,
         id = this.userId,
+        avatarIndex = this.avatarIndex,
         prayerNotifications = this.prayerNotifications,
         azkarNotifications = this.azkarNotifications,
         quranNotifications = this.quranNotifications

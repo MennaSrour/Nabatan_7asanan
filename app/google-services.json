@@ -23,6 +23,44 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865936905898:android:b9f4b1ba7958db83c822d3",
+        "android_client_info": {
+          "package_name": "com.menna.nabata_7asena.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrT2-JNVRLA9T-_VzPIuj_aJS0TYJeP6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865936905898:android:87a666912190c500c822d3",
+        "android_client_info": {
+          "package_name": "com.menna.nabatan_7asena.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrT2-JNVRLA9T-_VzPIuj_aJS0TYJeP6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

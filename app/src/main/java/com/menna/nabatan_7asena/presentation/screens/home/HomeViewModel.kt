@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.core.audio.AudioPlayerManager
 import com.menna.nabatan_7asena.core.util.DateUtils
+import com.menna.nabatan_7asena.core.util.PrayerSlot
+import com.menna.nabatan_7asena.core.util.PrayerTimeline
 import com.menna.nabatan_7asena.domain.LocationTracker
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.Activity
+import com.menna.nabatan_7asena.domain.entity.DailyContent
 import com.menna.nabatan_7asena.domain.entity.ExtraTasks
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 import com.menna.nabatan_7asena.domain.entity.User
@@ -24,7 +27,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -56,7 +58,13 @@ class HomeViewModel @Inject constructor(
     private val tempCompletedTaskIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     private var lastCompletedCount = -1
 
-    // بدل ما يكون قيمة ثابتة بتتحسب مرة واحدة بس، بقت دالة بترجع التاريخ الحقيقي وقت النداء عليها
+    private val retrySignal = MutableStateFlow(0)
+
+    private val _hasLoadError = MutableStateFlow(false)
+
+    fun retryLoadingData() {
+        retrySignal.update { it + 1 }
+    }
     private fun currentDate() = getTodayDate()
 
     override fun onCleared() {
@@ -64,44 +72,57 @@ class HomeViewModel @Inject constructor(
         audioPlayerManager.stopAnyPlayingSound()
     }
 
-    // نبضة كل دقيقة — عملية محلية بحتة (قراءة ساعة الموبايل)، مفيهاش أي اتصال بالنت
     private val minuteTicker = flow {
         while (true) {
             emit(Unit)
-            delay(60_000)
+            delay(60_000L - System.currentTimeMillis() % 60_000L)
         }
     }
-
-    // بيتغير قيمته مرة واحدة تقريبًا في اليوم بس (مع منتصف الليل)، عشان نتجنب طلب مواقيت الصلاة كل دقيقة
     private val dateFlow: Flow<String> = minuteTicker
         .map { currentDate() }
         .distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val combinedUiState = dateFlow.flatMapLatest { today ->
+    private val combinedUiState = combine(dateFlow, retrySignal) { today, _ -> today }.flatMapLatest { today ->
         combine(
             getCurrentUserUseCase(),
+
             flow {
-                val location = currentLocation.getCurrentLocation()
-                emit(Pair(location?.city ?: "Cairo", location?.country ?: "Egypt"))
+                emit(Pair("Cairo", "Egypt"))
+                val location = kotlinx.coroutines.withTimeoutOrNull(3000) {
+                    currentLocation.getCurrentLocation()
+                }
+                if (location != null) {
+                    emit(Pair(location.city ?: "Cairo", location.country ?: "Egypt"))
+                }
             },
-            flow { emit(getDailyActivitiesUseCase.getTodayRiddle()) },
+
+            flow {
+                emit(null as DailyContent?)
+                val riddle = kotlinx.coroutines.withTimeoutOrNull(5000) {
+                    getDailyActivitiesUseCase.getTodayRiddle()
+                }
+                if (riddle != null) {
+                    emit(riddle)
+                }
+            },
+
             playingTaskId
         ) { domainUser, cityCountryPair, dailyContent, currentPlayingId ->
             val (city, country) = cityCountryPair
-            // ⬅️ بتتنادى مرة واحدة بس لكل يوم (لما "today" يتغير)، مش كل دقيقة
             val activitiesFlow = getDailyActivitiesUseCase(today, city, country)
+                .onEach { _hasLoadError.value = false }
+                .catch { _hasLoadError.value = true; emit(emptyList()) }
             Triple(domainUser, dailyContent, Pair(activitiesFlow, currentPlayingId))
         }
             .flatMapLatest { (user, dailyContent, flowPair) ->
                 val (activitiesFlow, currentPlayingId) = flowPair
 
-                // minuteTicker هنا بس، عشان يعيد حساب isNightTheme من البيانات
-                // الموجودة بالفعل — من غير أي subscribe جديد أو طلب نت إضافي
-                combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { domainActivities, tempStatusMap, _ ->
+               combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { domainActivities, tempStatusMap, _ ->
                     val currentPartToRead = user.quranPartsFinished + 1
+                    val nowMinutes = PrayerTimeline.nowMinutes()
 
-                    val uiTasks = domainActivities.map { activity ->
+                    val baseTasks = domainActivities.map { activity ->
                         val uiModel = activity.toUiModel(currentPartToRead)
                         val tempStatus = tempStatusMap[uiModel.id]
                         val isDone = tempStatus ?: uiModel.isCompleted
@@ -112,15 +133,29 @@ class HomeViewModel @Inject constructor(
                         )
                     }
 
+                     val prayerStatuses = PrayerTimeline.resolve(
+                        prayers = baseTasks
+                            .filter { it.category == TaskCategory.PRAYER }
+                            .map { PrayerSlot(it.id, PrayerTimeline.parseMinutes(it.subtitle)) },
+                        nowMinutes = nowMinutes
+                    )
+                    val uiTasks = baseTasks.map { task ->
+                        val status = prayerStatuses[task.id] ?: return@map task
+                        task.copy(prayerPhase = status.phase, isPrayerFocused = status.isFocused)
+                    }
+
                     val currentCompletedCount = uiTasks.count { it.isCompleted }
+                   val hasPrayerLoadError = !_hasLoadError.value && uiTasks.none { it.category == TaskCategory.PRAYER }
 
                     HomeUiState(
                         isLoading = false,
                         user = user.toUiUser(),
-                        dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: الصلاة نور والطاعة ضياء ✨",
+                        dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                         tasks = uiTasks,
                         hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
-                        isNightTheme = computeIsNightTheme(uiTasks)
+                        isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
+                        hasLoadError = _hasLoadError.value,
+                        hasPrayerLoadError = hasPrayerLoadError
                     ) to currentCompletedCount
                 }
             }
@@ -136,15 +171,9 @@ class HomeViewModel @Inject constructor(
     private fun observeCombined() {
         viewModelScope.launch {
             combinedUiState.collect { (state, completedCount) ->
-                val allTasksCompleted = state.tasks.isNotEmpty() && state.tasks.all { it.isCompleted }
+               val allTasksCompleted = state.tasks.isNotEmpty() && state.tasks.all { it.isCompleted }
 
-                val allPrayersReachableOrDone = state.tasks
-                    .filter { it.category == TaskCategory.PRAYER }
-                    .all { prayer -> prayer.isCompleted || isPrayerTimeReached(prayer.subtitle) }
-
-                val isReallyAllDone = allTasksCompleted && allPrayersReachableOrDone
-
-                if (lastCompletedCount != -1 && completedCount > lastCompletedCount && isReallyAllDone) {
+                if (lastCompletedCount != -1 && completedCount > lastCompletedCount && allTasksCompleted) {
                     if (!_uiState.value.showCelebration) {
                         delay(500)
                         audioPlayerManager.playCelebrationSound()
@@ -161,7 +190,9 @@ class HomeViewModel @Inject constructor(
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
                         hijriDate = state.hijriDate,
-                        isNightTheme = state.isNightTheme
+                        isNightTheme = state.isNightTheme,
+                        hasLoadError = state.hasLoadError,
+                        hasPrayerLoadError = state.hasPrayerLoadError
                     )
                 }
             }
@@ -198,7 +229,7 @@ class HomeViewModel @Inject constructor(
             if (item.category == TaskCategory.PRAYER) {
                 val prayerTime = item.subtitle
                 if (!item.isCompleted && prayerTime != null && !isPrayerTimeReached(prayerTime)) {
-                    _uiMessage.emit("لسه ميعاد الصلاة مجاش يا بطل! استعد واتوضأ 💧")
+                    _uiMessage.emit("لا يجوز الصلاة قبل دخول موعدها")
                     return@launch
                 }
             }
@@ -307,33 +338,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun parsePrayerTime(prayerTimeStr: String): Calendar? {
-        return try {
-            val sdf = SimpleDateFormat("h:mm a", Locale.US)
-            val date = sdf.parse(prayerTimeStr.trim().uppercase()) ?: return null
-            Calendar.getInstance().apply { time = date }
-        } catch (e: Exception) {
-            try {
-                val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
-                val date = sdf24.parse(prayerTimeStr.trim()) ?: return null
-                Calendar.getInstance().apply { time = date }
-            } catch (e2: Exception) {
-                null
-            }
-        }
-    }
-
-    private fun computeIsNightTheme(tasks: List<HomeUiState.UiTaskItem>): Boolean {
-        val fajrTime = tasks.firstOrNull { it.title == "الفجر" }?.subtitle ?: return false
-        val maghribTime = tasks.firstOrNull { it.title == "المغرب" }?.subtitle ?: return false
-
-        val fajrCal = parsePrayerTime(fajrTime) ?: return false
-        val maghribCal = parsePrayerTime(maghribTime) ?: return false
-        val now = Calendar.getInstance()
-
-        val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-        val fajrMinutes = fajrCal.get(Calendar.HOUR_OF_DAY) * 60 + fajrCal.get(Calendar.MINUTE)
-        val maghribMinutes = maghribCal.get(Calendar.HOUR_OF_DAY) * 60 + maghribCal.get(Calendar.MINUTE)
+    private fun computeIsNightTheme(tasks: List<HomeUiState.UiTaskItem>, nowMinutes: Int): Boolean {
+        val fajrMinutes = PrayerTimeline.parseMinutes(tasks.firstOrNull { it.title == "الفجر" }?.subtitle)
+            ?: return false
+        val maghribMinutes = PrayerTimeline.parseMinutes(tasks.firstOrNull { it.title == "المغرب" }?.subtitle)
+            ?: return false
 
         return if (maghribMinutes > fajrMinutes) {
             nowMinutes >= maghribMinutes || nowMinutes < fajrMinutes
@@ -343,20 +352,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun isPrayerTimeReached(prayerTimeStr: String?): Boolean {
-        if (prayerTimeStr.isNullOrEmpty()) return true
-
-        val prayerCal = parsePrayerTime(prayerTimeStr) ?: return true
-        val now = Calendar.getInstance()
-
-        val prayerHour = prayerCal.get(Calendar.HOUR_OF_DAY)
-        val prayerMinute = prayerCal.get(Calendar.MINUTE)
-        val nowHour = now.get(Calendar.HOUR_OF_DAY)
-        val nowMinute = now.get(Calendar.MINUTE)
-
-        if (nowHour > prayerHour) return true
-        if (nowHour == prayerHour && nowMinute >= prayerMinute) return true
-
-        return false
+        val minutes = PrayerTimeline.parseMinutes(prayerTimeStr) ?: return true
+        return PrayerTimeline.nowMinutes() >= minutes
     }
 
     private fun User.toUiUser() = HomeUiState.UiUser(

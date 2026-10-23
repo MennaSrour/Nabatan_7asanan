@@ -40,6 +40,8 @@ import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.entity.DailyContent
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
+private enum class QuizOptionState { IDLE, CORRECT, WRONG }
+
 @Composable
 fun DailyChallengeDialog(
     riddle: DailyContent.Riddle,
@@ -63,7 +65,7 @@ fun DailyChallengeDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(SummerTheme.colors.dialogBackground)
+                .background(SummerTheme.colors.cardBackground, SummerTheme.shapes.taskCard)
                 .border(3.dp, SummerTheme.colors.goldWarm, RoundedCornerShape(24.dp))
         ) {
             Column(
@@ -95,9 +97,9 @@ fun DailyChallengeDialog(
                 Spacer(Modifier.height(14.dp))
 
                 Box(
-                    modifier = Modifier
+                   modifier = Modifier
                         .fillMaxWidth()
-                        .background(SummerTheme.colors.white, SummerTheme.shapes.taskCard)
+                        .background(SummerTheme.colors.surfaceElevated, SummerTheme.shapes.taskCard)
                         .border(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.4f), SummerTheme.shapes.taskCard)
                         .padding(SummerTheme.dimensions.paddingLarge)
                 ) {
@@ -114,22 +116,34 @@ fun DailyChallengeDialog(
 
                 riddle.options.forEachIndexed { index, option ->
                     val isCorrect = option == riddle.answer
-                    val bgColor by animateColorAsState(
-                        when {
-                            isSolved && isCorrect -> SummerTheme.colors.successGreen
-                            selectedIdx == index && !isCorrect -> SummerTheme.colors.errorRed
-                            else -> SummerTheme.colors.white
-                        }, label = "color"
+                   val optionState = when {
+                        isSolved && isCorrect -> QuizOptionState.CORRECT
+                        selectedIdx == index && !isCorrect -> QuizOptionState.WRONG
+                        else -> QuizOptionState.IDLE
+                    }
+                    val containerColor by animateColorAsState(
+                        when (optionState) {
+                            QuizOptionState.CORRECT -> SummerTheme.colors.successGreen
+                            QuizOptionState.WRONG -> SummerTheme.colors.errorRed
+                            QuizOptionState.IDLE -> SummerTheme.colors.surfaceElevated
+                        }, label = "optionBg"
                     )
+                    val contentColor = if (optionState == QuizOptionState.IDLE) {
+                        SummerTheme.colors.quizOptionIdleText
+                    } else {
+                        SummerTheme.colors.quizOptionAnsweredText
+                    }
+                    val borderColor = if (optionState == QuizOptionState.IDLE) {
+                        SummerTheme.colors.goldWarm.copy(alpha = 0.3f)
+                    } else {
+                        SummerTheme.colors.transparent
+                    }
 
                     Button(
                         onClick = { if (!isSolved) check(index) },
-                        colors = ButtonDefaults.buttonColors(containerColor = bgColor),
+                        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
                         shape = SummerTheme.shapes.taskCard,
-                        border = BorderStroke(
-                            1.5.dp,
-                            if (bgColor == SummerTheme.colors.white) SummerTheme.colors.goldWarm.copy(alpha = 0.3f) else SummerTheme.colors.transparent
-                        ),
+                        border = BorderStroke(1.5.dp, borderColor),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 5.dp)
@@ -138,7 +152,7 @@ fun DailyChallengeDialog(
                         Text(
                             text = option,
                             style = SummerTheme.typography.buttonText,
-                            color = if (bgColor == SummerTheme.colors.white) SummerTheme.colors.textPrimary else SummerTheme.colors.white
+                            color = contentColor
                         )
                     }
                 }

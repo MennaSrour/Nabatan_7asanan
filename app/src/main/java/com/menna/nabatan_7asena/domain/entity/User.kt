@@ -8,6 +8,7 @@ data class User(
     val currentStreak: Int,
     val treeStage: Int,
     val quranPartsFinished: Int = 0,
+    val avatarIndex: Int = 0,
     val prayerNotifications: Boolean = true,
     val azkarNotifications: Boolean = true,
     val quranNotifications: Boolean = true,

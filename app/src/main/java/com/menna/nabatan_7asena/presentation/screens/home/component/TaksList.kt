@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Icon
@@ -30,6 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
@@ -59,7 +65,10 @@ fun TaskBubbleCard(
             )
         )
     } else {
-        baseColor.toCardGradient()
+        // كانت باعتة toCardGradient() على لون واحد (categoryColor) وبتطلّع تدرّج
+        // بمعادلة عامة — دلوقتي بتاخد التدرّج المختار يدويًا لنفس التصنيف من
+        // TaskStyle.kt (نفس عيلة الألوان، لكن مصمم مش متولّد تلقائيًا)
+        categoryGradient(item.category)
     }
 
     Box(
@@ -127,13 +136,29 @@ fun TaskBubbleCard(
             }
 
             if (!item.isCompleted) {
+                // كان مجرد مربع شفاف من غير أيقونة أو حدود — بصريًا مش واضح إنه
+                // "تشيك بوكس" قابل للضغط. دلوقتي بقى فيه حلقة واضحة + أيقونة
+                // دايرة فاضية، وده بيبقى معروف بصريًا كأي checkbox قياسي.
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(SummerTheme.colors.white.copy(alpha = 0.28f))
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SummerTheme.colors.white.copy(alpha = 0.22f))
+                        .border(1.5.dp, SummerTheme.colors.white.copy(alpha = 0.55f), RoundedCornerShape(10.dp))
                         .clickable { onCheckClick() }
-                )
+                        .semantics {
+                            role = Role.Checkbox
+                            contentDescription = "اضغطي لإتمام ${item.title}"
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = SummerTheme.colors.white.copy(alpha = 0.9f),
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
         }
 

@@ -14,16 +14,21 @@ android {
     defaultConfig {
         applicationId = "com.menna.nabatan_7asena"
         minSdk = 24
-        targetSdk = 35 // غيريها من 36 لـ 35
-        versionCode = 7 // خليها 7 عشان تتخطي أي Draft قديم
-        versionName = "2.1"
+        targetSdk = 36
+        versionCode = 10
+        versionName = "2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "App (Debug)")
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,6 +37,9 @@ android {
     }
 
     compileOptions {
+        // 1️⃣ تفعيل الـ Desugaring لدعم التواريخ على الإصدارات القديمة (minSdk 24)
+        isCoreLibraryDesugaringEnabled = true
+
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -47,6 +55,9 @@ android {
 }
 
 dependencies {
+    // 2️⃣ مكتبة Desugaring الخاصة بتشغيل API التواريخ على أندرويد القديم
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -76,30 +87,25 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
-    
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.hilt:hilt-work:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
 
-    
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
     implementation("com.google.firebase:firebase-config")
-    
+
     implementation("com.airbnb.android:lottie-compose:6.1.0")
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
     implementation("com.google.firebase:firebase-firestore")
@@ -116,5 +122,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 }

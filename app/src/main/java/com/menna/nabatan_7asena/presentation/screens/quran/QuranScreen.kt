@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -58,18 +59,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -77,6 +83,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -87,28 +94,36 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.domain.QuranConstants
 import com.menna.nabatan_7asena.domain.entity.AyahModel
+import com.menna.nabatan_7asena.ui.theme.QuranColors
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 enum class AyahAudioState { IDLE, LOADING, PLAYING, PAUSED }
+private val FloatingBarClearance = 92.dp
 
-private object QuranTheme {
-    val Purple      = Color(0xFF9B87F5)
-    val PurpleDeep  = Color(0xFF6C56D9)
-    val PurpleSoft  = Color(0xFFEDE7FB)
-    val Beige       = Color(0xFFFBF6EE)
-    val BeigeDeep   = Color(0xFFF0E4D0)
-    val White       = Color(0xFFFFFFFF)
-    val TextDark    = Color(0xFF3C3550)
-    val TextMuted   = Color(0xFF8F88A6)
-    val BorderLight = Color(0xFFE4DEF2)
+private val DownloadLabelFont = FontFamily(Font(R.font.cairo_semibold))
+
+@Composable
+private fun DownloadIcon(tint: Color, size: androidx.compose.ui.unit.Dp = 16.dp) {
+    Icon(
+        painter = painterResource(id = R.drawable.ic_quran_download),
+        contentDescription = "تنزيل",
+        tint = tint,
+        modifier = Modifier.size(size)
+    )
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
+    val q = SummerTheme.quran
     val savedPage  by viewModel.lastSavedPage.collectAsState()
     val audioState by viewModel.audioState.collectAsState()
+    val downloadStates by viewModel.surahDownloadStates.collectAsState()
+    val fullDownloadState by viewModel.fullDownloadState.collectAsState()
     val quranFont  = FontFamily(Font(R.font.amiri_regular))
 
     val initialSurah = remember(savedPage) {
@@ -130,19 +145,45 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
 
+  val lazyListStates = remember { mutableStateMapOf<Int, LazyListState>() }
+
     val bookmarkedSurahId by viewModel.bookmarkedSurah.collectAsState()
     val bookmarkedAyahNo  by viewModel.bookmarkedAyah.collectAsState()
     val snackbarState     = remember { SnackbarHostState() }
     var activeJuz         by remember { mutableStateOf(1) }
+    var currentPageNumber by remember { mutableStateOf(1) }
 
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onSurahChanged(pagerState.currentPage + 1)
     }
 
     LaunchedEffect(Unit) {
-        viewModel.scrollToSurahEvent.collect { page ->
-            pagerState.animateScrollToPage(page)
+        viewModel.scrollTarget.collect { target ->
+            pagerState.scrollToPage(target.surahIndex)
+
+            val listState = snapshotFlow { lazyListStates[target.surahIndex] }
+                .filterNotNull()
+                .first()
+
+            val hasBasmala = (target.surahIndex + 1) != 1 && (target.surahIndex + 1) != 9
+            val targetIndex = if (hasBasmala) target.ayaNo else target.ayaNo - 1
+            listState.scrollToItem(targetIndex.coerceAtLeast(0))
         }
+    }
+    LaunchedEffect(Unit) {
+        snapshotFlow { pagerState.currentPage to lazyListStates[pagerState.currentPage]?.firstVisibleItemIndex }
+            .collect { (page, visibleIndex) ->
+                if (visibleIndex == null) return@collect
+                val surahId = page + 1
+                val ayahs = viewModel.getSurahAyahs(surahId)
+                if (ayahs.isEmpty()) return@collect
+                val hasBasmala = surahId != 1 && surahId != 9
+                val ayahIdx = (visibleIndex - if (hasBasmala) 1 else 0)
+                    .coerceIn(0, ayahs.size - 1)
+                val ayah = ayahs[ayahIdx]
+                currentPageNumber = ayah.page
+                activeJuz = ayah.jozz
+            }
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -151,51 +192,210 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
             drawerContent = {
                 ModalDrawerSheet(
                     modifier = Modifier.width(300.dp),
-                    drawerContainerColor = QuranTheme.Beige
+                    drawerContainerColor = q.drawer
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(20.dp)
-                            .statusBarsPadding(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxSize()
+                            .padding(bottom = FloatingBarClearance)
                     ) {
-                        Text(
-                            "فهرس السور",
-                            style      = MaterialTheme.typography.titleMedium,
-                            color      = QuranTheme.TextDark,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-
-                    HorizontalDivider(color = QuranTheme.Purple.copy(alpha = 0.2f))
-
-                    LazyColumn(contentPadding = PaddingValues(bottom = 24.dp, top = 4.dp)) {
-                        items(QuranConstants.surahs) { surah ->
-                            val isSelected = pagerState.currentPage == surah.id - 1
-                            NavigationDrawerItem(
-                                label = {
-                                    Text(
-                                        surah.name,
-                                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                                        fontSize   = 15.sp
-                                    )
-                                },
-                                selected = isSelected,
-                                onClick  = {
-                                    scope.launch {
-                                        pagerState.scrollToPage(surah.id - 1)
-                                        drawerState.close()
-                                    }
-                                },
-                                colors = NavigationDrawerItemDefaults.colors(
-                                    selectedContainerColor   = QuranTheme.Purple.copy(0.15f),
-                                    unselectedContainerColor = Color.Transparent,
-                                    selectedTextColor        = QuranTheme.PurpleDeep,
-                                    unselectedTextColor      = QuranTheme.TextDark
-                                ),
-                                shape    = RoundedCornerShape(12.dp),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        Column(
+                            modifier = Modifier
+                                .padding(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
+                                .statusBarsPadding(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "الفهرس",
+                                style      = MaterialTheme.typography.titleMedium,
+                                color      = q.textPrimary,
+                                fontWeight = FontWeight.Black
                             )
+                        }
+
+                        var indexTab by remember { mutableStateOf(0) }
+
+                        TabRow(
+                            selectedTabIndex = indexTab,
+                            containerColor   = Color.Transparent,
+                            contentColor     = q.accentStrong,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Tab(
+                                selected = indexTab == 0,
+                                onClick  = { indexTab = 0 },
+                                text     = {
+                                    Text(
+                                        "السور",
+                                        fontWeight = if (indexTab == 0) FontWeight.Black else FontWeight.Medium,
+                                        fontSize   = 14.sp
+                                    )
+                                }
+                            )
+                            Tab(
+                                selected = indexTab == 1,
+                                onClick  = { indexTab = 1 },
+                                text     = {
+                                    Text(
+                                        "الأجزاء",
+                                        fontWeight = if (indexTab == 1) FontWeight.Black else FontWeight.Medium,
+                                        fontSize   = 14.sp
+                                    )
+                                }
+                            )
+                        }
+
+                        HorizontalDivider(color = q.accent.copy(alpha = 0.2f))
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (indexTab == 0) {
+                                LazyColumn(contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
+                                    items(QuranConstants.surahs) { surah ->
+                                        val isSelected = pagerState.currentPage == surah.id - 1
+                                        val dlState = downloadStates[surah.id] ?: SurahDownloadState()
+                                        NavigationDrawerItem(
+                                            label = {
+                                                Text(
+                                                    surah.name,
+                                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                                    fontSize   = 15.sp
+                                                )
+                                            },
+                                            badge = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(28.dp)
+                                                        .clickable(enabled = !dlState.isDownloading && !dlState.isComplete) {
+                                                            viewModel.downloadSurah(surah.id)
+                                                        },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    when {
+                                                        dlState.isDownloading -> CircularProgressIndicator(
+                                                            modifier    = Modifier.size(15.dp),
+                                                            color       = q.accentStrong,
+                                                            strokeWidth = 2.dp
+                                                        )
+                                                        dlState.isComplete -> Text(
+                                                            "✓",
+                                                            color = q.accentStrong,
+                                                            fontWeight = FontWeight.Black,
+                                                            fontSize = 14.sp
+                                                        )
+                                                        else -> DownloadIcon(tint = q.textMuted, size = 17.dp)
+                                                    }
+                                                }
+                                            },
+                                            selected = isSelected,
+                                            onClick  = {
+                                                scope.launch {
+                                                    pagerState.scrollToPage(surah.id - 1)
+                                                    drawerState.close()
+                                                }
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                selectedContainerColor   = q.accent.copy(0.15f),
+                                                unselectedContainerColor = Color.Transparent,
+                                                selectedTextColor        = q.accentStrong,
+                                                unselectedTextColor      = q.textPrimary
+                                            ),
+                                            shape    = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                LazyColumn(contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
+                                    items(30) { i ->
+                                        val juz = i + 1
+                                        val isSelected = activeJuz == juz
+                                        NavigationDrawerItem(
+                                            label = {
+                                                Text(
+                                                    "الجزء ${formatJuzNumber(juz)}",
+                                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                                    fontSize   = 15.sp
+                                                )
+                                            },
+                                            selected = isSelected,
+                                            onClick  = {
+                                                viewModel.goToJuz(juz)
+                                                scope.launch { drawerState.close() }
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                selectedContainerColor   = q.accent.copy(0.15f),
+                                                unselectedContainerColor = Color.Transparent,
+                                                selectedTextColor        = q.accentStrong,
+                                                unselectedTextColor      = q.textPrimary
+                                            ),
+                                            shape    = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = q.accent.copy(alpha = 0.2f))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)
+                        ) {
+                            when {
+                                fullDownloadState.isDownloading -> {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        CircularProgressIndicator(
+                                            modifier    = Modifier.size(16.dp),
+                                            color       = q.accentStrong,
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "بينزّل ${fullDownloadState.currentSurahName} (${fullDownloadState.completedSurahs}/${fullDownloadState.totalSurahs})",
+                                            color = q.textMuted,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                fullDownloadState.isComplete -> {
+                                    Text(
+                                        "✓ المصحف كامل متاح أوفلاين",
+                                        color = q.accentStrong,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                else -> {
+                                    Surface(
+                                        onClick  = { viewModel.downloadFullQuran() },
+                                        color    = q.accent.copy(alpha = 0.16f),
+                                        shape    = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            DownloadIcon(tint = q.accentStrong)
+                                            Text(
+                                                "تنزيل صوت المصحف كامل",
+                                                color      = q.accentStrong,
+                                                fontSize   = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontFamily = DownloadLabelFont
+                                            )
+                                        }
+                                    }
+                                    fullDownloadState.error?.let { err ->
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(err, color = q.textMuted, fontSize = 10.sp)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -211,7 +411,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 Text(
                                     "الجزء ${formatJuzNumber(activeJuz)}",
                                     fontWeight = FontWeight.Black,
-                                    color      = QuranTheme.PurpleDeep,
+                                    color      = q.accentStrong,
                                     fontSize   = 20.sp
                                 )
                                 if (audioState !is QuranAudioState.Idle) {
@@ -225,7 +425,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         Text(
                                             label,
                                             fontSize = 11.sp,
-                                            color    = QuranTheme.Purple
+                                            color    = q.accent
                                         )
                                     }
                                 }
@@ -236,7 +436,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 Icon(
                                     Icons.Default.Menu,
                                     contentDescription = null,
-                                    tint = QuranTheme.TextDark
+                                    tint = q.textPrimary
                                 )
                             }
                         },
@@ -246,7 +446,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                     Icon(
                                         Icons.Rounded.Stop,
                                         contentDescription = null,
-                                        tint     = QuranTheme.PurpleDeep,
+                                        tint     = q.accentStrong,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -258,9 +458,9 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                 }
                                 Surface(
                                     onClick  = { viewModel.goToBookmark() },
-                                    color    = QuranTheme.PurpleSoft,
+                                    color    = q.accentSoft,
                                     shape    = RoundedCornerShape(12.dp),
-                                    border   = BorderStroke(1.dp, QuranTheme.Purple.copy(0.4f)),
+                                    border   = BorderStroke(1.dp, q.accent.copy(0.4f)),
                                     modifier = Modifier.padding(end = 8.dp)
                                 ) {
                                     Row(
@@ -270,7 +470,7 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                         Icon(
                                             Icons.Rounded.Bookmark,
                                             null,
-                                            tint     = QuranTheme.PurpleDeep,
+                                            tint     = q.accentStrong,
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(Modifier.width(4.dp))
@@ -278,14 +478,14 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                                             "$bookmarkedSurahName ($bookmarkedAyahNo)",
                                             fontSize   = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color      = QuranTheme.PurpleDeep
+                                            color      = q.accentStrong
                                         )
                                     }
                                 }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = QuranTheme.Beige
+                            containerColor = q.topBar
                         )
                     )
                 }
@@ -304,25 +504,23 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
                         val surahInfo = remember(currentSurahId) { viewModel.getSurahInfo(currentSurahId) }
                         val ayahs     = remember(currentSurahId) { viewModel.getSurahAyahs(currentSurahId) }
 
-                        val currentJuz = remember(ayahs) { ayahs.firstOrNull()?.jozz ?: 1 }
-                        LaunchedEffect(pagerState.currentPage, currentJuz) {
-                            if (pagerState.currentPage == pageIndex) activeJuz = currentJuz
+                        LaunchedEffect(currentSurahId) {
+                            viewModel.refreshSurahDownloadState(currentSurahId)
                         }
+                        val surahDownloadState = downloadStates[currentSurahId]
+                            ?: SurahDownloadState(totalAyahs = ayahs.size)
 
                         val lazyListState = rememberLazyListState()
-
-                        LaunchedEffect(pagerState.currentPage) {
-                            if (pagerState.currentPage == pageIndex) {
-                                viewModel.scrollToAyahEvent.collect { ayahNo ->
-                                    val hasBasmala  = currentSurahId != 1 && currentSurahId != 9
-                                    val targetIndex = if (hasBasmala) ayahNo else ayahNo - 1
-                                    lazyListState.animateScrollToItem(targetIndex.coerceAtLeast(0))
-                                }
-                            }
-                        }
+                        SideEffect { lazyListStates[pageIndex] = lazyListState }
 
                         Column(modifier = Modifier.fillMaxSize()) {
-                            SurahHeaderCard(surah = surahInfo, ayahsCount = ayahs.size)
+                            SurahHeaderCard(
+                                surah = surahInfo,
+                                ayahsCount = ayahs.size,
+                                currentPage = currentPageNumber,
+                                downloadState = surahDownloadState,
+                                onDownloadClick = { viewModel.downloadSurah(currentSurahId) }
+                            )
 
                             LazyColumn(
                                 state       = lazyListState,
@@ -379,13 +577,14 @@ fun QuranScreen(viewModel: QuranViewModel = hiltViewModel()) {
 }
 @Composable
 fun QuranBackground() {
+    val q = SummerTheme.quran
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    QuranTheme.White,
-                    QuranTheme.Beige,
-                    QuranTheme.PurpleSoft.copy(alpha = 0.5f)
+                    q.backgroundTop,
+                    q.backgroundMid,
+                    q.backgroundEnd
                 )
             )
         )
@@ -393,11 +592,63 @@ fun QuranBackground() {
 }
 
 @Composable
-fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: Int) {
+private fun SurahDownloadRow(state: SurahDownloadState, onClick: () -> Unit, q: QuranColors) {
+    val clickable = !state.isDownloading && !state.isComplete
+    Surface(
+        onClick  = onClick,
+        enabled  = clickable,
+        color    = q.accent.copy(alpha = if (state.isComplete) 0.10f else 0.16f),
+        shape    = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            when {
+                state.isDownloading -> CircularProgressIndicator(
+                    modifier    = Modifier.size(18.dp),
+                    color       = q.accentStrong,
+                    strokeWidth = 2.dp
+                )
+                state.isComplete -> Text("✓", color = q.accentStrong, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                state.error != null -> Text("⚠", fontSize = 15.sp)
+                else -> DownloadIcon(tint = q.accentStrong)
+            }
+
+            Text(
+                text = when {
+                    state.isDownloading -> "يتم تنزيل صوت السورة... (${state.downloadedAyahs}/${state.totalAyahs})"
+                    state.isComplete    -> "صوت السورة متاح بدون الحاجة للإنترنت"
+                    state.error != null -> "${state.error} — الضغط للمحاولة تاني"
+                    else                -> "تنزيل صوت السورة"
+                },
+                color      = q.accentStrong,
+                fontSize   = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = DownloadLabelFont,
+                modifier   = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun SurahHeaderCard(
+    surah: com.menna.nabatan_7asena.domain.Surah,
+    ayahsCount: Int,
+    currentPage: Int,
+    downloadState: SurahDownloadState,
+    onDownloadClick: () -> Unit
+) {
+    val q = SummerTheme.quran
     Card(
         shape    = SummerTheme.Shapes.ExtraRounded,
         colors   = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border   = BorderStroke(2.dp, QuranTheme.Purple.copy(0.35f)),
+        border   = BorderStroke(2.dp, q.accent.copy(0.35f)),
         elevation = CardDefaults.cardElevation(3.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -408,8 +659,8 @@ fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: In
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            QuranTheme.PurpleSoft,
-                            QuranTheme.Beige
+                            q.headerStart,
+                            q.headerEnd
                         )
                     )
                 )
@@ -424,12 +675,12 @@ fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: In
                 ) {
                     val type = if (surah.id in listOf(1, 2, 3, 4, 5, 6, 7, 8, 9)) "سورة مدنية" else "سورة مكية"
                     Surface(
-                        color  = QuranTheme.Purple.copy(0.15f),
+                        color  = q.accent.copy(0.15f),
                         shape  = RoundedCornerShape(50)
                     ) {
                         Text(
                             text       = type,
-                            color      = QuranTheme.PurpleDeep,
+                            color      = q.accentStrong,
                             fontSize   = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier   = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
@@ -437,8 +688,8 @@ fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: In
                     }
 
                     Text(
-                        text  = "بداية من صفحة ${surah.startPage}",
-                        color = QuranTheme.TextMuted,
+                        text  = "صفحة $currentPage",
+                        color = q.textMuted,
                         fontSize   = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -453,17 +704,21 @@ fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: In
                 ) {
                     Text(
                         text       = "سُورَةُ ${surah.name}",
-                        color      = QuranTheme.PurpleDeep,
+                        color      = q.accentStrong,
                         fontSize   = 24.sp,
                         fontWeight = FontWeight.Black
                     )
                     Text(
                         text       = "$ayahsCount آية",
-                        color      = QuranTheme.Purple,
+                        color      = q.accent,
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                 }
+
+                Spacer(Modifier.height(12.dp))
+
+                SurahDownloadRow(state = downloadState, onClick = onDownloadClick, q = q)
             }
         }
     }
@@ -471,10 +726,11 @@ fun SurahHeaderCard(surah: com.menna.nabatan_7asena.domain.Surah, ayahsCount: In
 
 @Composable
 fun BasmalaCard(fontFamily: FontFamily) {
+    val q = SummerTheme.quran
     Card(
         shape    = SummerTheme.Shapes.MediumRounded,
-        colors   = CardDefaults.cardColors(containerColor = QuranTheme.White.copy(alpha = 0.9f)),
-        border   = BorderStroke(1.dp, QuranTheme.Purple.copy(0.25f)),
+        colors   = CardDefaults.cardColors(containerColor = q.card),
+        border   = BorderStroke(1.dp, q.accent.copy(0.25f)),
         elevation = CardDefaults.cardElevation(2.dp),
         modifier  = Modifier.fillMaxWidth()
     ) {
@@ -487,7 +743,7 @@ fun BasmalaCard(fontFamily: FontFamily) {
                 fontFamily = fontFamily,
                 fontSize   = 22.sp,
                 textAlign  = TextAlign.Center,
-                color      = QuranTheme.PurpleDeep
+                color      = q.accentStrong
             )
         }
     }
@@ -502,12 +758,13 @@ fun AyahCard(
     onPlayAudio: () -> Unit,
     onBookmarkClick: () -> Unit
 ) {
+    val q = SummerTheme.quran
     val isActive = audioState == AyahAudioState.PLAYING || audioState == AyahAudioState.LOADING
 
     Card(
         shape    = SummerTheme.Shapes.MediumRounded,
         colors   = CardDefaults.cardColors(
-            containerColor = if (isActive) QuranTheme.PurpleSoft else QuranTheme.White.copy(alpha = 0.95f)
+            containerColor = if (isActive) q.cardActive else q.card
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isActive) 6.dp else 3.dp
@@ -515,9 +772,9 @@ fun AyahCard(
         border = BorderStroke(
             width = if (isBookmarked || isActive) 1.5.dp else 1.dp,
             color = when {
-                isActive     -> QuranTheme.Purple
-                isBookmarked -> QuranTheme.Purple
-                else         -> QuranTheme.BorderLight
+                isActive     -> q.accent
+                isBookmarked -> q.accent
+                else         -> q.border
             }
         ),
         modifier = Modifier.fillMaxWidth()
@@ -529,14 +786,14 @@ fun AyahCard(
                 verticalAlignment     = Alignment.CenterVertically
             ) {
                 Surface(
-                    color    = QuranTheme.Purple.copy(0.12f),
+                    color    = q.accent.copy(0.12f),
                     shape    = CircleShape,
                     modifier = Modifier.size(34.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             "${ayah.ayaNo}",
-                            color      = QuranTheme.PurpleDeep,
+                            color      = q.accentStrong,
                             fontSize   = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -550,9 +807,9 @@ fun AyahCard(
                             .background(
                                 when (audioState) {
                                     AyahAudioState.PLAYING ->
-                                        QuranTheme.Purple.copy(0.2f)
+                                        q.accent.copy(0.2f)
                                     AyahAudioState.PAUSED ->
-                                        QuranTheme.PurpleSoft
+                                        q.accentSoft
                                     else -> Color.Transparent
                                 },
                                 CircleShape
@@ -561,7 +818,7 @@ fun AyahCard(
                                 1.dp,
                                 when (audioState) {
                                     AyahAudioState.IDLE -> Color.Transparent
-                                    else -> QuranTheme.Purple.copy(0.4f)
+                                    else -> q.accent.copy(0.4f)
                                 },
                                 CircleShape
                             )
@@ -582,7 +839,7 @@ fun AyahCard(
                                     )
                                 CircularProgressIndicator(
                                     modifier    = Modifier.size(18.dp).rotate(rotation),
-                                    color       = QuranTheme.PurpleDeep,
+                                    color       = q.accentStrong,
                                     strokeWidth = 2.dp
                                 )
                             }
@@ -590,7 +847,7 @@ fun AyahCard(
                                 Icon(
                                     Icons.Rounded.Pause,
                                     null,
-                                    tint     = QuranTheme.PurpleDeep,
+                                    tint     = q.accentStrong,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -599,7 +856,7 @@ fun AyahCard(
                                 Icon(
                                     Icons.Rounded.VolumeUp,
                                     null,
-                                    tint     = QuranTheme.Purple,
+                                    tint     = q.accent,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -611,7 +868,7 @@ fun AyahCard(
                             imageVector = if (isBookmarked) Icons.Default.Bookmark
                             else Icons.Default.BookmarkBorder,
                             contentDescription = null,
-                            tint     = if (isBookmarked) QuranTheme.PurpleDeep else QuranTheme.TextMuted.copy(0.6f),
+                            tint     = if (isBookmarked) q.accentStrong else q.textMuted.copy(0.6f),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -630,7 +887,7 @@ fun AyahCard(
                 fontSize   = 24.sp,
                 textAlign  = TextAlign.Right,
                 lineHeight = 44.sp,
-                color      = QuranTheme.TextDark,
+                color      = q.textPrimary,
                 modifier   = Modifier.fillMaxWidth()
             )
 
@@ -649,6 +906,7 @@ fun AyahCard(
 
 @Composable
 fun AudioWaveIndicator() {
+    val q = SummerTheme.quran
     val transition = rememberInfiniteTransition(label = "wave")
     val bars = List(5) { i ->
         transition.animateFloat(
@@ -673,7 +931,7 @@ fun AudioWaveIndicator() {
                 modifier = Modifier
                     .width(3.dp)
                     .height(h.dp)
-                    .background(QuranTheme.Purple.copy(0.8f), RoundedCornerShape(2.dp))
+                    .background(q.accent.copy(0.8f), RoundedCornerShape(2.dp))
             )
         }
     }

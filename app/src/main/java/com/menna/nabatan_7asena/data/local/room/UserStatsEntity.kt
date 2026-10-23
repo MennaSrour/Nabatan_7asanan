@@ -9,6 +9,7 @@ data class UserStatsEntity(
     val name: String = "",
     val gender: String = "BOY",
     val userId: String = "",
+    val avatarIndex: Int = 0,
 
     val totalStars: Int = 0,
     val treeStage: Int = 1,
@@ -20,4 +21,4 @@ data class UserStatsEntity(
     val prayerNotifications: Boolean = true,
     val azkarNotifications: Boolean = true,
     val quranNotifications: Boolean = true,
-    )
+)

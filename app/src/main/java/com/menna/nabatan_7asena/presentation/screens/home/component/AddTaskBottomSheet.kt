@@ -18,6 +18,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.domain.entity.ExtraTasks
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
@@ -88,6 +92,13 @@ fun AddTaskBottomSheet(
                             .background(backgroundColor)
                             .border(2.dp, borderColor, SummerTheme.shapes.chip)
                             .clickable { selectedCategory = cat }
+                            // شرايح الفلاتر دي وظيفيًا "تابات" (بتختار وتغيّر القايمة تحتها)،
+                            // لكن مفيهاش أي سيمانتكس تعبّر عن ده لقارئ الشاشة. أضفت
+                            // role = Tab + selected عشان قارئ الشاشة يعلن "محدد/غير محدد".
+                            .semantics {
+                                role = Role.Tab
+                                selected = isSelected
+                            }
                             .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -102,50 +113,67 @@ fun AddTaskBottomSheet(
 
             Spacer(Modifier.height(16.dp))
 
-            LazyColumn(
-                modifier = Modifier.heightIn(max = SummerTheme.dimensions.bottomSheetMaxHeight),
-                verticalArrangement = Arrangement.spacedBy(SummerTheme.dimensions.paddingMedium)
-            ) {
-                val items = when (selectedCategory) {
-                    "نوافل" -> listOf(
-                        "سنة الفجر ركعتين", "صلاة الضحى", "سنة الظهر",
-                        "سنة المغرب", "سنة العشاء", "قيام الليل", "صلاة الوتر"
-                    )
-                    "قرآن" -> suggestions.werd
-                    "مهمات" -> listOf(
-                        "تعلم دعاء جديد", "ساعد والديك اليوم", "ابتسم وتحدث بلين",
-                        "تصدق بصدقة بسيطة", "اقرأ حديثاً شريفاً", "تأمل في نعم الله عليك",
-                        "احفظ آية جديدة", "اقرأ قصة إسلامية"
-                    )
-                    else -> listOf(
-                        "أذكار الصباح", "أذكار المساء", "أذكار النوم",
-                        "استغفار 100", "صلاة على النبي 100"
+            val items = when (selectedCategory) {
+                "نوافل" -> listOf(
+                    "سنة الفجر ركعتين", "صلاة الضحى", "سنة الظهر",
+                    "سنة المغرب", "سنة العشاء", "قيام الليل", "صلاة الوتر"
+                )
+                "قرآن" -> suggestions.werd
+                "مهمات" -> listOf(
+                    "تعلم دعاء جديد", "ساعد والديك اليوم", "ابتسم وتحدث بلين",
+                    "تصدق بصدقة بسيطة", "اقرأ حديثاً شريفاً", "تأمل في نعم الله عليك",
+                    "احفظ آية جديدة", "اقرأ قصة إسلامية"
+                )
+                else -> listOf(
+                    "أذكار الصباح", "أذكار المساء", "أذكار النوم",
+                    "استغفار 100", "صلاة على النبي 100"
+                )
+            }
+
+            if (items.isEmpty()) {
+                // كانت القايمة بتفضل فاضية بصمت لو "werd" لسه متحملتش —
+                // بيدي إحساس إن الشاشة "واقفة" من غير أي تفسير.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 28.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "لا توجد اقتراحات متاحة دلوقتي",
+                        style = SummerTheme.typography.taskTitle,
+                        color = SummerTheme.colors.textBrown
                     )
                 }
-
-                items(items) { title ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(SummerTheme.shapes.taskCard)
-                            .background(SummerTheme.colors.cardBackground)
-                            .border(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.3f), SummerTheme.shapes.taskCard)
-                            .clickable { onTaskSelected(title); onDismiss() }
-                            .padding(SummerTheme.dimensions.paddingLarge),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = title,
-                            style = SummerTheme.typography.taskTitle,
-                            color = SummerTheme.colors.textDarkBrown
-                        )
-                        Icon(
-                            imageVector = Icons.Rounded.Star,
-                            contentDescription = null,
-                            tint = SummerTheme.colors.goldWarm,
-                            modifier = Modifier.size(SummerTheme.dimensions.iconSmall)
-                        )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = SummerTheme.dimensions.bottomSheetMaxHeight),
+                    verticalArrangement = Arrangement.spacedBy(SummerTheme.dimensions.paddingMedium)
+                ) {
+                    items(items) { title ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(SummerTheme.shapes.taskCard)
+                                .background(SummerTheme.colors.cardBackground)
+                                .border(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.3f), SummerTheme.shapes.taskCard)
+                                .clickable { onTaskSelected(title); onDismiss() }
+                                .padding(SummerTheme.dimensions.paddingLarge),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = title,
+                                style = SummerTheme.typography.taskTitle,
+                                color = SummerTheme.colors.textDarkBrown
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.Star,
+                                contentDescription = null,
+                                tint = SummerTheme.colors.goldWarm,
+                                modifier = Modifier.size(SummerTheme.dimensions.iconSmall)
+                            )
+                        }
                     }
                 }
             }

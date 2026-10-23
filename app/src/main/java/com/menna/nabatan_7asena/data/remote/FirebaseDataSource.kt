@@ -4,9 +4,12 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.menna.nabatan_7asena.data.remote.dto.DailyPlanDto
+import com.menna.nabatan_7asena.data.remote.dto.QuizQuestionDto
+import com.menna.nabatan_7asena.data.remote.dto.QuizScoreDto
 import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.jvm.java
 
 class FirebaseDataSource @Inject constructor(
     private val firestore: FirebaseFirestore
@@ -85,6 +88,56 @@ class FirebaseDataSource @Inject constructor(
             firestore.collection("leaderboard").document(userId).delete().await()
         } catch (e: Exception) {
             Log.e("FirebaseDataSource", "حدث خطأ في حذف نتيجة المستخدم $userId", e)
+            throw e
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // مسابقة المعلومات الدينية الأسبوعية
+    // ─────────────────────────────────────────────────────────
+
+    /** كل بنك الأسئلة (60، 100، أيًا كان)، مرتب بـ order — منطق اختيار الأسبوع نفسه محلي في QuizWeek */
+    suspend fun getQuizQuestions(): List<QuizQuestionDto> {
+        try {
+            val snapshot = firestore.collection("quiz_questions")
+                .orderBy("order", Query.Direction.ASCENDING)
+                .get()
+                .await()
+            return snapshot.toObjects(QuizQuestionDto::class.java)
+        } catch (e: Exception) {
+            Log.e("FirebaseDataSource", "حدث خطأ في جلب أسئلة المسابقة", e)
+            throw e
+        }
+    }
+
+    /** رفع نتيجة طفل لمسابقة أسبوع معيّن — set (مش add) عشان لو حاول يرسل تاني يستبدل مش يتكرر */
+    suspend fun submitQuizScore(weekId: String, dto: QuizScoreDto) {
+        try {
+            firestore.collection("quiz_scores")
+                .document(weekId)
+                .collection("entries")
+                .document(dto.userId)
+                .set(dto)
+                .await()
+        } catch (e: Exception) {
+            Log.e("FirebaseDataSource", "حدث خطأ في رفع نتيجة المسابقة لـ ${dto.userId}", e)
+            throw e
+        }
+    }
+
+    /** أعلى 3 أطفال في أسبوع معيّن — دول اللي بيظهروا في البوديوم */
+    suspend fun getQuizWeekWinners(weekId: String): List<QuizScoreDto> {
+        try {
+            val snapshot = firestore.collection("quiz_scores")
+                .document(weekId)
+                .collection("entries")
+                .orderBy("score", Query.Direction.DESCENDING)
+                .limit(3)
+                .get()
+                .await()
+            return snapshot.toObjects(QuizScoreDto::class.java)
+        } catch (e: Exception) {
+            Log.e("FirebaseDataSource", "حدث خطأ في جلب أبطال أسبوع $weekId", e)
             throw e
         }
     }

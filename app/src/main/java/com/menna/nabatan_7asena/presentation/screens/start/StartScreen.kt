@@ -3,18 +3,24 @@ package com.menna.nabatan_7asena.presentation.screens.start
 import android.media.MediaPlayer
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,7 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,8 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -55,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.menna.nabatan_7asena.R
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
@@ -68,6 +72,7 @@ private val NabatanFontFamily = FontFamily(
     Font(R.font.cairo_semibold, FontWeight.SemiBold),
     Font(R.font.cairo_bold, FontWeight.Bold)
 )
+
 
 @Composable
 fun StartScreen(
@@ -150,40 +155,44 @@ fun NabatanStartContent() {
     var leaf2 by remember { mutableStateOf(false) }
     var leaf3 by remember { mutableStateOf(false) }
     var timurVisible by remember { mutableStateOf(false) }
-    var textVisible by remember { mutableStateOf(false) }
+    var titleVisible by remember { mutableStateOf(false) }
+    var subtitleVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        delay(150)
         trunkGrown = true
-        delay(550)
-        leaf1 = true
-        delay(130)
-        leaf2 = true
-        delay(130)
-        leaf3 = true
-        delay(450)
-        timurVisible = true
         delay(500)
-        textVisible = true
+        leaf1 = true
+        delay(140)
+        leaf2 = true
+        delay(140)
+        leaf3 = true
+        delay(350)
+        timurVisible = true
+        delay(400)
+        titleVisible = true
+        delay(200)
+        subtitleVisible = true
     }
 
     val trunkGrowth by animateFloatAsState(
         targetValue = if (trunkGrown) 1f else 0f,
-        animationSpec = tween(550, easing = FastOutSlowInEasing),
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
         label = "trunkGrowth"
     )
     val leaf1Scale by animateFloatAsState(
         targetValue = if (leaf1) 1f else 0f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        animationSpec = spring(Spring.DampingRatioHighBouncy, Spring.StiffnessMedium),
         label = "leaf1"
     )
     val leaf2Scale by animateFloatAsState(
         targetValue = if (leaf2) 1f else 0f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        animationSpec = spring(Spring.DampingRatioHighBouncy, Spring.StiffnessMedium),
         label = "leaf2"
     )
     val leaf3Scale by animateFloatAsState(
         targetValue = if (leaf3) 1f else 0f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        animationSpec = spring(Spring.DampingRatioHighBouncy, Spring.StiffnessMedium),
         label = "leaf3"
     )
     val timurScale by animateFloatAsState(
@@ -191,25 +200,53 @@ fun NabatanStartContent() {
         animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
         label = "timurScale"
     )
-    val textAlpha by animateFloatAsState(
-        targetValue = if (textVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 700),
-        label = "textAlpha"
+    val timurRotation by animateFloatAsState(
+        targetValue = if (timurVisible) 0f else -14f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessVeryLow),
+        label = "timurRotation"
+    )
+    val titleScale by animateFloatAsState(
+        targetValue = if (titleVisible) 1f else 0.5f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        label = "titleScale"
+    )
+    val titleAlpha by animateFloatAsState(
+        targetValue = if (titleVisible) 1f else 0f,
+        animationSpec = tween(350),
+        label = "titleAlpha"
+    )
+    val subtitleAlpha by animateFloatAsState(
+        targetValue = if (subtitleVisible) 1f else 0f,
+        animationSpec = tween(450),
+        label = "subtitleAlpha"
+    )
+    val subtitleOffsetY by animateFloatAsState(
+        targetValue = if (subtitleVisible) 0f else 18f,
+        animationSpec = spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium),
+        label = "subtitleOffsetY"
     )
 
-    val sparkleAlphas = SummerTheme.rememberParticleAlphas(count = 6)
+    val idleFloat = rememberIdleFloat()
+    val idleSway = rememberIdleSway()
+    val bgShift = rememberBreathingShift()
+
+    val isDark = isSystemInDarkTheme()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(SummerTheme.colors.wisdomStart, SummerTheme.colors.dayBackground)
+                    colors = listOf(
+                        lerp(SummerTheme.colors.wisdomStart, SummerTheme.colors.backgroundLight, bgShift),
+                        SummerTheme.colors.dayBackground
+                    )
                 )
-            ),
+            )
+            .padding(top = 30.dp),
         contentAlignment = Alignment.Center
     ) {
-        SparkleField(sparkleAlphas)
+        SplashAtmosphere(isDark = isDark)
 
         Column(
             modifier = Modifier
@@ -218,8 +255,6 @@ fun NabatanStartContent() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            SkyCloudsAnimation()
-
             Spacer(Modifier.height(8.dp))
 
             GrowingTreeWithTimur(
@@ -227,7 +262,10 @@ fun NabatanStartContent() {
                 leaf1Scale = leaf1Scale,
                 leaf2Scale = leaf2Scale,
                 leaf3Scale = leaf3Scale,
-                timurScale = timurScale
+                timurScale = timurScale,
+                timurRotation = timurRotation,
+                idleFloat = if (timurVisible) idleFloat else 0f,
+                leafSway = if (trunkGrown) idleSway else 0f
             )
 
             Spacer(Modifier.height(24.dp))
@@ -238,7 +276,12 @@ fun NabatanStartContent() {
                 fontWeight = FontWeight.Bold,
                 fontSize = 40.sp,
                 color = SummerTheme.colors.wisdomAccent,
-                modifier = Modifier.alpha(textAlpha)
+                modifier = Modifier
+                    .alpha(titleAlpha)
+                    .graphicsLayer {
+                        scaleX = titleScale
+                        scaleY = titleScale
+                    }
             )
 
             Spacer(Modifier.height(8.dp))
@@ -249,65 +292,95 @@ fun NabatanStartContent() {
                 fontWeight = FontWeight.Medium,
                 fontSize = 18.sp,
                 color = SummerTheme.colors.textBrown,
-                modifier = Modifier.alpha(textAlpha)
+                modifier = Modifier
+                    .alpha(subtitleAlpha)
+                    .graphicsLayer { translationY = subtitleOffsetY }
             )
 
             Spacer(Modifier.weight(1f))
 
-            LoadingIndicator()
+            BouncingDotsLoader()
 
             Spacer(Modifier.height(40.dp))
         }
     }
 }
 
-/**
- * لمسة "حماس وطفولة" خفيفة بتتكرر في أكتر من شاشة (Start/Badges/Leaderboard)
- * بنفس الآلية عشان تبقى هوية بصرية متعرّفة، مش تأثير عشوائي في شاشة واحدة.
- */
-@Composable
-private fun SparkleField(alphas: List<Float>) {
-    val positions = remember {
-        listOf(
-            Offset(0.12f, 0.14f), Offset(0.85f, 0.10f), Offset(0.75f, 0.30f),
-            Offset(0.20f, 0.35f), Offset(0.55f, 0.06f), Offset(0.90f, 0.42f)
-        )
-    }
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        positions.forEachIndexed { i, off ->
-            drawCircle(
-                color = Color(0xFFFFC83D),
-                radius = 3.dp.toPx(),
-                center = Offset(size.width * off.x, size.height * off.y),
-                alpha = alphas.getOrElse(i) { 0.5f }
-            )
-        }
-    }
-}
 
 @Composable
-private fun SkyCloudsAnimation() {
-    val cloudsComposition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.clouds)
+private fun SplashAtmosphere(isDark: Boolean) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(if (isDark) R.raw.night_stars else R.raw.clouds)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+        speed = if (isDark) 0.55f else 0.35f
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp)
-            .alpha(0.7f),
-        contentAlignment = Alignment.TopCenter
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         LottieAnimation(
-            composition = cloudsComposition,
-            iterations = LottieConstants.IterateForever,
+            composition = composition,
+            progress = { progress },
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(90.dp),
-            contentScale = ContentScale.FillWidth
+                .then(
+                    if (isDark) Modifier.fillMaxHeight()
+                    else Modifier.height(200.dp).align(Alignment.TopCenter)
+                )
+                .graphicsLayer { alpha = if (isDark) 0.85f else 0.6f }
         )
     }
 }
+
+
+
+@Composable
+private fun rememberIdleFloat(): Float {
+    val infinite = rememberInfiniteTransition(label = "idleFloat")
+    val value by infinite.animateFloat(
+        initialValue = -6f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "idleFloatValue"
+    )
+    return value
+}
+
+@Composable
+private fun rememberIdleSway(): Float {
+    val infinite = rememberInfiniteTransition(label = "idleSway")
+    val value by infinite.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "idleSwayValue"
+    )
+    return value
+}
+
+@Composable
+private fun rememberBreathingShift(): Float {
+    val infinite = rememberInfiniteTransition(label = "bgBreathing")
+    val value by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bgBreathingValue"
+    )
+    return value
+}
+
 
 @Composable
 private fun GrowingTreeWithTimur(
@@ -315,7 +388,10 @@ private fun GrowingTreeWithTimur(
     leaf1Scale: Float,
     leaf2Scale: Float,
     leaf3Scale: Float,
-    timurScale: Float
+    timurScale: Float,
+    timurRotation: Float,
+    idleFloat: Float,
+    leafSway: Float
 ) {
     Box(
         modifier = Modifier
@@ -341,7 +417,12 @@ private fun GrowingTreeWithTimur(
                 .size(78.dp)
                 .align(Alignment.BottomCenter)
                 .offset(x = 34.dp, y = (-96).dp)
-                .scale(leaf1Scale)
+                .graphicsLayer {
+                    scaleX = leaf1Scale
+                    scaleY = leaf1Scale
+                    rotationZ = leafSway
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                }
                 .background(SummerTheme.colors.statGreenEnd, CircleShape)
         )
         Box(
@@ -349,7 +430,12 @@ private fun GrowingTreeWithTimur(
                 .size(58.dp)
                 .align(Alignment.BottomCenter)
                 .offset(x = 6.dp, y = (-72).dp)
-                .scale(leaf2Scale)
+                .graphicsLayer {
+                    scaleX = leaf2Scale
+                    scaleY = leaf2Scale
+                    rotationZ = -leafSway
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                }
                 .background(SummerTheme.colors.statGreenStart, CircleShape)
         )
         Box(
@@ -357,10 +443,16 @@ private fun GrowingTreeWithTimur(
                 .size(58.dp)
                 .align(Alignment.BottomCenter)
                 .offset(x = 62.dp, y = (-72).dp)
-                .scale(leaf3Scale)
-                // ورقة "مشمّسة" بتربط الأخضر بالدهبي — لمسة صغيرة بس بتوصل
-                // إن الاتنين من نفس العيلة اللونية للتطبيق
-                .background(lerp(SummerTheme.colors.statGreenStart, SummerTheme.colors.goldWarm, 0.35f), CircleShape)
+                .graphicsLayer {
+                    scaleX = leaf3Scale
+                    scaleY = leaf3Scale
+                    rotationZ = leafSway
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                }
+                .background(
+                    lerp(SummerTheme.colors.statGreenStart, SummerTheme.colors.goldWarm, 0.35f),
+                    CircleShape
+                )
         )
 
         Box(
@@ -368,7 +460,12 @@ private fun GrowingTreeWithTimur(
                 .size(190.dp)
                 .align(Alignment.BottomStart)
                 .offset(x = (-6).dp)
-                .scale(timurScale),
+                .graphicsLayer {
+                    translationY = idleFloat
+                    rotationZ = timurRotation
+                    scaleX = timurScale
+                    scaleY = timurScale
+                },
             contentAlignment = Alignment.BottomCenter
         ) {
             Box(
@@ -385,7 +482,7 @@ private fun GrowingTreeWithTimur(
                     )
             )
             Image(
-                painter = painterResource(id = R.drawable.timur_ss),
+                painter = painterResource(id = R.drawable.welcome),
                 contentDescription = "Timur",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(170.dp)
@@ -394,15 +491,33 @@ private fun GrowingTreeWithTimur(
     }
 }
 
+
 @Composable
-private fun LoadingIndicator() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(
-            color = SummerTheme.colors.goldWarm,
-            modifier = Modifier.size(30.dp),
-            strokeWidth = 3.dp
-        )
+private fun BouncingDotsLoader() {
+    val infinite = rememberInfiniteTransition(label = "dotsLoader")
+    val dotColor = SummerTheme.colors.goldWarm
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        repeat(3) { index ->
+            val bounce by infinite.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(600, delayMillis = index * 150, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot_$index"
+            )
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .graphicsLayer {
+                        translationY = -bounce * 14f
+                        scaleX = 1f - bounce * 0.15f
+                        scaleY = 1f + bounce * 0.15f
+                    }
+                    .background(dotColor, CircleShape)
+            )
+        }
     }
 }

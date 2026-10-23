@@ -9,7 +9,7 @@ import javax.inject.Inject
 class RegisterUserUseCase @Inject constructor(
     private val repository: UserRepository
 ) {
-    suspend operator fun invoke(name: String, gender: User.Gender): Resource<Unit> {
+    suspend operator fun invoke(name: String, gender: User.Gender, avatarIndex: Int): Resource<Unit> {
         if (name.isBlank()) return Resource.Error(IllegalArgumentException("Name cannot be empty"))
         val newUser = User(
             id = UUID.randomUUID().toString(),
@@ -19,6 +19,7 @@ class RegisterUserUseCase @Inject constructor(
             currentStreak = 0,
             treeStage = 1,
             quranPartsFinished = 0,
+            avatarIndex = avatarIndex,
             prayerNotifications = true,
             azkarNotifications = true,
             quranNotifications = true

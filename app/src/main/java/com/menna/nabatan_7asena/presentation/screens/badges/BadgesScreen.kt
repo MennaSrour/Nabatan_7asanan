@@ -64,23 +64,27 @@ data class Achievement(
     val color: Color
 )
 
+private val MedalBronze = Color(0xFFCD7F32)
+private val MedalSilver = Color(0xFF90A4AE)
+
 @Composable
 fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
 
         val stats by viewModel.userStats.collectAsState()
         val particleAlphas = SummerTheme.rememberParticleAlphas(count = 6)
+        val colors = SummerTheme.colors
 
         val achievements = listOf(
-            Achievement("بداية بطل",     "التزام 3 أيام",        "🥉", stats.currentStreak >= 3,   Color(0xFFCD7F32)),
-            Achievement("الأسبوع الذهبي","التزام 7 أيام",        "🥈", stats.currentStreak >= 7,   Color(0xFF90A4AE)),
-            Achievement("العشرة الأوائل","التزام 10 أيام",       "🥇", stats.currentStreak >= 10,  Color(0xFFFFD700)),
-            Achievement("الأسطورة",      "التزام 30 يوم",        "👑", stats.currentStreak >= 30,  SummerTheme.Colors.PrimaryGold),
-            Achievement("فاتحة الخير",   "ختم الجزء 30",         "📖", stats.quranPartsFinished >= 1,  Color(0xFF66BB6A)),
-            Achievement("نصف الطريق",   "ختم 15 جزء",           "🌱", stats.quranPartsFinished >= 15, SummerTheme.Colors.PrimaryTeal),
-            Achievement("حافظ القرآن",   "ختم المصحف كاملاً",    "🌳", stats.quranPartsFinished >= 30, SummerTheme.Colors.PrimaryPink),
-            Achievement("نبتة صغيرة",    "جمع 50 نجمة",          "🌱", stats.totalStars >= 50,     Color(0xFF8BC34A)),
-            Achievement("شجرة مثمرة",    "جمع 150 نجمة",         "🌳", stats.totalStars >= 150,    Color(0xFF388E3C)),
+            Achievement("بداية بطل",     "التزام 3 أيام",        "🥉", stats.currentStreak >= 3,   MedalBronze),
+            Achievement("الأسبوع الذهبي","التزام 7 أيام",        "🥈", stats.currentStreak >= 7,   MedalSilver),
+            Achievement("العشرة الأوائل","التزام 10 أيام",       "🥇", stats.currentStreak >= 10,  colors.goldWarm),
+            Achievement("الأسطورة",      "التزام 30 يوم",        "👑", stats.currentStreak >= 30,  colors.goldWarm),
+            Achievement("فاتحة الخير",   "ختم الجزء 30",         "📖", stats.quranPartsFinished >= 1,  colors.statGreenStart),
+            Achievement("نصف الطريق",   "ختم 15 جزء",           "🌱", stats.quranPartsFinished >= 15, colors.secondaryAccent),
+            Achievement("حافظ القرآن",   "ختم المصحف كاملاً",    "🌳", stats.quranPartsFinished >= 30, colors.highlightAccent),
+            Achievement("نبتة صغيرة",    "جمع 50 نجمة",          "🌱", stats.totalStars >= 50,     colors.leafGreen),
+            Achievement("شجرة مثمرة",    "جمع 150 نجمة",         "🌳", stats.totalStars >= 150,    colors.statGreenEnd),
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -109,7 +113,7 @@ fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
                             "إنجازاتي",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF37474F)
+                            color = colors.textPrimary
                         )
                     }
                 }
@@ -130,14 +134,14 @@ fun BadgesScreen(viewModel: BadgesViewModel = hiltViewModel()) {
                         Box(
                             modifier = Modifier
                                 .width(4.dp).height(20.dp)
-                                .background(SummerTheme.Colors.PrimaryGold, RoundedCornerShape(2.dp))
+                                .background(colors.goldWarm, RoundedCornerShape(2.dp))
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             "مكتبة الأوسمة",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = Color(0xFF37474F).copy(alpha = 0.8f)
+                            color = colors.textPrimary.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -164,20 +168,21 @@ fun BadgesSummerBackground(particleAlphas: List<Float>) {
     }
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.clouds))
 
+    val bgColors = SummerTheme.colors
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF29B6F6),
-                        Color(0xFF81D4FA),
-                        Color(0xFFFFFDE7)
+                        bgColors.wisdomStart,
+                        bgColors.dialogBackground,
+                        bgColors.dayBackground
                     )
                 )
             )
             positions.forEachIndexed { i, (off, radius) ->
                 drawCircle(
-                    color = Color.White.copy(0.7f),
+                    color = bgColors.goldWarm.copy(0.6f),
                     radius = radius.dp.toPx(),
                     center = Offset(size.width * off.x, size.height * off.y),
                     alpha = particleAlphas.getOrElse(i) { 0.7f }
@@ -198,6 +203,7 @@ fun BadgesSummerBackground(particleAlphas: List<Float>) {
 
 @Composable
 fun SummerTreeCard(totalStars: Int) {
+    val colors = SummerTheme.colors
     Card(
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(8.dp),
@@ -209,9 +215,9 @@ fun SummerTreeCard(totalStars: Int) {
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            Color(0xFF0288D1),
-                            Color(0xFF29B6F6),
-                            Color(0xFFC8E6C9)
+                            colors.goldWarm,
+                            colors.statGreenStart,
+                            colors.statGreenEnd
                         )
                     )
                 )
@@ -223,7 +229,7 @@ fun SummerTreeCard(totalStars: Int) {
                     Offset(0.5f, 0.25f) to 2f,
                 ).forEach { (off, r) ->
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = colors.white.copy(alpha = 0.5f),
                         radius = r.dp.toPx(),
                         center = Offset(size.width * off.x, size.height * off.y)
                     )
@@ -236,17 +242,17 @@ fun SummerTreeCard(totalStars: Int) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("شجرتك بتكبر! 🌱", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("شجرتك بتكبر! 🌱", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.white)
                     Spacer(Modifier.height(4.dp))
-                    Text("كل نجمة بتسقي شجرتك", fontSize = 13.sp, color = Color.White.copy(0.9f))
+                    Text("كل نجمة بتسقي شجرتك", fontSize = 13.sp, color = colors.white.copy(0.9f))
                     Spacer(Modifier.height(12.dp))
                     Surface(
-                        color = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.25f),
+                        color = colors.overlayDark.copy(alpha = 0.18f),
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
                             "$totalStars ⭐ مجمعة",
-                            color = Color(0xFFE65100),
+                            color = colors.overlayDark,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             fontSize = 13.sp
@@ -261,6 +267,7 @@ fun SummerTreeCard(totalStars: Int) {
 
 @Composable
 fun SummerGrowingTree(totalStars: Int) {
+    val colors = SummerTheme.colors
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.growing_tree))
     val targetProgress = when {
         totalStars < 50  -> (totalStars / 50f) * 0.33f
@@ -273,7 +280,7 @@ fun SummerGrowingTree(totalStars: Int) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+            .background(colors.white.copy(alpha = 0.2f), CircleShape)
             .padding(8.dp)
     ) {
         LottieAnimation(composition = composition, progress = { animatedProgress }, modifier = Modifier.size(100.dp))
@@ -281,14 +288,15 @@ fun SummerGrowingTree(totalStars: Int) {
         LinearProgressIndicator(
             progress = { animatedProgress },
             modifier = Modifier.width(70.dp).height(6.dp).clip(RoundedCornerShape(3.dp)),
-            color = SummerTheme.Colors.PrimaryGold,
-            trackColor = Color.White.copy(0.3f)
+            color = colors.goldWarm,
+            trackColor = colors.white.copy(0.3f)
         )
     }
 }
 
 @Composable
 fun SummerStreakCard(streak: Int) {
+    val colors = SummerTheme.colors
     Card(
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier.fillMaxWidth().height(100.dp),
@@ -300,9 +308,9 @@ fun SummerStreakCard(streak: Int) {
                 .background(
                     brush = Brush.horizontalGradient(
                         listOf(
-                            Color(0xFFFFA726),
-                            Color(0xFFFFCA28),
-                            Color(0xFFFFD54F)
+                            colors.goldDeep,
+                            colors.goldWarm,
+                            colors.goldWarm
                         )
                     ),
                     shape = RoundedCornerShape(24.dp)
@@ -318,26 +326,26 @@ fun SummerStreakCard(streak: Int) {
                     Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .background(Color.White.copy(0.25f), CircleShape),
+                            .background(colors.white.copy(0.25f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) { Text("⚡", fontSize = 28.sp) }
 
                     Spacer(Modifier.width(16.dp))
 
                     Column {
-                        Text("حماس متواصل!", fontWeight = FontWeight.Bold, color = Color(0xFF5D4037), fontSize = 13.sp)
-                        Text("$streak أيام", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color(0xFF3E2723))
+                        Text("حماس متواصل!", fontWeight = FontWeight.Bold, color = colors.textBrown, fontSize = 13.sp)
+                        Text("$streak أيام", fontSize = 28.sp, fontWeight = FontWeight.Black, color = colors.textDarkBrown)
                     }
                 }
 
                 Surface(
-                    color = Color.White.copy(alpha = 0.3f),
+                    color = colors.white.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         "خير الأعمال أدومها!",
                         fontSize = 12.sp,
-                        color = Color(0xFF3E2723),
+                        color = colors.textDarkBrown,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         textAlign = TextAlign.Center
@@ -350,6 +358,7 @@ fun SummerStreakCard(streak: Int) {
 
 @Composable
 fun SummerBadgeItem(badge: Achievement) {
+    val colors = SummerTheme.colors
     Card(
         modifier = Modifier.height(160.dp),
         shape = RoundedCornerShape(20.dp),
@@ -364,17 +373,17 @@ fun SummerBadgeItem(badge: Achievement) {
                         Brush.verticalGradient(
                             listOf(
                                 badge.color.copy(alpha = 0.2f),
-                                Color.White.copy(alpha = 0.95f)
+                                colors.white.copy(alpha = 0.95f)
                             )
                         )
                     else
                         Brush.verticalGradient(
-                            listOf(Color(0xFFECEFF1), Color(0xFFCFD8DC))
+                            listOf(colors.chipUnselected, colors.dayBackground)
                         )
                 )
                 .border(
                     width = if (badge.isUnlocked) 2.dp else 1.dp,
-                    color = if (badge.isUnlocked) badge.color.copy(0.8f) else Color.Gray.copy(0.2f),
+                    color = if (badge.isUnlocked) badge.color.copy(0.8f) else colors.textBrown.copy(0.2f),
                     shape = RoundedCornerShape(20.dp)
                 )
         ) {
@@ -392,11 +401,11 @@ fun SummerBadgeItem(badge: Achievement) {
                             if (badge.isUnlocked)
                                 badge.color.copy(alpha = 0.2f)
                             else
-                                Color.White.copy(alpha = 0.4f)
+                                colors.white.copy(alpha = 0.4f)
                         )
                         .border(
                             2.dp,
-                            if (badge.isUnlocked) badge.color.copy(0.7f) else Color.Gray.copy(0.2f),
+                            if (badge.isUnlocked) badge.color.copy(0.7f) else colors.textBrown.copy(0.2f),
                             CircleShape
                         )
                 ) {
@@ -412,7 +421,7 @@ fun SummerBadgeItem(badge: Achievement) {
                     badge.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
-                    color = if (badge.isUnlocked) Color(0xFF37474F) else Color.Gray,
+                    color = if (badge.isUnlocked) colors.textPrimary else colors.textBrown,
                     textAlign = TextAlign.Center
                 )
 
@@ -421,7 +430,7 @@ fun SummerBadgeItem(badge: Achievement) {
                 Text(
                     badge.description,
                     fontSize = 10.sp,
-                    color = if (badge.isUnlocked) Color(0xFF4E342E) else Color.Gray.copy(0.8f),
+                    color = if (badge.isUnlocked) colors.textBrown else colors.textBrown.copy(0.6f),
                     textAlign = TextAlign.Center,
                     lineHeight = 14.sp
                 )

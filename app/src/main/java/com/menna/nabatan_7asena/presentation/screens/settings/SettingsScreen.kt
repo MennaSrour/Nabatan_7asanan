@@ -94,7 +94,7 @@ fun SettingsScreen(
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = SummerTheme.colors.transparent,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
                     Card(
@@ -112,7 +112,7 @@ fun SettingsScreen(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = data.visuals.message,
-                                color = Color(0xFF37474F),
+                                color = SummerTheme.colors.textPrimary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -128,7 +128,7 @@ fun SettingsScreen(
                             Text(
                                 "إعدادات رحلتي",
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF37474F)
+                                color = SummerTheme.colors.textPrimary
                             )
                         }
                     },
@@ -137,7 +137,7 @@ fun SettingsScreen(
                             Icon(
                                 Icons.AutoMirrored.Rounded.ArrowBack,
                                 contentDescription = "Back",
-                                tint = Color(0xFF37474F)
+                                tint = SummerTheme.colors.textPrimary
                             )
                         }
                     },
@@ -241,7 +241,7 @@ fun SettingsScreen(
                 title = {
                     Text(
                         "اسمك الجديد يا بطل؟ ☀️",
-                        color = Color(0xFF37474F),
+                        color = SummerTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -270,12 +270,12 @@ fun SettingsScreen(
                         ),
                         shape = SummerTheme.Shapes.SmallRounded
                     ) {
-                        Text("حفظ ☀️", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("حفظ ☀️", fontWeight = FontWeight.Bold, color = SummerTheme.colors.white)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showEditNameDialog = false }) {
-                        Text("إلغاء", color = Color.Gray, fontWeight = FontWeight.Bold)
+                        Text("إلغاء", color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -284,7 +284,7 @@ fun SettingsScreen(
         if (showResetDialog) {
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
-                containerColor = Color(0xFFFFF5F5),
+                containerColor = SummerTheme.colors.errorRed.copy(alpha = 0.08f),
                 shape = SummerTheme.Shapes.ExtraRounded,
                 icon = { Text("⚠️", fontSize = 48.sp) },
                 title = {
@@ -298,7 +298,7 @@ fun SettingsScreen(
                     Text(
                         "كل النجوم والشجرة هيرجعوا للصفر كأنك لسه بادئ التطبيق دلوقتي حالاً. رحلتك الجميلة هتبدأ من جديد! 🌱",
                         fontSize = 15.sp,
-                        color = Color(0xFF455A64),
+                        color = SummerTheme.colors.wisdomTextSecondary,
                         lineHeight = 22.sp
                     )
                 },
@@ -320,7 +320,7 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
-                        Text("إلغاء", color = Color.Gray, fontWeight = FontWeight.Bold)
+                        Text("إلغاء", color = SummerTheme.colors.textBrown, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -339,19 +339,22 @@ fun SummerSettingsBackground() {
         )
     }
 
+    // استخراج اللون هنا قبل بدء الـ Canvas
+    val goldColor = SummerTheme.Colors.PrimaryGold
+    val wisdom=SummerTheme.colors.wisdomStart
+    val dialogbackground = SummerTheme.colors.dialogBackground
+    val daybackground = SummerTheme.colors.dayBackground
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFFF3EEFB),
-                    Color(0xFFFFF9E6),
-                    Color(0xFFfcf7f1)
+                  wisdom,dialogbackground,daybackground
                 )
             )
         )
         starPositions.forEach { pos ->
             drawCircle(
-                color = SummerTheme.Colors.PrimaryGold.copy(alpha = 0.4f),
+                color = goldColor.copy(alpha = 0.4f), // استخدام المتغير المحلي
                 radius = 3.dp.toPx(),
                 center = Offset(size.width * pos.x, size.height * pos.y)
             )
@@ -372,7 +375,7 @@ fun SummerSectionTitle(text: String) {
             text = text,
             fontSize = 16.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFFE65100),
+            color = SummerTheme.colors.goldDeep,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
@@ -391,7 +394,7 @@ fun SummerSettingsItem(
 ) {
     Card(
         shape = SummerTheme.Shapes.MediumRounded,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = SummerTheme.colors.cardBackground),
         elevation = CardDefaults.cardElevation(4.dp),
         border = BorderStroke(2.dp, iconColor.copy(alpha = 0.2f)),
         modifier = Modifier
@@ -434,13 +437,13 @@ fun SummerSettingsItem(
                     title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color(0xFF2E3E5C)
+                    color = SummerTheme.colors.textPrimary
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     subtitle,
                     fontSize = 13.sp,
-                    color = Color.Gray,
+                    color = SummerTheme.colors.textBrown,
                     lineHeight = 18.sp
                 )
             }
@@ -450,10 +453,10 @@ fun SummerSettingsItem(
                     checked = isSwitchChecked,
                     onCheckedChange = onSwitchChange,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
+                        checkedThumbColor = SummerTheme.colors.white,
                         checkedTrackColor = SummerTheme.Colors.TaskCompletedGreen,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color.LightGray
+                        uncheckedThumbColor = SummerTheme.colors.white,
+                        uncheckedTrackColor = SummerTheme.colors.chipUnselected
                     )
                 )
             }

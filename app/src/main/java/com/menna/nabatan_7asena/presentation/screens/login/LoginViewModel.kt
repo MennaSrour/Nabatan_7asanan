@@ -32,6 +32,14 @@ class LoginViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedGender = gender)
     }
 
+    fun onAvatarSelected(index: Int) {
+        _state.value = if (_state.value.selectedGender == User.Gender.BOY) {
+            _state.value.copy(selectedBoyAvatarIndex = index)
+        } else {
+            _state.value.copy(selectedGirlAvatarIndex = index)
+        }
+    }
+
     fun onStartClicked() {
         val currentState = _state.value
         if (currentState.name.isBlank()) {
@@ -39,10 +47,16 @@ class LoginViewModel @Inject constructor(
             return
         }
 
+        // ⬅️ الأفاتار المختار فعليًا حسب النوع المختار، بدل ما يتمسح عند التسجيل
+        val avatarIndex = if (currentState.selectedGender == User.Gender.BOY)
+            currentState.selectedBoyAvatarIndex
+        else
+            currentState.selectedGirlAvatarIndex
+
         viewModelScope.launch {
             _state.value = currentState.copy(isLoading = true)
 
-            val result = registerUserUseCase(currentState.name, currentState.selectedGender)
+            val result = registerUserUseCase(currentState.name, currentState.selectedGender, avatarIndex)
             when (result) {
                 is Resource.Success -> {
                     _uiEvent.emit(LoginEvent.NavigateToHome)
@@ -64,6 +78,8 @@ class LoginViewModel @Inject constructor(
 data class LoginState(
     val name: String = "",
     val selectedGender: User.Gender = User.Gender.BOY,
+    val selectedBoyAvatarIndex: Int = 0,
+    val selectedGirlAvatarIndex: Int = 0,
     val isLoading: Boolean = false
 )
 

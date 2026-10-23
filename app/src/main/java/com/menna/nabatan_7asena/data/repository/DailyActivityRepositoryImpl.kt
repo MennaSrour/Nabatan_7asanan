@@ -1,6 +1,7 @@
 package com.menna.nabatan_7asena.data.repository
 
 import android.util.Log
+import com.menna.nabatan_7asena.data.local.QuranBookmarkStore
 import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.data.local.room.DailyRecordEntity
 import com.menna.nabatan_7asena.data.local.room.ExtraTaskEntity
@@ -9,6 +10,7 @@ import com.menna.nabatan_7asena.data.mappers.toDomain
 import com.menna.nabatan_7asena.data.mappers.toEntity
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
 import com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase
+import com.menna.nabatan_7asena.domain.QuranConstants
 import com.menna.nabatan_7asena.domain.entity.Activity
 import com.menna.nabatan_7asena.domain.entity.DailyContent
 import com.menna.nabatan_7asena.domain.entity.ExtraTasks
@@ -28,7 +30,8 @@ import kotlin.random.Random
 class DailyActivityRepositoryImpl @Inject constructor(
     private val appDao: AppDao,
     private val firebaseDataSource: FirebaseDataSource,
-    private val getPrayerTimesUseCase: GetPrayerTimesUseCase
+    private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
+    private val quranBookmarkStore: QuranBookmarkStore
 ) : DailyActivityRepository {
 
     private val dailyPlanCache = mutableMapOf<Int, DailyContent>()
@@ -41,26 +44,55 @@ class DailyActivityRepositoryImpl @Inject constructor(
         val recordsFlow = appDao.getRecordsForDate(date)
         val extraTasksFlow = appDao.getExtraTasksForDate(date)
 
-        val dailyPlanFlow = flow {
+         val dailyPlanFlow = flow {
             val dayId = getDayOfYear()
-            emit(fetchDailyPlan(dayId))
+            emit(null)
+             val plan = kotlinx.coroutines.withTimeoutOrNull(5000) {
+                fetchDailyPlan(dayId)
+            }
+            if (plan != null) {
+                emit(plan)
+            }
         }
 
         return combine(recordsFlow, dailyPlanFlow, extraTasksFlow) { records, plan, extraTasks ->
             val statusMap = records.associate { it.itemId to it.isCompleted }
-            val prayers = getPrayerTimesUseCase(city, country, date)
+            val prayers = try {
+                getPrayerTimesUseCase(city, country, date)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to fetch prayer times for city=$city, country=$country, date=$date", e)
+                null
+            }
             val activities = mutableListOf<Activity>()
 
-            // الصلوات
             if (prayers != null) {
                 activities.add(Activity.Prayer(100, statusMap[100] ?: false, "الفجر", prayers.fajr))
-                activities.add(Activity.Prayer(101, statusMap[101] ?: false, "الظهر", prayers.dhuhr))
+                activities.add(
+                    Activity.Prayer(
+                        101,
+                        statusMap[101] ?: false,
+                        "الظهر",
+                        prayers.dhuhr
+                    )
+                )
                 activities.add(Activity.Prayer(102, statusMap[102] ?: false, "العصر", prayers.asr))
-                activities.add(Activity.Prayer(103, statusMap[103] ?: false, "المغرب", prayers.maghrib))
-                activities.add(Activity.Prayer(104, statusMap[104] ?: false, "العشاء", prayers.isha))
+                activities.add(
+                    Activity.Prayer(
+                        103,
+                        statusMap[103] ?: false,
+                        "المغرب",
+                        prayers.maghrib
+                    )
+                )
+                activities.add(
+                    Activity.Prayer(
+                        104,
+                        statusMap[104] ?: false,
+                        "العشاء",
+                        prayers.isha
+                    )
+                )
             }
-
-            // ✅ تاسك الأذكار — ثابت، بيتولد كل يوم لوحده، مش مرتبط بأي محتوى من فايرباز
             activities.add(
                 Activity.Task(
                     id = 400,
@@ -70,24 +102,15 @@ class DailyActivityRepositoryImpl @Inject constructor(
                 )
             )
 
-            // ✅ تاسك إكمال الورد اليومي — ثابت برضو، ولو فيه ورد محدد من الخطة بيتضاف كتفصيلة زيادة بس
-            val werdSubtitle = plan?.quranWerd?.let { werd ->
-                listOfNotNull(
-                    werd.dhuhr.takeIf { it.isNotEmpty() },
-                    werd.asr.takeIf { it.isNotEmpty() },
-                    werd.maghrib.takeIf { it.isNotEmpty() }
-                ).joinToString(" • ").takeIf { it.isNotEmpty() }
-            }
             activities.add(
                 Activity.Task(
                     id = 300,
                     isCompleted = statusMap[300] ?: false,
-                    title = if (werdSubtitle == null) "إكمال الورد اليومي 📖" else "إكمال الورد اليومي 📖 ($werdSubtitle)",
+                    title = buildQuranWerdTitle(),
                     category = TaskCategory.QURAN
                 )
             )
 
-            // التحدي اليومي — ده فعلاً محتوى بييجي من فايرباز، فطبيعي يفضل مرتبط بوجود الخطة
             if (plan != null) {
                 activities.add(
                     Activity.Task(
@@ -241,6 +264,13 @@ class DailyActivityRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to upload user score", e)
         }
+    }
+
+    private fun buildQuranWerdTitle(): String {
+        val bookmark = quranBookmarkStore.getBookmark() ?: return "إكمال من سورة الفاتحة"
+        val surahName = QuranConstants.surahs.getOrNull(bookmark.surahId - 1)?.name
+            ?: return "إكمال من عند آخر علامة حفظ"
+        return "إكمال من سورة $surahName الآية ${bookmark.ayahNo}"
     }
 
     private fun getDayOfYear(): Int = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)

@@ -61,7 +61,8 @@ class UserRepositoryImpl @Inject constructor(
             totalStars = user.totalStars,
             treeStage = user.treeStage,
             currentStreak = user.currentStreak,
-            quranPartsFinished = user.quranPartsFinished
+            quranPartsFinished = user.quranPartsFinished,
+            avatarIndex = user.avatarIndex
         )
         dao.clearUserStats()
         dao.clearAllRecords()
@@ -73,7 +74,8 @@ class UserRepositoryImpl @Inject constructor(
                 userId = user.id,
                 name = user.name,
                 gender = user.gender.name.lowercase(),
-                totalStars = user.totalStars
+                totalStars = user.totalStars,
+                avatarIndex = user.avatarIndex
             )
             firebaseDataSource.uploadUserScore(dto)
         } catch (e: CancellationException) {
@@ -99,7 +101,8 @@ class UserRepositoryImpl @Inject constructor(
                         ) User.Gender.BOY else User.Gender.GIRL,
                         totalStars = dto.totalStars,
                         rank = index + 1,
-                        quranPartsFinished = dto.quranPartsFinished
+                        quranPartsFinished = dto.quranPartsFinished,
+                        avatarIndex = dto.avatarIndex
                     )
                 }
                 emit(Resource.Success(leaderboard))
@@ -140,7 +143,8 @@ class UserRepositoryImpl @Inject constructor(
                 name = user.name,
                 gender = user.gender.name.lowercase(),
                 totalStars = user.totalStars,
-                quranPartsFinished = user.quranPartsFinished
+                quranPartsFinished = user.quranPartsFinished,
+                avatarIndex = user.avatarIndex
             )
             firebaseDataSource.uploadUserScore(dto)
         } catch (e: CancellationException) {
@@ -161,7 +165,8 @@ class UserRepositoryImpl @Inject constructor(
                     userId = user.userId,
                     name = newName,
                     gender = user.gender.lowercase(),
-                    totalStars = user.totalStars
+                    totalStars = user.totalStars,
+                    avatarIndex = user.avatarIndex
                 )
                 firebaseDataSource.uploadUserScore(dto)
             } catch (e: CancellationException) {
@@ -254,7 +259,8 @@ class UserRepositoryImpl @Inject constructor(
                         name = userEntity.name,
                         gender = userEntity.gender.lowercase(),
                         totalStars = userEntity.totalStars,
-                        quranPartsFinished = updatedCount
+                        quranPartsFinished = updatedCount,
+                        avatarIndex = userEntity.avatarIndex
                     )
                     firebaseDataSource.uploadUserScore(dto)
                 } catch (e: CancellationException) {
@@ -290,7 +296,8 @@ class UserRepositoryImpl @Inject constructor(
                         name = userEntity.name,
                         gender = userEntity.gender.lowercase(),
                         totalStars = userEntity.totalStars,
-                        quranPartsFinished = updatedCount
+                        quranPartsFinished = updatedCount,
+                        avatarIndex = userEntity.avatarIndex
                     )
                     firebaseDataSource.uploadUserScore(dto)
                 } catch (e: CancellationException) {

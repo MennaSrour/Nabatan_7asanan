@@ -6,5 +6,6 @@ data class LeaderboardEntry(
     val gender: User.Gender,
     val totalStars: Int,
     val quranPartsFinished: Int,
-    val rank: Int
+    val rank: Int,
+    val avatarIndex: Int = 0
 )

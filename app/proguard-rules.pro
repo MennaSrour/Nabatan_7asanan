@@ -1,21 +1,39 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http:
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keepattributes Signature, Exceptions, *Annotation*, InnerClasses, EnclosingMethod
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+-keep class com.menna.nabatan_7asena.data.remote.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+-keep interface com.menna.nabatan_7asena.data.PrayerTimesApi { *; }
+-keep class com.menna.nabatan_7asena.data.PrayerApiResponse { *; }
+-keep class com.menna.nabatan_7asena.data.PrayerData { *; }
+-keep class com.menna.nabatan_7asena.data.Timings { *; }
+-keep class com.menna.nabatan_7asena.data.Hijri { *; }
+-keep class com.menna.nabatan_7asena.data.Date { *; }
+
+-keep interface com.menna.nabatan_7asena.**Api { *; }
+
+-keep class com.menna.nabatan_7asena.domain.entity.PrayerTimes { *; }
+-keepclassmembers,allowobfuscation class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+-keep,allowobfuscation,allowshrinking class com.google.gson.reflect.TypeToken
+-keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
+
+
+-keepclassmembers class com.menna.nabatan_7asena.data.remote.dto.** {
+    <init>();
+}
+-keepattributes *Annotation*
+-keep class com.google.firebase.firestore.** { *; }
+-dontwarn com.google.firebase.firestore.**
+
+
+-keepclassmembers enum com.menna.nabatan_7asena.domain.entity.** {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+-dontwarn kotlinx.coroutines.**

@@ -15,7 +15,8 @@ data class ZikrItem(
     val text: String,
     val target: Int = 33,
     val audioResId: Int = 0,
-    val color: Long = 0xFF42A5F5
+    val color: Long = 0xFF42A5F5,
+    val isCustom: Boolean = false
 )
 
 data class AzkarState(
@@ -55,10 +56,33 @@ class SebhaViewModel @Inject constructor(
     private var mediaPlayer: MediaPlayer? = null
 
     fun selectZikr(zikr: ZikrItem) {
+        stopAudio()
         _state.value = _state.value.copy(
             isSelectionMode = false,
             currentZikr = zikr,
             currentCount = 0,
+            totalCycles = 0,
+            showCelebration = false
+        )
+    }
+
+
+    fun startFreeTasbeeh(text: String, targetCount: Int?) {
+        stopAudio()
+        val zikr = ZikrItem(
+            id = -1,
+            text = text.ifBlank { "تسبيح حر" },
+            target = (targetCount ?: 0).coerceAtLeast(0),
+            audioResId = 0,
+            color = 0xFF8D6E63,
+            isCustom = true
+        )
+        _state.value = AzkarState(
+            isSelectionMode = false,
+            currentZikr = zikr,
+            currentCount = 0,
+            totalCycles = 0,
+            isPlayingAudio = false,
             showCelebration = false
         )
     }
@@ -72,7 +96,6 @@ class SebhaViewModel @Inject constructor(
         val currentState = _state.value
         val zikr = currentState.currentZikr ?: return
 
-
         if (currentState.showCelebration) {
             dismissCelebration()
             return
@@ -80,8 +103,12 @@ class SebhaViewModel @Inject constructor(
 
         val newCount = currentState.currentCount + 1
 
-        if (newCount >= zikr.target) {
+        if (zikr.target <= 0) {
+            _state.value = currentState.copy(currentCount = newCount)
+            return
+        }
 
+        if (newCount >= zikr.target) {
             _state.value = currentState.copy(
                 currentCount = zikr.target,
                 totalCycles = currentState.totalCycles + 1,
@@ -106,7 +133,6 @@ class SebhaViewModel @Inject constructor(
             playAudio(zikr.audioResId)
         }
     }
-
 
     fun dismissCelebration() {
         _state.value = _state.value.copy(

@@ -21,6 +21,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,15 +33,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
@@ -57,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,25 +69,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.launch
-private val ColorBgTop = Color(0xFF3F7A5C)      // was Color(0xFF1565C0)
-private val ColorBgBottom = Color(0xFF7FAE8E)   // was Color(0xFF42A5F5)
-private val ColorScreenBg = Color(0xFFF4F8F5)   // was Color(0xFFF5F7FA)
-private val ColorTextPrimary = Color(0xFF1F4B3F) // was Color(0xFF1565C0)
-private val ColorCardBg = Color(0xFFE7F1EA)     // was Color(0xFFE3F2FD)
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -93,11 +100,27 @@ fun OnboardingScreen(
     onNavigateToLogin: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        OnboardingContent(
+            onNavigateToLogin = onNavigateToLogin,
+            viewModel = viewModel
+        )
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun OnboardingContent(
+    onNavigateToLogin: () -> Unit,
+    viewModel: OnboardingViewModel
+) {
     val context = LocalContext.current
     val currentPage by viewModel.currentPageIndex
     val pages = viewModel.pages
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
+
+    val isDark = isSystemInDarkTheme()
 
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -107,10 +130,8 @@ fun OnboardingScreen(
     val batteryOptimizationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        // no-op: we re-check viewModel.isBatteryOptimizationDisabled() the
-        // next time "Next" is pressed, whatever the user chose.
-    }
 
+    }
 
     var showBatteryExplainDialog by remember { mutableStateOf(false) }
 
@@ -123,15 +144,9 @@ fun OnboardingScreen(
         notificationPermission?.status?.isGranted
     ) {
         when (currentPage) {
-            3 -> {
-                if (locationPermission.status.isGranted) {
-                    pagerState.animateScrollToPage(4)
-                }
-            }
-            4 -> {
-                if (notificationPermission == null || notificationPermission.status.isGranted) {
-                    pagerState.animateScrollToPage(5)
-                }
+            3 -> if (locationPermission.status.isGranted) pagerState.animateScrollToPage(4)
+            4 -> if (notificationPermission == null || notificationPermission.status.isGranted) {
+                pagerState.animateScrollToPage(5)
             }
         }
     }
@@ -139,12 +154,20 @@ fun OnboardingScreen(
     if (showBatteryExplainDialog) {
         AlertDialog(
             onDismissRequest = { showBatteryExplainDialog = false },
-            title = { Text("تحسين البطارية") },
+            containerColor = SummerTheme.colors.cardBackground,
+            title = {
+                Text(
+                    text = "تحسين البطارية",
+                    color = SummerTheme.colors.textDarkBrown,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
                 Text(
-                    "هنفتحلك دلوقتي شاشة إعدادات الهاتف عشان تسمح لتطبيق نباتاً حسناً " +
-                            "يشتغل في الخلفية، فيقدر يبعتلك الأذان والتذكيرات في وقتها. " +
-                            "الشاشة اللي هتفتح دي من النظام نفسه، فهتبان بلغة هاتفك."
+                    text = "هنفتحلك شاشة إعدادات الهاتف علشان تسمح للتطبيق يشتغل في الخلفية، " +
+                            "فيقدر يبعتلك الأذان والتذكيرات في وقتها. الشاشة دي من النظام نفسه، " +
+                            "فهتظهر بلغة هاتفك.",
+                    color = SummerTheme.colors.textBrown
                 )
             },
             confirmButton = {
@@ -156,35 +179,66 @@ fun OnboardingScreen(
                     }
                     batteryOptimizationLauncher.launch(intent)
                 }) {
-                    Text("تمام، كمّل", color = ColorTextPrimary, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "تمام، كمّل",
+                        color = SummerTheme.colors.wisdomAccent,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBatteryExplainDialog = false }) {
-                    Text("لاحقاً", color = Color.Gray)
+                    Text("لاحقاً", color = SummerTheme.colors.textBrown)
                 }
             }
         )
     }
 
-    Scaffold(
-        containerColor = ColorScreenBg
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+    Scaffold(containerColor = SummerTheme.colors.dayBackground) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.5f)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(ColorBgTop, ColorBgBottom)
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier.fillMaxSize()
+                    .fillMaxHeight(0.55f)
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    SummerTheme.colors.wisdomStart,
+                                    SummerTheme.colors.dayBackground
+                                )
+                            )
+                        )
+                )
+
+                OnboardingAtmosphere(
+                    isDark = isDark,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.35f)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    SummerTheme.colors.dayBackground.copy(alpha = 0f),
+                                    SummerTheme.colors.dayBackground
+                                )
+                            )
+                        )
+                )
+            }
+
+            Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -194,7 +248,7 @@ fun OnboardingScreen(
                     repeat(pages.size) { index ->
                         PageIndicator(
                             isSelected = index == currentPage,
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                            modifier = Modifier.padding(horizontal = 3.dp)
                         )
                     }
                 }
@@ -205,10 +259,7 @@ fun OnboardingScreen(
                     state = pagerState,
                     modifier = Modifier.weight(1f)
                 ) { index ->
-                    OnboardingPageContent(
-                        page = pages[index],
-                        pageIndex = index
-                    )
+                    OnboardingPageContent(page = pages[index], pageIndex = index)
                 }
 
                 BottomSection(
@@ -217,32 +268,29 @@ fun OnboardingScreen(
                     onNextClicked = {
                         scope.launch {
                             when (currentPage) {
-                                3 -> {
-                                    if (locationPermission.status.isGranted) {
-                                        pagerState.animateScrollToPage(4)
-                                    } else {
-                                        locationPermission.launchPermissionRequest()
-                                    }
+                                3 -> if (locationPermission.status.isGranted) {
+                                    pagerState.animateScrollToPage(4)
+                                } else {
+                                    locationPermission.launchPermissionRequest()
                                 }
-                                4 -> {
-                                    if (notificationPermission == null || notificationPermission.status.isGranted) {
-                                        pagerState.animateScrollToPage(5)
-                                    } else {
-                                        notificationPermission.launchPermissionRequest()
-                                    }
+
+                                4 -> if (notificationPermission == null ||
+                                    notificationPermission.status.isGranted
+                                ) {
+                                    pagerState.animateScrollToPage(5)
+                                } else {
+                                    notificationPermission.launchPermissionRequest()
                                 }
-                                5 -> {
-                                    if (viewModel.isBatteryOptimizationDisabled(context)) {
-                                        viewModel.saveOnboardingCompleted()
-                                        onNavigateToLogin()
-                                    } else {
-                                        showBatteryExplainDialog = true
-                                    }
+
+                                5 -> if (viewModel.isBatteryOptimizationDisabled(context)) {
+                                    viewModel.saveOnboardingCompleted()
+                                    onNavigateToLogin()
+                                } else {
+                                    showBatteryExplainDialog = true
                                 }
-                                else -> {
-                                    if (currentPage < pages.size - 1) {
-                                        pagerState.animateScrollToPage(currentPage + 1)
-                                    }
+
+                                else -> if (currentPage < pages.size - 1) {
+                                    pagerState.animateScrollToPage(currentPage + 1)
                                 }
                             }
                         }
@@ -264,23 +312,46 @@ fun OnboardingScreen(
 }
 
 @Composable
+private fun OnboardingAtmosphere(
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(if (isDark) R.raw.night_stars else R.raw.clouds)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+        speed = if (isDark) 0.55f else 0.35f
+    )
+
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        contentScale = ContentScale.Crop,
+        modifier = modifier.graphicsLayer { alpha = if (isDark) 0.85f else 0.55f }
+    )
+}
+
+@Composable
 fun PageIndicator(
     isSelected: Boolean,
     modifier: Modifier = Modifier
 ) {
     val width by animateDpAsState(
-        targetValue = if (isSelected) 24.dp else 8.dp,
+        targetValue = if (isSelected) 20.dp else 6.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-        label = "width"
+        label = "indicator_width"
     )
 
     Box(
         modifier = modifier
             .width(width)
-            .height(8.dp)
+            .height(6.dp)
             .clip(CircleShape)
             .background(
-                if (isSelected) Color.White else Color.White.copy(alpha = 0.5f)
+                if (isSelected) SummerTheme.colors.white
+                else SummerTheme.colors.white.copy(alpha = 0.45f)
             )
     )
 }
@@ -301,9 +372,7 @@ fun OnboardingPageContent(
         label = "y_axis"
     )
 
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val imageSize = (maxHeight * 0.42f).coerceIn(160.dp, 300.dp)
 
         Column(
@@ -319,18 +388,15 @@ fun OnboardingPageContent(
                 contentDescription = null,
                 modifier = Modifier
                     .size(imageSize)
-                    .graphicsLayer {
-                        translationY = translateY.dp.toPx()
-                    }
+                    .graphicsLayer { translationY = translateY.dp.toPx() }
             )
 
             Spacer(Modifier.height(32.dp))
 
             Text(
                 text = page.title,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                color = ColorTextPrimary,
+                style = SummerTheme.typography.overlayTitle,
+                color = SummerTheme.colors.textDarkBrown,
                 textAlign = TextAlign.Center,
                 lineHeight = 36.sp,
                 modifier = Modifier.widthIn(max = 480.dp)
@@ -342,9 +408,9 @@ fun OnboardingPageContent(
                 text = page.description,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Gray,
+                color = SummerTheme.colors.textBrown,
                 textAlign = TextAlign.Center,
-                lineHeight = 26.sp,
+                lineHeight = 28.sp,
                 modifier = Modifier
                     .widthIn(max = 480.dp)
                     .padding(horizontal = 16.dp)
@@ -366,9 +432,9 @@ fun OnboardingPageContent(
                             else -> Icons.Default.LocationOn
                         },
                         text = when (pageIndex) {
-                            3 -> "ساعد تيمور يعرف القبلة ومواقيت الصلاة في مدينتك 🌍"
-                            4 -> "مش عاوزين يفوتنا أذان ولا ذكر، اسمح لتيمور ينبهك ✨"
-                            5 -> "عشان تيمور يفضل صاحي وينبهك في الوقت الصح 🔋"
+                            3 -> "الموقع بيتستخدم لحساب مواقيت الصلاة واتجاه القبلة بس، ومش بيتشارك مع حد."
+                            4 -> "التنبيهات بتوصلك بالأذان ووقت الصلاة والأذكار، وتقدر تظبطها بعدين."
+                            5 -> "السماح بالعمل في الخلفية بيخلي التنبيه يوصل في ميعاده من غير تأخير."
                             else -> ""
                         }
                     )
@@ -389,10 +455,8 @@ fun PermissionInfoCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ColorCardBg
-        )
+        shape = SummerTheme.Shapes.MediumRounded,
+        colors = CardDefaults.cardColors(containerColor = SummerTheme.colors.wisdomStart)
     ) {
         Row(
             modifier = Modifier
@@ -403,18 +467,18 @@ fun PermissionInfoCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = ColorTextPrimary,
-                modifier = Modifier.size(32.dp)
+                tint = SummerTheme.colors.wisdomAccent,
+                modifier = Modifier.size(28.dp)
             )
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(14.dp))
 
             Text(
                 text = text,
                 fontSize = 14.sp,
-                color = ColorTextPrimary,
+                color = SummerTheme.colors.wisdomTextPrimary,
                 fontWeight = FontWeight.Medium,
-                lineHeight = 20.sp
+                lineHeight = 22.sp
             )
         }
     }
@@ -429,47 +493,46 @@ fun BottomSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
+        color = SummerTheme.colors.cardBackground,
         shadowElevation = 8.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp),
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             TextButton(onClick = onSkipClicked) {
                 Text(
                     text = if (currentPage >= 3) "تخطي الكل" else "تخطي",
-                    color = Color.Gray,
-                    fontSize = 16.sp,
+                    color = SummerTheme.colors.textBrown,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
 
             Button(
                 onClick = onNextClicked,
-                shape = RoundedCornerShape(16.dp),
+                shape = SummerTheme.Shapes.MediumRounded,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ColorTextPrimary
+                    containerColor = SummerTheme.colors.goldWarm
                 ),
-                contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp
-                )
+                contentPadding = PaddingValues(horizontal = 28.dp, vertical = 14.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Text(
                     text = when (currentPage) {
-                        totalPages - 1 -> "ابدأ الرحلة 🚀"
+                        totalPages - 1 -> "ابدأ الرحلة"
                         3 -> "السماح بالموقع"
                         4 -> "السماح بالإشعارات"
                         5 -> "تحسين البطارية"
                         else -> "التالي"
                     },
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SummerTheme.colors.overlayDark
                 )
             }
         }
