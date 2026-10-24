@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.core.audio
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -15,7 +16,7 @@ import javax.inject.Singleton
  *   → سهّل الـ testing وعدم ربط الـ ViewModel بـ ExoPlayer مباشرة
  */
 interface QuranAudioPlayer {
-    fun play(url: String, onReady: () -> Unit, onBuffering: () -> Unit, onEnded: () -> Unit)
+    fun play(url: String, onReady: () -> Unit, onBuffering: () -> Unit, onEnded: () -> Unit, onError: (Exception) -> Unit = {})
     fun pause()
     fun resume()
     fun stop()
@@ -33,7 +34,8 @@ class QuranAudioPlayerImpl @Inject constructor(
         url: String,
         onReady: () -> Unit,
         onBuffering: () -> Unit,
-        onEnded: () -> Unit
+        onEnded: () -> Unit,
+        onError: (Exception) -> Unit
     ) {
         release()
 
@@ -41,6 +43,7 @@ class QuranAudioPlayerImpl @Inject constructor(
         player = exoPlayer
 
         exoPlayer.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) { onError(error) }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_BUFFERING -> onBuffering()

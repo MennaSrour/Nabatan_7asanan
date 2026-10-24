@@ -44,7 +44,8 @@ internal fun QuranSurahPage(pageIndex: Int, state: QuranUiState, actions: QuranA
             ayahsCount = ayahs.size,
             currentPage = currentPageNumber,
             downloadState = surahDownloadState,
-            onDownloadClick = { actions.downloadSurah(currentSurahId) }
+            onDownloadClick = { actions.downloadSurah(currentSurahId) },
+            onRepeatClick = { actions.onOpenRepeatBottomSheet(currentSurahId) }
         )
 
         QuranAyahList(ayahs, state, actions, lazyListState, quranFont, currentSurahId)
