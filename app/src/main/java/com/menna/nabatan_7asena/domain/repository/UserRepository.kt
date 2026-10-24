@@ -13,6 +13,7 @@ interface UserRepository {
     fun getLeaderboardResource(): Flow<Resource<List<LeaderboardEntry>>>
 
     suspend fun syncUserScore(user: User)
+    suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int)
     suspend fun updateUserName(newName: String)
     suspend fun resetAllProgress()
     suspend fun setNotificationsEnabled(enabled: Boolean)

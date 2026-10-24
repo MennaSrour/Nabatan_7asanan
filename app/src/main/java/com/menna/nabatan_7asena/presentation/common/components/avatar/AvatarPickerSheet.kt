@@ -1,4 +1,4 @@
-package com.menna.nabatan_7asena.presentation.screens.login.composables
+package com.menna.nabatan_7asena.presentation.common.components.avatar
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.menna.nabatan_7asena.domain.entity.User
+import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
@@ -31,11 +31,12 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 @Composable
 internal fun AvatarPickerSheet(
     gender: User.Gender,
-    avatars: List<Int>,
     selectedIndex: Int,
     onAvatarPicked: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    enabled: Boolean = true
 ) {
+    val avatars = AvatarCatalog.listFor(gender)
     val sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -69,8 +70,10 @@ internal fun AvatarPickerSheet(
                 items(avatars.size) { index ->
                     AvatarThumbnail(
                         avatarRes = avatars[index],
+                        avatarDescription = genderedStringResource(GenderedStrings.avatarOption, index + 1, gender = gender),
                         isSelected = index == selectedIndex,
-                        onClick = { onAvatarPicked(index) }
+                        onClick = { onAvatarPicked(index) },
+                        enabled = enabled
                     )
                 }
             }

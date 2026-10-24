@@ -154,6 +154,12 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int) {
+        check(dao.updateProfileImage(userId, gender.name, avatarIndex) == 1) {
+            "The saved profile changed or no longer exists"
+        }
+    }
+
     override suspend fun updateUserName(newName: String) {
         val user = dao.getUserStats().firstOrNull()
         if (user != null) {

@@ -28,6 +28,9 @@ interface AppDao {
     @androidx.room.Update
     suspend fun updateUserStats(stats: UserStatsEntity)
 
+    @Query("UPDATE user_stats SET avatarIndex = :avatarIndex WHERE id = 1 AND userId = :userId AND gender = :gender")
+    suspend fun updateProfileImage(userId: String, gender: String, avatarIndex: Int): Int
+
     @Query("DELETE FROM user_stats")
     suspend fun clearUserStats()
 

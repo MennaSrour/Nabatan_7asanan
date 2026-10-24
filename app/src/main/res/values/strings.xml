@@ -458,4 +458,8 @@
     <string name="onboarding_battery_explanation_female">هنفتحلك شاشة إعدادات الهاتف علشان تسمحي للتطبيق يشتغل في الخلفية، فيقدر يبعتلك الأذان والتذكيرات في وقتها. الشاشة دي من النظام نفسه، فهتظهر بلغة هاتفك.</string>
     <string name="quran_bookmark_saved_male">تم حفظ العلامة بنجاح</string>
     <string name="quran_bookmark_saved_female">تم حفظ العلامة بنجاح</string>
+    <string name="avatar_save_error_male">تعذر حفظ صورتك. حاول مرة أخرى.</string>
+    <string name="avatar_save_error_female">تعذر حفظ صورتك. حاولي مرة أخرى.</string>
+    <string name="avatar_option_male">اختر الصورة %1$d</string>
+    <string name="avatar_option_female">اختاري الصورة %1$d</string>
 </resources>
