@@ -1,5 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.settings.composables
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,8 +27,10 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
         modifier = Modifier
             .padding(padding)
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        SettingsProfileHeader(state, actions)
         SummerSectionTitle(genderedStringResource(GenderedStrings.settingsAccount))
         SummerSettingsItem(
             icon = Icons.Rounded.Edit,

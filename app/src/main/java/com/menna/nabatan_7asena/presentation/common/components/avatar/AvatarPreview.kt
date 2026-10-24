@@ -1,4 +1,4 @@
-package com.menna.nabatan_7asena.presentation.screens.login.composables
+package com.menna.nabatan_7asena.presentation.common.components.avatar
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -16,13 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
-internal fun AvatarPreview(avatarRes: Int, onEditClick: () -> Unit) {
+internal fun AvatarPreview(avatarRes: Int, onEditClick: () -> Unit, enabled: Boolean = true) {
     Box(contentAlignment = Alignment.BottomEnd) {
         Surface(
             shape = CircleShape,
@@ -31,7 +32,7 @@ internal fun AvatarPreview(avatarRes: Int, onEditClick: () -> Unit) {
             shadowElevation = 6.dp,
             modifier = Modifier
                 .size(130.dp)
-                .clickable { onEditClick() }
+                .clickable(enabled = enabled, role = Role.Button) { onEditClick() }
         ) {
             Image(
                 painter = painterResource(id = avatarRes),
@@ -47,7 +48,7 @@ internal fun AvatarPreview(avatarRes: Int, onEditClick: () -> Unit) {
             shadowElevation = 4.dp,
             modifier = Modifier
                 .size(36.dp)
-                .clickable { onEditClick() }
+                .clickable(enabled = enabled, role = Role.Button) { onEditClick() }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

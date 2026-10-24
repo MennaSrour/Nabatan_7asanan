@@ -4,6 +4,8 @@ import com.menna.nabatan_7asena.R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val avatarSaveError = GenderedString(R.string.avatar_save_error_male, R.string.avatar_save_error_female)
+    val avatarOption = GenderedString(R.string.avatar_option_male, R.string.avatar_option_female)
     val loginWelcome = GenderedString(R.string.login_welcome_male, R.string.login_welcome_female)
     val loginIntroduction = GenderedString(R.string.login_introduction_male, R.string.login_introduction_female)
     val loginChooseAvatarHint = GenderedString(R.string.login_choose_avatar_hint_male, R.string.login_choose_avatar_hint_female)

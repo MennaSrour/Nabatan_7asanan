@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
 import com.menna.nabatan_7asena.presentation.common.LocalUserGender
+import com.menna.nabatan_7asena.presentation.common.components.avatar.AvatarPickerSheet
 import com.menna.nabatan_7asena.presentation.screens.login.LoginActions
 import com.menna.nabatan_7asena.presentation.screens.login.LoginUiState
 
@@ -52,7 +53,6 @@ fun LoginContent(
         if (showAvatarSheet) {
             AvatarPickerSheet(
                 gender = state.selectedGender,
-                avatars = currentAvatarList,
                 selectedIndex = currentAvatarIndex,
                 onAvatarPicked = { index ->
                     actions.onAvatarSelected(index)

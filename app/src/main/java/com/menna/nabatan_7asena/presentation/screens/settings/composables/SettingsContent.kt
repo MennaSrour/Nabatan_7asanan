@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import com.menna.nabatan_7asena.presentation.common.LocalUserGender
 import androidx.compose.ui.unit.LayoutDirection
 import com.menna.nabatan_7asena.presentation.screens.settings.SettingsActions
 import com.menna.nabatan_7asena.presentation.screens.settings.SettingsUiState
@@ -31,7 +32,7 @@ fun SettingsContent(
     var showResetDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl, LocalUserGender provides state.gender) {
         Scaffold(
             containerColor = SummerTheme.colors.transparent,
             snackbarHost = {
@@ -47,6 +48,8 @@ fun SettingsContent(
                 SettingsSections(state, actions, padding, { showEditNameDialog = true }, { showResetDialog = true })
             }
         }
+
+        SettingsImagePickerDialog(state, actions)
 
         if (showEditNameDialog) EditNameDialog(actions) { showEditNameDialog = false }
 

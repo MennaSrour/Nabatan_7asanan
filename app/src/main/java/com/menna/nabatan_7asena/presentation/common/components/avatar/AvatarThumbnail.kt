@@ -1,4 +1,4 @@
-package com.menna.nabatan_7asena.presentation.screens.login.composables
+package com.menna.nabatan_7asena.presentation.common.components.avatar
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -17,17 +17,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
-internal fun AvatarThumbnail(avatarRes: Int, isSelected: Boolean, onClick: () -> Unit) {
+internal fun AvatarThumbnail(avatarRes: Int, isSelected: Boolean, onClick: () -> Unit, avatarDescription: String, enabled: Boolean = true) {
     Box(contentAlignment = Alignment.TopEnd) {
         Surface(
             onClick = onClick,
+            enabled = enabled,
             shape = RoundedCornerShape(18.dp),
             color = if (isSelected) SummerTheme.colors.goldWarm.copy(alpha = 0.15f) else SummerTheme.colors.dayBackground,
             border = BorderStroke(
@@ -37,6 +40,7 @@ internal fun AvatarThumbnail(avatarRes: Int, isSelected: Boolean, onClick: () ->
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
+                .semantics { contentDescription = avatarDescription; selected = isSelected }
         ) {
             Image(
                 painter = painterResource(id = avatarRes),
