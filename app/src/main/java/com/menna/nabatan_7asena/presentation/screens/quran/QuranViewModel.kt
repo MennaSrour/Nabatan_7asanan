@@ -45,7 +45,11 @@ class QuranViewModel @Inject constructor(
 
     private val _effects = Channel<QuranEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
-    private val _audioState = MutableStateFlow<QuranAudioState>(QuranAudioState.Idle)
+    private val playback = QuranPlaybackController(audioPlayer, onPlaybackError = {
+        _effects.trySend(QuranEffect.PlaybackFailed)
+    }) { surah, ayah ->
+        downloadManager.localUriIfExists(surah, ayah) ?: EveryAyahUrlBuilder.buildUrl(surah, ayah)
+    }
     private val _surahDownloadStates = MutableStateFlow<Map<Int, SurahDownloadState>>(emptyMap())
 
     private val _fullDownloadState = MutableStateFlow(FullQuranDownloadState())
@@ -53,8 +57,12 @@ class QuranViewModel @Inject constructor(
     private val _ayahsBySurah = MutableStateFlow<Map<Int, List<AyahModel>>>(emptyMap())
     private val _position = MutableStateFlow(QuranReadingPosition())
     private val loadingSurahs = mutableSetOf<Int>()
-    private val playbackState = combine(lastSavedPage, _audioState, _surahDownloadStates, _fullDownloadState) { page, audio, downloads, full ->
-        QuranUiState(savedPage = page, audioState = audio, downloadStates = downloads, fullDownloadState = full)
+    private val playbackState = combine(lastSavedPage, playback.state, _surahDownloadStates, _fullDownloadState) { page, audio, downloads, full ->
+        QuranUiState(savedPage = page, audioState = audio.audioState, downloadStates = downloads, fullDownloadState = full,
+            isRepeatBottomSheetVisible = audio.isRepeatBottomSheetVisible, repeatSurahId = audio.repeatSurahId,
+            repeatAyahCount = audio.repeatAyahCount, playbackScope = audio.playbackScope,
+            startAyah = audio.startAyah, endAyah = audio.endAyah, repeatCount = audio.repeatCount,
+            isRepeatModeActive = audio.isRepeatModeActive, remainingRepeats = audio.remainingRepeats)
     }
     val uiState = combine(playbackState, _bookmarkedSurah, _bookmarkedAyah, _ayahsBySurah, _position) { playback, surah, ayah, content, position ->
         playback.copy(bookmarkedSurahId = surah, bookmarkedAyahNo = ayah, ayahsBySurah = content,
@@ -87,11 +95,11 @@ class QuranViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        audioPlayer.release()
-        _audioState.value = QuranAudioState.Idle
+        playback.release()
     }
 
     override fun onSurahChanged(surahId: Int) {
+        playback.onSurahChanged(surahId)
         onSurahVisible(surahId)
         val surah = QuranConstants.surahs.getOrNull(surahId - 1) ?: return
         viewModelScope.launch {
@@ -145,46 +153,17 @@ class QuranViewModel @Inject constructor(
         }
     }
 
-    override fun playAyahAudio(suraNo: Int, ayaNo: Int) {
-        val current = _audioState.value
-
-        if (current is QuranAudioState.Playing && current.suraNo == suraNo && current.ayaNo == ayaNo) {
-            audioPlayer.pause()
-            _audioState.value = QuranAudioState.Paused(suraNo, ayaNo)
-            return
-        }
-
-        if (current is QuranAudioState.Paused && current.suraNo == suraNo && current.ayaNo == ayaNo) {
-            audioPlayer.resume()
-            _audioState.value = QuranAudioState.Playing(suraNo, ayaNo)
-            return
-        }
-
-        val url = downloadManager.localUriIfExists(suraNo, ayaNo)
-        ?: EveryAyahUrlBuilder.buildUrl(suraNo, ayaNo)
-        _audioState.value = QuranAudioState.Loading(suraNo, ayaNo)
-
-        audioPlayer.play(
-            url = url,
-            onBuffering = {
-                val s = _audioState.value
-                if (s !is QuranAudioState.Playing || (s.suraNo == suraNo && s.ayaNo == ayaNo)) {
-                    _audioState.value = QuranAudioState.Loading(suraNo, ayaNo)
-                }
-            },
-            onReady = {
-                _audioState.value = QuranAudioState.Playing(suraNo, ayaNo)
-            },
-            onEnded = {
-                _audioState.value = QuranAudioState.Idle
-            }
-        )
+    override fun onOpenRepeatBottomSheet(surahId: Int) {
+        playback.openRepeatSheet(surahId, _ayahsBySurah.value[surahId]?.size ?: 0)
     }
-
-    override fun stopAudio() {
-        audioPlayer.stop()
-        _audioState.value = QuranAudioState.Idle
-    }
+    override fun onDismissRepeatBottomSheet() = playback.dismissRepeatSheet()
+    override fun onPlaybackScopeChanged(scope: PlaybackScope) = playback.setScope(scope)
+    override fun onStartAyahChanged(ayah: Int) = playback.setStartAyah(ayah)
+    override fun onEndAyahChanged(ayah: Int) = playback.setEndAyah(ayah)
+    override fun onRepeatCountChanged(count: Int) = playback.setRepeatCount(count)
+    override fun onStartRepeatClicked() = playback.startRepeat()
+    override fun playAyahAudio(suraNo: Int, ayaNo: Int) = playback.playAyah(suraNo, ayaNo)
+    override fun stopAudio() = playback.stop()
 
     private fun refreshSurahDownloadState(suraId: Int) {
         val ayahsCount = getSurahAyahs(suraId).size

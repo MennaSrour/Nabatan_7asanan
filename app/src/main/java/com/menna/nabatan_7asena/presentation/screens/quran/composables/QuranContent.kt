@@ -23,5 +23,6 @@ fun QuranContent(state: QuranUiState, actions: QuranActions, layout: QuranLayout
         ) {
             QuranReaderScaffold(state, actions, layout)
         }
+        if (state.isRepeatBottomSheetVisible) QuranRepeatBottomSheet(state, actions)
     }
 }

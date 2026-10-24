@@ -88,7 +88,7 @@ internal fun QuranReaderTopBar(state: QuranUiState, actions: QuranActions, layou
                 IconButton(onClick = { actions.stopAudio() }) {
                     Icon(
                         Icons.Rounded.Stop,
-                        contentDescription = null,
+                        contentDescription = genderedStringResource(GenderedStrings.quranStopPlayback),
                         tint     = q.accentStrong,
                         modifier = Modifier.size(24.dp)
                     )

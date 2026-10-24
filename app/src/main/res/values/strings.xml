@@ -462,4 +462,26 @@
     <string name="avatar_save_error_female">تعذر حفظ صورتك. حاولي مرة أخرى.</string>
     <string name="avatar_option_male">اختر الصورة %1$d</string>
     <string name="avatar_option_female">اختاري الصورة %1$d</string>
+    <string name="quran_repeat_memorize_male">تكرار وحفظ</string>
+    <string name="quran_repeat_memorize_female">تكرار وحفظ</string>
+    <string name="quran_full_surah_male">سورة كاملة</string>
+    <string name="quran_full_surah_female">سورة كاملة</string>
+    <string name="quran_custom_range_male">من آية إلى آية</string>
+    <string name="quran_custom_range_female">من آية إلى آية</string>
+    <string name="quran_start_ayah_male">من آية %1$d</string>
+    <string name="quran_start_ayah_female">من آية %1$d</string>
+    <string name="quran_end_ayah_male">إلى آية %1$d</string>
+    <string name="quran_end_ayah_female">إلى آية %1$d</string>
+    <string name="quran_repeat_count_male">عدد مرات التكرار</string>
+    <string name="quran_repeat_count_female">عدد مرات التكرار</string>
+    <string name="quran_repeat_times_male">%1$d مرات</string>
+    <string name="quran_repeat_times_female">%1$d مرات</string>
+    <string name="quran_infinite_repeat_male">بلا نهاية</string>
+    <string name="quran_infinite_repeat_female">بلا نهاية</string>
+    <string name="quran_start_repeat_male">بدء التكرار</string>
+    <string name="quran_start_repeat_female">بدء التكرار</string>
+    <string name="quran_stop_playback_male">إيقاف التشغيل</string>
+    <string name="quran_stop_playback_female">إيقاف التشغيل</string>
+    <string name="quran_playback_error_male">تعذر تشغيل الصوت. تحقق من الاتصال أو نزّل السورة ثم حاول مرة أخرى.</string>
+    <string name="quran_playback_error_female">تعذر تشغيل الصوت. تحقق من الاتصال أو نزّل السورة ثم حاول مرة أخرى.</string>
 </resources>

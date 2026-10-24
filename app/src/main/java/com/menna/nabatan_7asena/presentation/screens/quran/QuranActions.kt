@@ -1,6 +1,13 @@
 package com.menna.nabatan_7asena.presentation.screens.quran
 
 interface QuranActions {
+    fun onOpenRepeatBottomSheet(surahId: Int)
+    fun onDismissRepeatBottomSheet()
+    fun onPlaybackScopeChanged(scope: PlaybackScope)
+    fun onStartAyahChanged(ayah: Int)
+    fun onEndAyahChanged(ayah: Int)
+    fun onRepeatCountChanged(count: Int)
+    fun onStartRepeatClicked()
     fun onSurahChanged(surahId: Int)
     fun goToJuz(juz: Int)
     fun goToBookmark()

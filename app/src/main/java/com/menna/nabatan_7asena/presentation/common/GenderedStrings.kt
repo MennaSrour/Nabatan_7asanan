@@ -4,6 +4,18 @@ import com.menna.nabatan_7asena.R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val quranRepeatMemorize = GenderedString(R.string.quran_repeat_memorize_male, R.string.quran_repeat_memorize_female)
+    val quranFullSurah = GenderedString(R.string.quran_full_surah_male, R.string.quran_full_surah_female)
+    val quranCustomRange = GenderedString(R.string.quran_custom_range_male, R.string.quran_custom_range_female)
+    val quranStartAyah = GenderedString(R.string.quran_start_ayah_male, R.string.quran_start_ayah_female)
+    val quranEndAyah = GenderedString(R.string.quran_end_ayah_male, R.string.quran_end_ayah_female)
+    val quranRepeatCount = GenderedString(R.string.quran_repeat_count_male, R.string.quran_repeat_count_female)
+    val quranRepeatTimes = GenderedString(R.string.quran_repeat_times_male, R.string.quran_repeat_times_female)
+    val quranInfiniteRepeat = GenderedString(R.string.quran_infinite_repeat_male, R.string.quran_infinite_repeat_female)
+    val quranStartRepeat = GenderedString(R.string.quran_start_repeat_male, R.string.quran_start_repeat_female)
+    val quranStopPlayback = GenderedString(R.string.quran_stop_playback_male, R.string.quran_stop_playback_female)
+    val quranPlaybackError = GenderedString(R.string.quran_playback_error_male, R.string.quran_playback_error_female)
+
     val avatarSaveError = GenderedString(R.string.avatar_save_error_male, R.string.avatar_save_error_female)
     val avatarOption = GenderedString(R.string.avatar_option_male, R.string.avatar_option_female)
     val loginWelcome = GenderedString(R.string.login_welcome_male, R.string.login_welcome_female)

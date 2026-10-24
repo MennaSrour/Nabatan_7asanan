@@ -35,7 +35,8 @@ fun SurahHeaderCard(
     ayahsCount: Int,
     currentPage: Int,
     downloadState: SurahDownloadState,
-    onDownloadClick: () -> Unit
+    onDownloadClick: () -> Unit,
+    onRepeatClick: () -> Unit
 ) {
     val q = SummerTheme.quran
     Card(
@@ -111,7 +112,7 @@ fun SurahHeaderCard(
 
                 Spacer(Modifier.height(12.dp))
 
-                SurahDownloadRow(state = downloadState, onClick = onDownloadClick, q = q)
+                SurahPlaybackActions(downloadState, ayahsCount > 0, onDownloadClick, onRepeatClick)
             }
         }
     }

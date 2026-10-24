@@ -13,8 +13,10 @@ import kotlinx.coroutines.flow.first
 internal fun QuranScreenEffects(state: QuranUiState, layout: QuranLayoutState, viewModel: QuranViewModel) {
     val savedMessage = genderedStringResource(GenderedStrings.quranBookmarkSaved)
     val errorMessage = genderedStringResource(GenderedStrings.unexpectedError)
+    val playbackError = genderedStringResource(GenderedStrings.quranPlaybackError)
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
+            QuranEffect.PlaybackFailed -> layout.snackbar.showSnackbar(playbackError)
             QuranEffect.LoadFailed -> layout.snackbar.showSnackbar(errorMessage)
             QuranEffect.BookmarkSaved -> layout.snackbar.showSnackbar(savedMessage)
             is QuranEffect.ScrollToAyah -> scrollToAyah(layout, effect)
