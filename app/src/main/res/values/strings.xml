@@ -484,4 +484,8 @@
     <string name="quran_stop_playback_female">إيقاف التشغيل</string>
     <string name="quran_playback_error_male">تعذر تشغيل الصوت. تحقق من الاتصال أو نزّل السورة ثم حاول مرة أخرى.</string>
     <string name="quran_playback_error_female">تعذر تشغيل الصوت. تحقق من الاتصال أو نزّل السورة ثم حاول مرة أخرى.</string>
+    <string name="challenge_correct_answer_male">إجابة صحيحة! أحسنت.</string>
+    <string name="challenge_correct_answer_female">إجابة صحيحة! أحسنتِ.</string>
+    <string name="challenge_wrong_answer_male">إجابة غير صحيحة. حاول مرة أخرى.</string>
+    <string name="challenge_wrong_answer_female">إجابة غير صحيحة. حاولي مرة أخرى.</string>
 </resources>

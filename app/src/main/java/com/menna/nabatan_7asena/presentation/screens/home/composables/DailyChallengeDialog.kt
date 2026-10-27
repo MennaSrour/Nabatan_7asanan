@@ -50,12 +50,13 @@ fun DailyChallengeDialog(
     onDismiss: () -> Unit,
     onAnswerSelected: (Boolean) -> Unit
 ) {
-    var selectedIdx by remember { mutableStateOf<Int?>(null) }
-    var isSolved by remember { mutableStateOf(false) }
+    var selectedIdx by remember(riddle) { mutableStateOf<Int?>(null) }
+    var isSolved by remember(riddle) { mutableStateOf(false) }
 
     fun check(index: Int) {
+        if (isSolved) return
         selectedIdx = index
-        val isCorrect = riddle.options[index] == riddle.answer
+        val isCorrect = riddle.isCorrectAnswer(riddle.options[index])
         if (isCorrect) {
             isSolved = true
         }
@@ -117,7 +118,7 @@ fun DailyChallengeDialog(
                 Spacer(Modifier.height(18.dp))
 
                 riddle.options.forEachIndexed { index, option ->
-                    val isCorrect = option == riddle.answer
+                    val isCorrect = riddle.isCorrectAnswer(option)
                     val optionState = when {
                         isSolved && isCorrect -> QuizOptionState.CORRECT
                         selectedIdx == index && !isCorrect -> QuizOptionState.WRONG
@@ -159,21 +160,10 @@ fun DailyChallengeDialog(
                     }
                 }
 
+                if (selectedIdx != null) DailyChallengeFeedback(isSolved)
                 if (isSolved) {
-                    Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = null,
-                            tint = SummerTheme.colors.successGreen,
-                            modifier = Modifier.size(SummerTheme.dimensions.iconSmall)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = genderedStringResource(GenderedStrings.challengeWellDone),
-                            color = SummerTheme.colors.successGreen,
-                            style = SummerTheme.typography.taskTitle
-                        )
+                    Button(onClick = onDismiss) {
+                        Text(genderedStringResource(GenderedStrings.done))
                     }
                 }
             }
