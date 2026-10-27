@@ -17,5 +17,8 @@ data class DailyContent(
         val question: String,
         val answer: String,
         val options: List<String>
-    )
+    ) {
+        fun isCorrectAnswer(option: String): Boolean =
+            answer.isNotBlank() && option.trim() == answer.trim()
+    }
 }

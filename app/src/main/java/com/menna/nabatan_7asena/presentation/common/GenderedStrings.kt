@@ -4,6 +4,8 @@ import com.menna.nabatan_7asena.R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val challengeCorrectAnswer = GenderedString(R.string.challenge_correct_answer_male, R.string.challenge_correct_answer_female)
+    val challengeWrongAnswer = GenderedString(R.string.challenge_wrong_answer_male, R.string.challenge_wrong_answer_female)
     val quranRepeatMemorize = GenderedString(R.string.quran_repeat_memorize_male, R.string.quran_repeat_memorize_female)
     val quranFullSurah = GenderedString(R.string.quran_full_surah_male, R.string.quran_full_surah_female)
     val quranCustomRange = GenderedString(R.string.quran_custom_range_male, R.string.quran_custom_range_female)

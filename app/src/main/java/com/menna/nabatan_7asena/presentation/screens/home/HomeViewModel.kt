@@ -313,11 +313,7 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun onCorrectAnswer() {
-        viewModelScope.launch {
-            audioPlayerManager.playCorrectAnswerSound()
-            delay(1500)
-            closeChallenge()
-        }
+        audioPlayerManager.playCorrectAnswerSound()
     }
 
     private fun Activity.toUiModel(currentPart: Int): HomeUiState.UiTaskItem {
