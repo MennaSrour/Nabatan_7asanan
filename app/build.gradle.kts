@@ -55,6 +55,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":composeApp"))
+
     // 2️⃣ مكتبة Desugaring الخاصة بتشغيل API التواريخ على أندرويد القديم
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
