@@ -8,7 +8,6 @@ import androidx.work.WorkerParameters
 import com.menna.nabatan_7asena.data.schedulers.AzkarScheduler
 import com.menna.nabatan_7asena.data.schedulers.PrayersScheduler
 import com.menna.nabatan_7asena.data.schedulers.QuranScheduler
-import com.menna.nabatan_7asena.data.schedulers.TaskScheduler
 import com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase
 import com.menna.nabatan_7asena.domain.LocationTracker
 import dagger.assisted.Assisted
@@ -25,8 +24,7 @@ class DailyManagerWorker @AssistedInject constructor(
     private val locationTracker: LocationTracker,   
     private val prayersScheduler: PrayersScheduler, 
     private val azkarScheduler: AzkarScheduler,     
-    private val quranScheduler: QuranScheduler,     
-    private val taskScheduler: TaskScheduler     
+    private val quranScheduler: QuranScheduler
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -67,7 +65,6 @@ class DailyManagerWorker @AssistedInject constructor(
                 quranScheduler.scheduleWerd(prayerTimes)
 
                 
-                taskScheduler.scheduleDailyChallenge()
 
                 Log.d("DailyManagerWorker", "تمت الجدولة بنجاح لكل المهام ✅")
                 Result.success()

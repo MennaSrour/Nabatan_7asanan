@@ -21,6 +21,7 @@ class UnifiedAlarmReceiver : BroadcastReceiver() {
     lateinit var audioPlayerManager: AudioPlayerManager
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (RetiredDailyMission.matches(intent.getStringExtra("TITLE"))) return
         val title = intent.getStringExtra("TITLE") ?: "نباتاً حسناً"
         val message = intent.getStringExtra("MESSAGE") ?: ""
         val soundId = intent.getIntExtra("SOUND_ID", R.raw.sound_normal)

@@ -11,10 +11,6 @@ private val CATEGORY_PALETTES = mapOf(
         gradientStart = Color(0xFF4BE0AC),
         gradientEnd = Color(0xFF1B8F6B)
     ),
-    TaskCategory.CHALLENGE to CategoryPalette(
-        gradientStart = Color(0xFFFFCE55),
-        gradientEnd = Color(0xFFE8930A)
-    ),
     TaskCategory.AZKAR to CategoryPalette(
         gradientStart = Color(0xFFFFA36B),
         gradientEnd = Color(0xFFF1552F)

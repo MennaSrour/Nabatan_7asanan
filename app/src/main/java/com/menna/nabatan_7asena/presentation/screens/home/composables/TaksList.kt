@@ -211,7 +211,6 @@ fun TaskBubbleCard(
 private fun categoryIcon(category: TaskCategory): ImageVector = when (category) {
     TaskCategory.QURAN -> Icons.Rounded.MenuBook
     TaskCategory.AZKAR -> Icons.Rounded.SelfImprovement
-    TaskCategory.CHALLENGE -> Icons.Rounded.EmojiEvents
     TaskCategory.EXTRA -> Icons.Rounded.AutoAwesome
     TaskCategory.PRAYER -> Icons.Rounded.AutoAwesome
 }

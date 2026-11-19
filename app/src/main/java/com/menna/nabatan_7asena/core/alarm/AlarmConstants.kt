@@ -23,6 +23,4 @@ object AlarmConstants {
     const val ID_QURAN_ASR = 3002
     const val ID_QURAN_MAGHRIB = 3003
 
-    // التحدي اليومي (TaskScheduler)
-    const val ID_DAILY_CHALLENGE = 4001
 }

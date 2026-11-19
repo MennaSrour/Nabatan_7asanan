@@ -11,7 +11,7 @@ import com.menna.nabatan_7asena.domain.entity.User
 fun DailyPlanDto.toEntity(dayId: Int): DailyPlanEntity {
     return DailyPlanEntity(
         dayId = dayId,
-        challenge = this.challenge,
+        challenge = "", // Retain the legacy Room column without storing new missions.
         wisdom = this.wisdom.ifEmpty { "قال رسول الله ﷺ: تبسمك في وجه أخيك صدقة" },
         quranDhuhr = this.quranDhuhr,
         quranAsr = this.quranAsr,
@@ -41,7 +41,6 @@ fun UserStatsEntity.toDomain(): User {
 fun DailyPlanEntity.toDomain(): DailyContent {
     return DailyContent(
         dayId = this.dayId,
-        challengeTitle = this.challenge,
         quranWerd = QuranWerd(this.quranDhuhr, this.quranAsr, this.quranMaghrib),
         wisdom = this.wisdom,
         riddle = if (this.riddleQuestion.isNotEmpty()) Riddle(

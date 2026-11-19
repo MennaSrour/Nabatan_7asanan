@@ -1,6 +1,7 @@
 package com.menna.nabatan_7asena.data.remote
 
 import android.util.Log
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.menna.nabatan_7asena.data.remote.dto.DailyPlanDto
@@ -24,8 +25,8 @@ class FirebaseDataSource @Inject constructor(
                 .await()
 
             if (snapshot.exists()) {
-                Log.d("DailyPlanDebug", "تم العثور على الخطة! البيانات: ${snapshot.data}")
-                return snapshot.toObject(DailyPlanDto::class.java)
+                Log.d("DailyPlanDebug", "تم العثور على الخطة ليوم: $dayId")
+                return snapshot.toDailyPlan()
             }
             Log.w("DailyPlanDebug", "لا توجد خطة متاحة لليوم: $dayId")
             return null
@@ -72,8 +73,7 @@ class FirebaseDataSource @Inject constructor(
                     .await()
 
                 if (snapshot.exists()) {
-                    val dto = snapshot.toObject(DailyPlanDto::class.java)
-                    if (dto != null) plans.add(dto)
+                    plans.add(snapshot.toDailyPlan())
                 }
             }
             return plans
@@ -142,3 +142,13 @@ class FirebaseDataSource @Inject constructor(
         }
     }
 }
+/** Read only the retained daily content; the retired mission field is deliberately ignored. */
+private fun DocumentSnapshot.toDailyPlan() = DailyPlanDto(
+    wisdom = getString("wisdom").orEmpty(),
+    quranDhuhr = getString("quranDhuhr").orEmpty(),
+    quranAsr = getString("quranAsr").orEmpty(),
+    quranMaghrib = getString("quranMaghrib").orEmpty(),
+    riddleQuestion = getString("riddleQuestion").orEmpty(),
+    riddleAnswer = getString("riddleAnswer").orEmpty(),
+    riddleOptions = getString("riddleOptions").orEmpty()
+)

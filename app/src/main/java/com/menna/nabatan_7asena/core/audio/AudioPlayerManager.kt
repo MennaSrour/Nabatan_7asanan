@@ -146,7 +146,6 @@ class AudioPlayerManager @Inject constructor(
                     item.title.contains("سبحان الله") -> R.raw.subhan_allah
                     else -> R.raw.yala_zekr
                 }
-                TaskCategory.CHALLENGE -> R.raw.mohima
                 else -> null
             }
         }
