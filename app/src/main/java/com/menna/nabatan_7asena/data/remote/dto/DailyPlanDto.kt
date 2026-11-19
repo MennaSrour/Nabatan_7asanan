@@ -1,7 +1,6 @@
 package com.menna.nabatan_7asena.data.remote.dto
 
 data class DailyPlanDto(
-    val challenge: String = "",
     val wisdom: String = "",
     val quranDhuhr: String = "",
     val quranAsr: String = "",

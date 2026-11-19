@@ -19,7 +19,6 @@ import com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -44,18 +43,7 @@ class DailyActivityRepositoryImpl @Inject constructor(
         val recordsFlow = appDao.getRecordsForDate(date)
         val extraTasksFlow = appDao.getExtraTasksForDate(date)
 
-         val dailyPlanFlow = flow {
-            val dayId = getDayOfYear()
-            emit(null)
-             val plan = kotlinx.coroutines.withTimeoutOrNull(5000) {
-                fetchDailyPlan(dayId)
-            }
-            if (plan != null) {
-                emit(plan)
-            }
-        }
-
-        return combine(recordsFlow, dailyPlanFlow, extraTasksFlow) { records, plan, extraTasks ->
+        return combine(recordsFlow, extraTasksFlow) { records, extraTasks ->
             val statusMap = records.associate { it.itemId to it.isCompleted }
             val prayers = try {
                 getPrayerTimesUseCase(city, country, date)
@@ -110,19 +98,6 @@ class DailyActivityRepositoryImpl @Inject constructor(
                     category = TaskCategory.QURAN
                 )
             )
-
-            if (plan != null) {
-                activities.add(
-                    Activity.Task(
-                        200,
-                        statusMap[200] ?: false,
-                        plan.challengeTitle,
-                        TaskCategory.CHALLENGE
-                    )
-                )
-            } else {
-                Log.w(TAG, "No daily plan available for today, Challenge task will not show")
-            }
 
             extraTasks.forEach { extra ->
                 activities.add(
@@ -202,19 +177,17 @@ class DailyActivityRepositoryImpl @Inject constructor(
             emptyList()
         }
 
-        val extraChallenges = mutableListOf<String>()
         val extraWerd = mutableListOf<String>()
         futurePlans.forEach { plan ->
             if (plan.quranDhuhr.isNotEmpty()) extraWerd.add("تلاوة إضافية: ${plan.quranDhuhr}")
             if (plan.quranAsr.isNotEmpty()) extraWerd.add("تلاوة إضافية: ${plan.quranAsr}")
             if (plan.quranMaghrib.isNotEmpty()) extraWerd.add("تلاوة إضافية: ${plan.quranMaghrib}")
 
-            if (plan.challenge.isNotEmpty()) extraChallenges.add("تحدي إضافي: ${plan.challenge}")
         }
 
         return ExtraTasks(
             werd = extraWerd,
-            challenges = extraChallenges
+            challenges = emptyList()
         )
     }
 

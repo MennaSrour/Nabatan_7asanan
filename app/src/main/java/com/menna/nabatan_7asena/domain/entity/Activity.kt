@@ -21,7 +21,6 @@ sealed class Activity {
 
 enum class TaskCategory {
     QURAN,
-    CHALLENGE,
     AZKAR,
     EXTRA,
     PRAYER

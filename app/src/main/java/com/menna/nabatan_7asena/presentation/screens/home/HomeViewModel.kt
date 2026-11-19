@@ -369,7 +369,6 @@ class HomeViewModel @Inject constructor(
 
     private fun getTaskEmoji(category: TaskCategory) = when (category) {
         TaskCategory.QURAN -> "📖"
-        TaskCategory.CHALLENGE -> "💪"
         TaskCategory.AZKAR -> "📿"
         TaskCategory.EXTRA -> "✨"
         TaskCategory.PRAYER -> "🕌"

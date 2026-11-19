@@ -2,7 +2,6 @@ package com.menna.nabatan_7asena.domain.entity
 
 data class DailyContent(
     val dayId: Int,
-    val challengeTitle: String,
     val wisdom: String,
     val quranWerd: QuranWerd,
     val riddle: Riddle? = null
