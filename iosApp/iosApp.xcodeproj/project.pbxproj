@@ -4,6 +4,20 @@
     classes = {};
     objectVersion = 56;
     objects = {
+        B10000000000000000000001 = {isa = PBXBuildFile; productRef = B20000000000000000000001; };
+        B10000000000000000000002 = {isa = PBXBuildFile; productRef = B20000000000000000000002; };
+        B10000000000000000000003 = {isa = PBXBuildFile; productRef = B20000000000000000000003; };
+        B20000000000000000000001 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseCore; };
+        B20000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseFirestore; };
+        B20000000000000000000003 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseRemoteConfig; };
+        B30000000000000000000001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/firebase/firebase-ios-sdk"; requirement = {kind = upToNextMajorVersion; minimumVersion = 11.1.0; }; };
+        B40000000000000000000001 = {
+            isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647;
+            files = (); inputPaths = (); outputPaths = (); runOnlyForDeploymentPostprocessing = 0;
+            name = "Copy optional Firebase configuration"; shellPath = /bin/sh;
+            shellScript = "set -eu\nif [ -f \"$SRCROOT/iosApp/GoogleService-Info.plist\" ]; then mkdir -p \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH\"; cp \"$SRCROOT/iosApp/GoogleService-Info.plist\" \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/GoogleService-Info.plist\"; fi\n";
+        };
+
         A10000000000000000000001 = {isa = PBXBuildFile; fileRef = A20000000000000000000001; };
         A10000000000000000000002 = {isa = PBXBuildFile; fileRef = A20000000000000000000002; };
         A20000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
@@ -16,10 +30,11 @@
         A40000000000000000000001 = {
             isa = PBXNativeTarget;
             buildConfigurationList = A80000000000000000000002;
-            buildPhases = (A50000000000000000000001, A50000000000000000000002, A50000000000000000000003, A50000000000000000000004);
+            buildPhases = (A50000000000000000000001, B40000000000000000000001, A50000000000000000000002, A50000000000000000000003, A50000000000000000000004);
             buildRules = ();
             dependencies = ();
             name = iosApp;
+            packageProductDependencies = (B20000000000000000000001, B20000000000000000000002, B20000000000000000000003);
             productName = iosApp;
             productReference = A20000000000000000000004;
             productType = "com.apple.product-type.application";
@@ -37,7 +52,7 @@
             shellScript = "set -eu\nif [ \"${OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED:-NO}\" = \"YES\" ]; then exit 0; fi\nif [ -z \"${JAVA_HOME:-}\" ]; then export JAVA_HOME=\"$(/usr/libexec/java_home -v 21)\"; fi\ncd \"$SRCROOT/..\"\n./gradlew -Dorg.gradle.java.home=\"$JAVA_HOME\" :composeApp:embedAndSignAppleFrameworkForXcode\n";
         };
         A50000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002); runOnlyForDeploymentPostprocessing = 0; };
-        A50000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A50000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
         A50000000000000000000004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
         A60000000000000000000001 = {
             isa = PBXProject;
@@ -49,6 +64,7 @@
             knownRegions = (en, Base);
             mainGroup = A30000000000000000000001;
             productRefGroup = A30000000000000000000003;
+            packageReferences = (B30000000000000000000001);
             projectDirPath = "";
             projectRoot = "";
             targets = (A40000000000000000000001);

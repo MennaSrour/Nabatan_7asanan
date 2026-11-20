@@ -1,6 +1,6 @@
 package com.menna.nabatan_7asena.presentation.screens
 
-import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaViewModel
 import org.junit.Assert.*

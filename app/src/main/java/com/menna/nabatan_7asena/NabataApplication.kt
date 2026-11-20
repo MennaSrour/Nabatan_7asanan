@@ -3,7 +3,7 @@ package com.menna.nabatan_7asena
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import com.menna.nabatan_7asena.core.alarm.RetiredDailyMission
+import com.menna.nabatan_7asena.platform.AndroidPlatform
 import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -16,7 +16,7 @@ class NabataApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
-        RetiredDailyMission.cancel(this)
+        AndroidPlatform.initialize(this)
         FirebaseApp.initializeApp(this)
     }
 

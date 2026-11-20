@@ -5,6 +5,9 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 kotlin {
@@ -24,7 +27,36 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
+            implementation(compose.components.resources)
+            implementation(libs.gitlive.firestore)
+            implementation(libs.gitlive.config)
+            implementation(libs.coroutines.core)
+            implementation(libs.serialization.json)
+            implementation(libs.datetime)
+            implementation(libs.lifecycle.viewmodel.compose)
+            implementation(libs.lifecycle.runtime.compose)
+            implementation(libs.navigation.compose)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+            implementation(libs.compottie)
+            implementation(libs.ktor.core)
+            implementation(libs.ktor.content.negotiation)
+            implementation(libs.ktor.json)
         }
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.sqlite.framework)
+            implementation(libs.hilt.android)
+            implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+            implementation("androidx.hilt:hilt-work:1.2.0")
+            implementation("androidx.work:work-runtime-ktx:2.9.0")
+            implementation(libs.play.services.location)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+            implementation("androidx.media3:media3-exoplayer:1.2.1")
+            implementation(libs.ktor.android)
+        }
+        iosMain.dependencies { implementation(libs.ktor.ios) }
         commonTest.dependencies { implementation(kotlin("test")) }
         // Kotlin's default hierarchy creates androidMain and shared iosMain automatically.
     }
@@ -39,4 +71,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.menna.nabatan.shared.generated.resources"
+    generateResClass = always
+}
+
+dependencies {
+    add("kspAndroid", libs.room.compiler)
+    add("kspAndroid", libs.hilt.compiler)
+    add("kspAndroid", "androidx.hilt:hilt-compiler:1.2.0")
+    add("kspIosX64", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
 }

@@ -1,6 +1,6 @@
 package com.menna.nabatan_7asena.presentation.common
 
-import com.menna.nabatan_7asena.R
+import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.domain.entity.User
 import java.io.File
 import java.util.Locale

@@ -1,22 +1,60 @@
 package com.menna.nabatan.shared
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.*
+import com.menna.nabatan_7asena.platform.platformMainViewModel
+import com.menna.nabatan_7asena.presentation.MainScreenHolder
+import com.menna.nabatan_7asena.presentation.common.LocalUserGender
+import com.menna.nabatan_7asena.presentation.screens.start.StartScreen
+import com.menna.nabatan_7asena.presentation.screens.onboarding.OnboardingScreen
+import com.menna.nabatan_7asena.presentation.screens.login.LoginScreen
+import com.menna.nabatan_7asena.presentation.screens.settings.SettingsScreen
+import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
+import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
+import com.menna.nabatan_7asena.ui.theme.NabataAppTheme
+import com.menna.nabatan_7asena.ui.theme.isNightFallback
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 
-/** Foundation UI for the new iOS host; existing Android screens remain in :app. */
+object AppNavigation { val destination = MutableStateFlow<String?>(null) }
+
 @Composable
 fun App() {
-    MaterialTheme {
-        Surface(Modifier.fillMaxSize()) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("Nabatan — Multiplatform foundation")
+    val model = platformMainViewModel()
+    val state by model.uiState.collectAsStateWithLifecycle()
+    val nav = rememberNavController()
+    LaunchedEffect(model) { model.enableDailyAutoScheduling() }
+    LaunchedEffect(nav) {
+        AppNavigation.destination.collectLatest { route ->
+            if (route in listOf("quran", "sebha")) {
+                nav.currentBackStackEntryFlow.first {
+                    it.destination.route in listOf("home", "settings", "quran", "sebha")
+                }
+                nav.navigate(route!!) { launchSingleTop = true }
+                AppNavigation.destination.value = null
             }
         }
+    }
+    CompositionLocalProvider(LocalUserGender provides state.gender) {
+        NabataAppTheme(isNightFallback()) { SharedNavigation(nav, model::startManagerWorkerImmediately) }
+    }
+}
+
+@Composable
+private fun SharedNavigation(nav: androidx.navigation.NavHostController, setup: () -> Unit) {
+    NavHost(nav, startDestination = "splash") {
+        composable("splash") {
+            StartScreen(onNavigateToHome = { nav.navigate("home") { popUpTo("splash") { inclusive = true } } },
+                onNavigateToOnboarding = { nav.navigate("onboarding") { popUpTo("splash") { inclusive = true } } },
+                onNavigateToLogin = { nav.navigate("login") { popUpTo("splash") { inclusive = true } } })
+        }
+        composable("onboarding") { OnboardingScreen(onNavigateToLogin = { setup(); nav.navigate("login") { popUpTo("onboarding") { inclusive = true } } }) }
+        composable("login") { LoginScreen({ nav.navigate("home") { popUpTo("login") { inclusive = true } } }) }
+        composable("settings") { SettingsScreen({ nav.popBackStack() }, { nav.navigate("splash") { popUpTo(0) { inclusive = true } } }) }
+        composable("home") { MainScreenHolder { nav.navigate("settings") } }
+        composable("quran") { QuranScreen() }
+        composable("sebha") { SebhaScreen() }
     }
 }
