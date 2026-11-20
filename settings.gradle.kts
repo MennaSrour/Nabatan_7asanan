@@ -24,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "نباتا حسنا"
 include(":app")
+
+include(":composeApp")
