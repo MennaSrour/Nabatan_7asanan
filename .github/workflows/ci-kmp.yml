@@ -129,13 +129,17 @@ jobs:
       - name: Identify native toolchains
         id: toolchain
         run: echo "xcode=$(xcodebuild -version | shasum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: native-cache
         with:
           path: |
             ~/.konan
             ~/.konan-dependencies
-          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle.properties', '**/*.gradle.kts') }}
-          restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+            composeApp/build/cocoapods
+          key: native-sdk-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.xcode }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle.properties', '**/*.gradle.kts') }}
+          restore-keys: native-sdk-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.xcode }}-
       - uses: actions/cache@v4
         with:
           path: |
@@ -149,8 +153,20 @@ jobs:
             xcode-sim-${{ runner.arch }}-${{ steps.toolchain.outputs.xcode }}-
       - name: Run shared tests on the available simulator architecture
         run: |
+          pod --version
           if [[ "$(uname -m)" == arm64 ]]; then target=iosSimulatorArm64Test; else target=iosX64Test; fi
-          bash .github/scripts/ci-run.sh ios-tests ./gradlew --build-cache --parallel --max-workers=2 ":composeApp:$target"
+          bash .github/scripts/ci-run.sh ios-tests ./gradlew --build-cache --parallel --max-workers=2 -PfirebaseNativeTests=true ":composeApp:$target"
+      - name: Save native compiler and SDK caches
+        if: always() && steps.native-cache.outputs.cache-hit != 'true' && steps.native-cache.outputs.cache-primary-key != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.konan
+            ~/.konan-dependencies
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+            composeApp/build/cocoapods
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
       - name: Build unsigned simulator app
         run: |
           bash .github/scripts/ci-run.sh ios-build xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \

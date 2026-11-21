@@ -43,6 +43,13 @@ creating the Kotlin controller. Without the file, shared Firestore requests fail
 as recoverable data errors instead of accessing an unconfigured native SDK.
 Remote Config's Android Play Store update policy is disabled on iOS.
 
+Standalone Gradle iOS tests opt into CocoaPods **link-only** SDK dependencies:
+`./gradlew -PfirebaseNativeTests=true :composeApp:iosSimulatorArm64Test`. Install
+CocoaPods first (`pod --version`); the hosted macOS runner already includes it.
+This provides Firebase 11.15 frameworks and runtime search paths for test
+executables without generating duplicate GitLive cinterops. The flag is not used
+for Xcode app builds, which retain Swift Package Manager integration.
+
 The Xcode project links FirebaseCore, FirebaseFirestore and FirebaseRemoteConfig
 through the official Firebase Swift package (11.x, compatible with GitLive 2.1's
 native SDK baseline). No service-account keys belong in either client.

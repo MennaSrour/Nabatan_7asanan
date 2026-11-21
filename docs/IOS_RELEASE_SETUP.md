@@ -43,9 +43,11 @@ App Store Connect and needs no App Store Connect API key.
 Every selected iOS CI run also uploads `ios-simulator-app`, a ZIP containing
 `iosApp.app` at its root, built with `iphonesimulator` and signing disabled. Upload
 that ZIP to Appetize.io using a compatible simulator architecture. It is separate
-from the signed device IPA. The project currently uses Swift Package Manager for
-Firebase, so no CocoaPods install is needed; caches cover Swift packages,
-DerivedData, Kotlin/Native and the CocoaPods download cache if pods are added later.
+from the signed device IPA. The app uses Swift Package Manager for Firebase.
+Standalone native tests use CocoaPods link-only dependencies through
+`-PfirebaseNativeTests=true`; the hosted macOS image includes CocoaPods. Caches
+cover Swift packages, DerivedData, Kotlin/Native and CocoaPods SDK build/download
+outputs. Native SDK caches are saved even when a later build step fails.
 
 CI uses JDK 17 and installs Android tooling on both hosts because the shared Gradle
 project configures its Android target even during Apple builds. Android CI always
