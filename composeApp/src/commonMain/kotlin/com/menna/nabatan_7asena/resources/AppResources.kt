@@ -652,14 +652,18 @@ object AppResources {
         const val total_stars_male: Int = -1358517395
         const val treasure_complete_tasks_female: Int = -487041285
         const val treasure_complete_tasks_male: Int = -360103076
+        const val treasure_daily_reward: Int = -1184968260
         const val treasure_open_female: Int = -1534788213
         const val treasure_open_male: Int = -222300577
         const val treasure_progress_female: Int = -637211832
         const val treasure_progress_male: Int = -163506959
+        const val treasure_remaining_female: Int = -1314809987
+        const val treasure_remaining_male: Int = -1167402104
         const val treasure_unlock_hint_female: Int = -410311000
         const val treasure_unlock_hint_male: Int = -960277371
         const val treasure_unlocked_female: Int = -971519283
         const val treasure_unlocked_male: Int = -593101123
+        const val treasure_waiting_tasks: Int = -1670867644
         const val unexpected_error_female: Int = -555694809
         const val unexpected_error_male: Int = -885829801
         const val update_available_female: Int = -700862470
@@ -1257,14 +1261,18 @@ object ResourceCatalog {
         AppResources.string.total_stars_male to Res.string.total_stars_male,
         AppResources.string.treasure_complete_tasks_female to Res.string.treasure_complete_tasks_female,
         AppResources.string.treasure_complete_tasks_male to Res.string.treasure_complete_tasks_male,
+        AppResources.string.treasure_daily_reward to Res.string.treasure_daily_reward,
         AppResources.string.treasure_open_female to Res.string.treasure_open_female,
         AppResources.string.treasure_open_male to Res.string.treasure_open_male,
         AppResources.string.treasure_progress_female to Res.string.treasure_progress_female,
         AppResources.string.treasure_progress_male to Res.string.treasure_progress_male,
+        AppResources.string.treasure_remaining_female to Res.string.treasure_remaining_female,
+        AppResources.string.treasure_remaining_male to Res.string.treasure_remaining_male,
         AppResources.string.treasure_unlock_hint_female to Res.string.treasure_unlock_hint_female,
         AppResources.string.treasure_unlock_hint_male to Res.string.treasure_unlock_hint_male,
         AppResources.string.treasure_unlocked_female to Res.string.treasure_unlocked_female,
         AppResources.string.treasure_unlocked_male to Res.string.treasure_unlocked_male,
+        AppResources.string.treasure_waiting_tasks to Res.string.treasure_waiting_tasks,
         AppResources.string.unexpected_error_female to Res.string.unexpected_error_female,
         AppResources.string.unexpected_error_male to Res.string.unexpected_error_male,
         AppResources.string.update_available_female to Res.string.update_available_female,

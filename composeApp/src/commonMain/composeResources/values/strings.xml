@@ -523,4 +523,8 @@
     <string name="leaderboard_quran_parts">أجزاء القرآن المكتملة</string>
     <string name="quran_surah_prefix">سُورَةُ</string>
     <string name="quran_small_page_hint">مرّر لقراءة بقية الصفحة على الشاشة الصغيرة</string>
+    <string name="treasure_daily_reward">كنز اليوم ينتظرك!</string>
+    <string name="treasure_remaining_male">باقي %1$d مهمة وتفتح كنزك، أنت قدّها!</string>
+    <string name="treasure_remaining_female">باقي %1$d مهمة وتفتحي كنزك، أنتِ قدّها!</string>
+    <string name="treasure_waiting_tasks">كل خطوة خير تقرّبك من كنزك</string>
 </resources>

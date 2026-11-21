@@ -316,15 +316,17 @@ fun NabataAppTheme(
     isNight: Boolean,
     content: @Composable () -> Unit
 ) {
+    val fontFamily = KidsFontFamily
+    val materialTypography = remember(fontFamily) { playfulMaterialTypography(fontFamily) }
     CompositionLocalProvider(
         LocalLayoutDirection provides LayoutDirection.Rtl,
         LocalSummerColors provides if (isNight) NightGalaxyColors else SummerColors(),
         LocalIsNight provides isNight,
         LocalQuranColors provides if (isNight) QuranNightColors else QuranDayColors,
-        LocalSummerTypography provides Typography(),
+        LocalSummerTypography provides Typography(fontFamily = fontFamily),
         LocalSummerShapes provides SummerShapes(),
         LocalSummerDimensions provides SummerDimensions(),
-        content = content
+        content = { androidx.compose.material3.MaterialTheme(typography = materialTypography, content = content) }
     )
 }
 
