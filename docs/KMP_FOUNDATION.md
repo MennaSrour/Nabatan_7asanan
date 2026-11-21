@@ -48,7 +48,9 @@ Standalone Gradle iOS tests opt into CocoaPods **link-only** SDK dependencies:
 CocoaPods first (`pod --version`); the hosted macOS runner already includes it.
 This provides Firebase 11.15 frameworks and runtime search paths for test
 executables without generating duplicate GitLive cinterops. The flag is not used
-for Xcode app builds, which retain Swift Package Manager integration.
+for Xcode app builds, which retain Swift Package Manager integration. CI passes
+`-PnativeTestArchitecture=arm64` (or `x86_64` on Intel) to build only its runner
+architecture; omitting that optional property keeps CocoaPods defaults.
 
 The Xcode project links FirebaseCore, FirebaseFirestore and FirebaseRemoteConfig
 through the official Firebase Swift package (11.x, compatible with GitLive 2.1's
