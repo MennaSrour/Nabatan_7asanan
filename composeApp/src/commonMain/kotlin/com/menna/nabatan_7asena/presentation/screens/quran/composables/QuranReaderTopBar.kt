@@ -58,6 +58,16 @@ private fun QuranReaderTitle(state: QuranUiState) {
         Text(genderedStringResource(GenderedStrings.quranActiveJuz, formatJuzNumber(state.activeJuz)),
             fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SummerTheme.quran.accentStrong,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (state.viewMode == QuranViewMode.MUSHAF) {
+            val ayahs = state.mushafPages[state.currentPageNumber].orEmpty()
+            val activeSurah = audioAyah(state.audioState)?.first
+            val surah = ayahs.firstOrNull { it.suraNo == activeSurah } ?: ayahs.firstOrNull()
+            surah?.let {
+                Text(it.suraNameAr, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                    color = SummerTheme.quran.accentStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            return@Column
+        }
         val status = when (state.audioState) {
             is QuranAudioState.Loading -> GenderedStrings.loading
             is QuranAudioState.Playing -> GenderedStrings.quranPlaying
