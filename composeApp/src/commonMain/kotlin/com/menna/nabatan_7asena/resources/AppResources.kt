@@ -522,6 +522,7 @@ object AppResources {
         const val quran_repeat_times_female: Int = -2086440858
         const val quran_repeat_times_male: Int = -785897491
         const val quran_save: Int = -1491649162
+        const val quran_small_page_hint: Int = -1012666568
         const val quran_start_ayah_female: Int = -386960046
         const val quran_start_ayah_male: Int = -793014586
         const val quran_start_repeat_female: Int = -1718975400
@@ -532,6 +533,7 @@ object AppResources {
         const val quran_surah_name_male: Int = -1865789373
         const val quran_surah_offline_ready_female: Int = -317215297
         const val quran_surah_offline_ready_male: Int = -1108795367
+        const val quran_surah_prefix: Int = -820483710
         const val quran_surahs_female: Int = -536919802
         const val quran_surahs_male: Int = -2008095240
         const val quran_view_cards: Int = -216333512
@@ -1121,6 +1123,7 @@ object ResourceCatalog {
         AppResources.string.quran_repeat_times_female to Res.string.quran_repeat_times_female,
         AppResources.string.quran_repeat_times_male to Res.string.quran_repeat_times_male,
         AppResources.string.quran_save to Res.string.quran_save,
+        AppResources.string.quran_small_page_hint to Res.string.quran_small_page_hint,
         AppResources.string.quran_start_ayah_female to Res.string.quran_start_ayah_female,
         AppResources.string.quran_start_ayah_male to Res.string.quran_start_ayah_male,
         AppResources.string.quran_start_repeat_female to Res.string.quran_start_repeat_female,
@@ -1131,6 +1134,7 @@ object ResourceCatalog {
         AppResources.string.quran_surah_name_male to Res.string.quran_surah_name_male,
         AppResources.string.quran_surah_offline_ready_female to Res.string.quran_surah_offline_ready_female,
         AppResources.string.quran_surah_offline_ready_male to Res.string.quran_surah_offline_ready_male,
+        AppResources.string.quran_surah_prefix to Res.string.quran_surah_prefix,
         AppResources.string.quran_surahs_female to Res.string.quran_surahs_female,
         AppResources.string.quran_surahs_male to Res.string.quran_surahs_male,
         AppResources.string.quran_view_cards to Res.string.quran_view_cards,

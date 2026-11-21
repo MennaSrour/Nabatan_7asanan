@@ -5,7 +5,6 @@ import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import androidx.compose.runtime.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -13,26 +12,21 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.text.font.FontWeight
 import com.menna.nabatan_7asena.presentation.screens.quran.*
-import com.menna.nabatan_7asena.domain.QuranConstants
 import com.menna.nabatan_7asena.core.util.arabicIndic
 import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.resources.stringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.*
-import androidx.compose.ui.text.style.*
 import com.menna.nabatan_7asena.domain.entity.AyahModel
-import com.menna.nabatan_7asena.domain.util.uthmaniText
-import com.menna.nabatan_7asena.core.util.ayahMarker
 
 @Composable
 fun QuranMushafPager(state: QuranUiState, actions: QuranActions, layout: QuranLayoutState, padding: PaddingValues) {
+    val navigationInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val clearance = (76.dp + navigationInset - padding.calculateBottomPadding()).coerceAtLeast(0.dp)
     HorizontalPager(state = layout.mushafPagerState, beyondViewportPageCount = 1,
-        modifier = Modifier.padding(padding).fillMaxSize()) { index ->
+        modifier = Modifier.padding(padding).padding(bottom = clearance).fillMaxSize()) { index ->
         MushafPage(index + 1, state.mushafPages[index + 1].orEmpty(), state, actions)
     }
 }
@@ -40,67 +34,45 @@ fun QuranMushafPager(state: QuranUiState, actions: QuranActions, layout: QuranLa
 @Composable
 private fun MushafPage(page: Int, ayahs: List<AyahModel>, state: QuranUiState, actions: QuranActions) {
     val q = SummerTheme.quran
-    val active = audioAyah(state.audioState)
-    val bookmark = active?.let { selected -> ayahs.firstOrNull { it.suraNo == selected.first && it.ayaNo == selected.second } } ?: ayahs.firstOrNull()
-    Surface(color = Color(0xFFFFFAEF), shape = RoundedCornerShape(22.dp),
+    var fallback by remember(page) { mutableStateOf(false) }
+    Surface(color = q.headerEnd, shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, q.border), modifier = Modifier.fillMaxSize().padding(12.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            MushafHeader(ayahs, actions)
-            MushafAyahText(ayahs, active, actions, Modifier.weight(1f))
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            MushafPageActions(ayahs, state, actions)
+            MushafPageBody(ayahs, audioAyah(state.audioState), actions, { fallback = it }, Modifier.weight(1f))
             HorizontalDivider(color = q.border)
-            Text(stringResource(R.string.quran_page_label, arabicIndic(page)), color = q.accentStrong,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp))
-            bookmark?.let { ayah ->
-                TextButton(onClick = { actions.saveBookmark(ayah.suraNo, ayah.ayaNo) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text(stringResource(R.string.quran_bookmark_page, arabicIndic(ayah.ayaNo)))
-                }
-            }
+            MushafPageFooter(page, fallback)
         }
     }
 }
 
 @Composable
-private fun MushafHeader(ayahs: List<AyahModel>, actions: QuranActions) {
-    val first = ayahs.firstOrNull() ?: return
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(ayahs.map { it.suraNameAr }.distinct().joinToString(" · "), color = SummerTheme.quran.accentStrong)
-            Text(stringResource(R.string.quran_juz_label, arabicIndic(first.jozz)), color = SummerTheme.quran.textMuted)
+private fun MushafPageActions(ayahs: List<AyahModel>, state: QuranUiState, actions: QuranActions) {
+    val saved = state.bookmarkedSurahId to state.bookmarkedAyahNo
+    val target = mushafBookmarkTarget(ayahs, audioAyah(state.audioState), saved) ?: return
+    val marked = ayahs.any { (it.suraNo to it.ayaNo) == saved }
+    val purple = SummerTheme.quran.accentStrong
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        IconButton(onClick = { actions.downloadSurah(target.suraNo) }) {
+            Icon(Icons.Rounded.Download, stringResource(R.string.quran_download_surah), tint = purple)
         }
-        IconButton(onClick = { actions.onOpenRepeatBottomSheet(first.suraNo) }) {
-            Icon(Icons.Rounded.Repeat, genderedStringResource(GenderedStrings.quranRepeatMemorize))
+        IconButton(onClick = { actions.onOpenRepeatBottomSheet(target.suraNo) }) {
+            Icon(Icons.Rounded.Repeat, genderedStringResource(GenderedStrings.quranRepeatMemorize), tint = purple)
         }
-        IconButton(onClick = { actions.downloadSurah(first.suraNo) }) {
-            Icon(Icons.Rounded.Download, stringResource(R.string.quran_download_surah))
+        IconButton(onClick = { actions.saveBookmark(target.suraNo, target.ayaNo) }) {
+            Icon(if (marked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                stringResource(R.string.quran_bookmark_page, arabicIndic(target.ayaNo)), tint = purple)
         }
     }
 }
 
 @Composable
-private fun MushafAyahText(ayahs: List<AyahModel>, active: Pair<Int, Int>?, actions: QuranActions, modifier: Modifier) {
-    val q = SummerTheme.quran
-    val content = remember(ayahs, active, q) {
-        buildAnnotatedString {
-            ayahs.forEach { ayah ->
-                if (ayah.ayaNo == 1 && ayah.suraNo !in listOf(1, 9)) {
-                    if (length > 0) append("\n")
-                    append("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n")
-                }
-                val selected = active == (ayah.suraNo to ayah.ayaNo)
-                val span = SpanStyle(background = if (selected) q.accentSoft else Color.Transparent, textDecoration = TextDecoration.None)
-                withLink(LinkAnnotation.Clickable("${ayah.suraNameAr} ${arabicIndic(ayah.ayaNo)}",
-                    styles = TextLinkStyles(style = span), linkInteractionListener = { actions.playAyahAudio(ayah.suraNo, ayah.ayaNo) })) {
-                    append(uthmaniText(ayah.text, ayah.ayaNo)); append(" "); append(ayahMarker(ayah.ayaNo))
-                }
-                append(" ")
-            }
-        }
-    }
-    Column(modifier.verticalScroll(rememberScrollState()).padding(vertical = 18.dp)) {
-        Text(content, fontFamily = quranFontFamily(), fontSize = 26.sp, lineHeight = 84.sp,
-            color = q.textPrimary, textAlign = TextAlign.Justify,
-            style = TextStyle(textDirection = TextDirection.Rtl,
-                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)), modifier = Modifier.fillMaxWidth())
+private fun MushafPageFooter(page: Int, fallback: Boolean) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.quran_page_label, arabicIndic(page)), color = SummerTheme.quran.accentStrong)
+        if (fallback) Icon(Icons.Rounded.UnfoldMore, stringResource(R.string.quran_small_page_hint),
+            tint = SummerTheme.quran.accentStrong, modifier = Modifier.padding(start = 4.dp).size(16.dp))
     }
 }
 
