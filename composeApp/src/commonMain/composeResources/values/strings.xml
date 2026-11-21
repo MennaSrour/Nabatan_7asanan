@@ -527,4 +527,10 @@
     <string name="treasure_remaining_male">باقي %1$d مهمة وتفتح كنزك، أنت قدّها!</string>
     <string name="treasure_remaining_female">باقي %1$d مهمة وتفتحي كنزك، أنتِ قدّها!</string>
     <string name="treasure_waiting_tasks">كل خطوة خير تقرّبك من كنزك</string>
+    <string name="countdown_fajr">الفجر</string>
+    <string name="countdown_until">متبقي على صلاة %1$s</string>
+    <string name="countdown_waiting">نستعد للصلاة القادمة</string>
+    <string name="countdown_missing_times">بانتظار مواقيت الصلاة القادمة</string>
+    <string name="countdown_interval_missing">مسار التقدم بانتظار وقت الصلاة السابقة</string>
+    <string name="countdown_progress">انقضى %1$d بالمئة من الوقت بين الصلاتين</string>
 </resources>

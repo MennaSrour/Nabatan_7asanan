@@ -6,6 +6,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import com.menna.nabatan_7asena.data.PrayerTimesApi
 import com.menna.nabatan_7asena.data.toEntity
 import com.menna.nabatan_7asena.domain.PrayerTimesRepository
@@ -26,6 +28,29 @@ class PrayerTimesRepositoryImpl constructor(
 
     private val prefs = PlatformPreferences(PREFS_NAME)
     private val json = Json { ignoreUnknownKeys = true }
+
+    private val exactCacheMutex = Mutex()
+
+    /** Date-specific cache; a failed forecast must never reuse another day's timings. */
+    override suspend fun getExactPrayerTimes(city: String, country: String, date: String): PrayerTimes {
+        val signature = "$date|$city|$country"
+        readExactCache(signature)?.let { return it }
+        exactCacheMutex.withLock { readCountdownCache()[signature] }?.let { return it }
+        val fresh = api.getPrayerTimesByCity(city = city, country = country, date = date).toEntity()
+        exactCacheMutex.withLock {
+            val entries = readCountdownCache().toMutableMap().apply { put(signature, fresh) }.entries.toList().takeLast(4)
+            prefs.putString(KEY_COUNTDOWN_CACHE, json.encodeToString(entries.associate { it.key to it.value }))
+        }
+        return fresh
+    }
+
+    private fun readCountdownCache(): Map<String, PrayerTimes> = try {
+        json.decodeFromString(prefs.getString(KEY_COUNTDOWN_CACHE, null) ?: "{}")
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        emptyMap()
+    }
 
     override suspend fun getPrayerTimes(
         city: String,
@@ -100,6 +125,7 @@ class PrayerTimesRepositoryImpl constructor(
     }
 
     companion object {
+        private const val KEY_COUNTDOWN_CACHE = "countdown_exact_dates"
         private const val PREFS_NAME = "prayer_times_cache"
         private const val KEY_CACHE_SIGNATURE = "cache_signature"
         private const val KEY_CACHE_LOCATION = "cache_location"

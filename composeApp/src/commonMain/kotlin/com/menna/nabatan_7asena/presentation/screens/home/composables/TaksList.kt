@@ -14,13 +14,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
-import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -31,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -52,7 +48,7 @@ fun TaskBubbleCard(
     onPlaySound: () -> Unit
 ) {
     val completeDescription = genderedStringResource(GenderedStrings.taskComplete, item.title)
-    val icon = remember(item.category) { categoryIcon(item.category) }
+
     val baseColor = remember(item.category) { categoryColor(item.category) }
     val displaySubtitle = when {
         item.category == TaskCategory.QURAN && hasBookmark && !item.isCompleted ->
@@ -89,20 +85,7 @@ fun TaskBubbleCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(SummerTheme.colors.white.copy(alpha = 0.22f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = SummerTheme.colors.white,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            HomeIconBadge(taskBadgeStyle(item.category), Modifier.size(46.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -206,11 +189,4 @@ fun TaskBubbleCard(
             }
         }
     }
-}
-
-private fun categoryIcon(category: TaskCategory): ImageVector = when (category) {
-    TaskCategory.QURAN -> Icons.Rounded.MenuBook
-    TaskCategory.AZKAR -> Icons.Rounded.SelfImprovement
-    TaskCategory.EXTRA -> Icons.Rounded.AutoAwesome
-    TaskCategory.PRAYER -> Icons.Rounded.AutoAwesome
 }

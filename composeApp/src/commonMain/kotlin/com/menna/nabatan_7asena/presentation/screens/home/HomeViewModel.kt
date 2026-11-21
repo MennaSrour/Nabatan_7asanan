@@ -27,6 +27,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.plus
+import kotlinx.datetime.minus
+import kotlinx.datetime.LocalDate
 
 open class HomeViewModel constructor(
     private val getDailyActivitiesUseCase: GetDailyActivitiesUseCase,
@@ -38,7 +45,8 @@ open class HomeViewModel constructor(
     private val decrementQuranPartUseCase: DecrementQuranPartUseCase,
     private val currentLocation: LocationTracker,
     private val audioPlayerManager: AudioPlayerManager,
-    private val quranRepository: QuranRepository
+    private val quranRepository: QuranRepository,
+    private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase
 ) : ViewModel(), HomeActions {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -79,12 +87,13 @@ open class HomeViewModel constructor(
             delay(60_000L - AppClock.nowMillis() % 60_000L)
         }
     }
-    private val dateFlow: Flow<String> = minuteTicker
-        .map { currentDate() }
+    private val dateFlow: Flow<LocalDate> = minuteTicker
+        .map { AppClock.today() }
         .distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val combinedUiState = combine(dateFlow, retrySignal) { today, _ -> today }.flatMapLatest { today ->
+    private val combinedUiState = combine(dateFlow, retrySignal) { today, _ -> today }.flatMapLatest { date ->
+        val today = AppClock.dateString(date)
         combine(
             getCurrentUserUseCase(),
 
@@ -111,15 +120,17 @@ open class HomeViewModel constructor(
             playingTaskId
         ) { domainUser, cityCountryPair, dailyContent, currentPlayingId ->
             val (city, country) = cityCountryPair
-            val activitiesFlow = getDailyActivitiesUseCase(today, city, country)
+            val activities = getDailyActivitiesUseCase(today, city, country)
                 .onEach { _hasLoadError.value = false }
                 .catch { _hasLoadError.value = true; emit(emptyList()) }
+            val activitiesFlow = combine(activities, prayerBoundaries(date, city, country)) { tasks, bounds -> tasks to bounds }
             Triple(domainUser, dailyContent, Pair(activitiesFlow, currentPlayingId))
         }
             .flatMapLatest { (user, dailyContent, flowPair) ->
             val (activitiesFlow, currentPlayingId) = flowPair
 
-            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { domainActivities, tempStatusMap, _ ->
+            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { activitiesAndBounds, tempStatusMap, _ ->
+                val (domainActivities, bounds) = activitiesAndBounds
                 val currentPartToRead = user.quranPartsFinished + 1
                 val nowMinutes = PrayerTimeline.nowMinutes()
 
@@ -153,6 +164,9 @@ open class HomeViewModel constructor(
                     user = user.toUiUser(),
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
+                    prayerDate = date,
+                    previousIshaMinutes = bounds.first,
+                    tomorrowFajrMinutes = bounds.second,
                     hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
                     isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
                     hasLoadError = _hasLoadError.value,
@@ -167,6 +181,20 @@ open class HomeViewModel constructor(
     init {
         observeCombined()
         observeQuranBookmark()
+    }
+
+    private fun prayerBoundaries(date: LocalDate, city: String, country: String) = flow {
+        emit(Pair<Int?, Int?>(null, null))
+        val bounds = coroutineScope {
+            val previous = async {
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.minus(1, DateTimeUnit.DAY))) }
+            }
+            val next = async {
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.plus(1, DateTimeUnit.DAY))) }
+            }
+            PrayerTimeline.parseMinutes(previous.await()?.isha) to PrayerTimeline.parseMinutes(next.await()?.fajr)
+        }
+        emit(bounds)
     }
 
     private fun observeCombined() {
@@ -190,6 +218,9 @@ open class HomeViewModel constructor(
                         user = state.user,
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
+                        prayerDate = state.prayerDate,
+                        previousIshaMinutes = state.previousIshaMinutes,
+                        tomorrowFajrMinutes = state.tomorrowFajrMinutes,
                         hijriDate = state.hijriDate,
                         isNightTheme = state.isNightTheme,
                         hasLoadError = state.hasLoadError,
