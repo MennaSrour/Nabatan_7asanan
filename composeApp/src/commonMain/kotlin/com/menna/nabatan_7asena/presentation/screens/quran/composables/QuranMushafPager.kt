@@ -1,5 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.quran.composables
 
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import androidx.compose.runtime.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -66,7 +68,7 @@ private fun MushafHeader(ayahs: List<AyahModel>, actions: QuranActions) {
             Text(stringResource(R.string.quran_juz_label, arabicIndic(first.jozz)), color = SummerTheme.quran.textMuted)
         }
         IconButton(onClick = { actions.onOpenRepeatBottomSheet(first.suraNo) }) {
-            Icon(Icons.Rounded.Repeat, stringResource(R.string.quran_repeat_playlist))
+            Icon(Icons.Rounded.Repeat, genderedStringResource(GenderedStrings.quranRepeatMemorize))
         }
         IconButton(onClick = { actions.downloadSurah(first.suraNo) }) {
             Icon(Icons.Rounded.Download, stringResource(R.string.quran_download_surah))

@@ -1,5 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.quran.composables
 
+import com.menna.nabatan_7asena.presentation.common.GenderedStrings
+import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import androidx.compose.runtime.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -38,7 +40,7 @@ fun QuranPlaylistPlayer(queue: PlaylistPlaybackState, audio: QuranAudioState, ac
                 IconToggleButton(checked = queue.repeat, onCheckedChange = { actions.togglePlaylistRepeat() }) {
                     Icon(Icons.Rounded.Repeat, stringResource(R.string.quran_repeat_playlist), tint = if (queue.repeat) SummerTheme.quran.accentStrong else SummerTheme.quran.textMuted)
                 }
-                IconButton(onClick = actions::stopAudio) { Icon(Icons.Rounded.Stop, stringResource(R.string.quran_cancel)) }
+                IconButton(onClick = actions::stopAudio) { Icon(Icons.Rounded.Stop, genderedStringResource(GenderedStrings.quranStopPlayback)) }
             }
         }
     }
