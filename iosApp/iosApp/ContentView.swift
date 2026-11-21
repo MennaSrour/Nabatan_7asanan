@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import ComposeApp
+import FirebaseCore
 
 struct ContentView: View {
     var body: some View {
@@ -11,7 +12,7 @@ struct ContentView: View {
 
 private struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        MainViewControllerKt.MainViewController(firebaseConfigured: FirebaseApp.app() != nil)
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

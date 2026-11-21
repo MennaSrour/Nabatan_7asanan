@@ -1,60 +1,113 @@
-# KMP foundation — Phase 1
+# Shared Android and iOS application
 
 ## Module boundaries
 
-- `app`: the existing Android application, screens, resources, Hilt, Room, Firebase,
-  workers and notifications remain in `app/src/main`. It consumes `:composeApp`.
-- `composeApp/src/commonMain`: a minimal shared Compose `App` placeholder; no existing
-  screens or Firebase code have been migrated.
-- `composeApp/src/androidMain`: Android library manifest; common code also compiles
-  for the Android target.
-- `composeApp/src/iosMain`: the UIKit `MainViewController` entry point.
-- `iosApp`: a SwiftUI application and checked-in Xcode project importing the static
-  `ComposeApp` framework. Kotlin's default hierarchy shares `iosMain` across
-  `iosX64`, `iosArm64`, and `iosSimulatorArm64`.
+- `app` is the Android host: `MainActivity`, `NabataApplication`, manifest, launcher
+  resources, Google Services configuration and application packaging.
+- `composeApp/src/commonMain` contains all screens, navigation, UI state,
+  ViewModels, themes, models, repositories, use cases, Room entities/DAOs,
+  Firestore and Remote Config integration, prayer HTTP client and Compose resources.
+- `composeApp/src/androidMain` supplies Hilt ViewModel factories, Android Room
+  creation/migration, preferences, permissions, location, audio, downloads,
+  workers, alarms, notifications and system intents.
+- `composeApp/src/iosMain` supplies the UIKit entry point, lifecycle ViewModel
+  factories, Room/SQLite, NSUserDefaults, Darwin HTTP and platform adapters.
+- `iosApp` is the SwiftUI/Xcode host. Both hosts render the same `App()`.
 
-Kotlin and the Compose compiler stay at **2.2.10**. Compose Multiplatform is pinned
-at **1.9.0** (requires Kotlin 2.1 or newer). Existing Android dependency versions
-and application IDs are retained. The static framework uses its own bundle ID.
+The static `ComposeApp` framework targets `iosX64`, `iosArm64` and
+`iosSimulatorArm64`. Kotlin/Compose compiler is 2.2.10; Compose Multiplatform is
+1.9.0. Navigation and lifecycle use their JetBrains multiplatform distributions.
+Hilt remains an Android implementation detail.
 
-## Android
+## Firebase
 
-Use JDK 21 and Android SDK 36. Gradle now uses the IDE/JAVA_HOME JDK instead of a
-machine-specific Windows path. Keep the existing development Firebase configuration
-in `app/google-services.json`; Firebase is not required by the shared module or iOS host.
+Shared Firestore and Remote Config use GitLive 2.1.0. This release still publishes
+Intel iOS simulator artifacts; GitLive 2.3 does not. Its Android KTX dependencies
+require Firebase BOM 33.16.0 (BOM 34 removed KTX modules) and desugaring 2.1.5.
+No Firebase Auth dependency is added because the application does not use it.
+
+Android keeps its existing Firebase initialization, automatic Analytics collection
+and `app/google-services.json`.
+For a new environment, provide a development Firebase configuration matching the
+Android application ID (including `.debug` for debug). Do not introduce production
+credentials into CI. Firebase configuration filenames are ignored for new files;
+any previously tracked configuration is unaffected by that ignore rule.
+
+For iOS, register `com.menna.nabatan7asena.ios` in the **same intended Firebase
+project** and place its `GoogleService-Info.plist` in `iosApp/iosApp/`. The Xcode
+build copies the optional file to the bundle; Swift initializes Firebase before
+creating the Kotlin controller. Without the file, shared Firestore requests fail
+as recoverable data errors instead of accessing an unconfigured native SDK.
+Remote Config's Android Play Store update policy is disabled on iOS.
+
+The Xcode project links FirebaseCore, FirebaseFirestore and FirebaseRemoteConfig
+through the official Firebase Swift package (11.x, compatible with GitLive 2.1's
+native SDK baseline). No service-account keys belong in either client.
+
+## Persistence and resources
+
+Android retains `nabata_db`, Room schema version 5, migration 4→5, SharedPreferences
+filenames/keys, and JSON cache field names. The generated Room identity hash is
+unchanged. iOS creates its own local database in Documents and uses namespaced
+NSUserDefaults. Network DTOs and prayer caches use generated Kotlin serializers.
+
+Strings (including male/female Arabic variants), fonts, images, animations,
+Quran text and bundled audio live under `commonMain/composeResources`.
+`AppResources` is a platform-neutral compatibility catalog for the existing
+integer-based UI/audio contracts; it resolves to typed Compose resources and file
+paths, without Android resource reflection. Its negative IDs are stable hashes
+of resource names. After adding or renaming a resource, run:
 
 ```sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+python3 tools/generate_resource_catalog.py
 ```
 
-The app dependency ensures the shared module's Android code is built too. The
-existing Android launcher and navigation continue to show the existing screens.
+Android recovers sounds for pre-migration alarm PendingIntents from their prayer/
+zekr content and destination. Old Android numeric IDs vary between releases and
+are deliberately not interpreted as a fixed resource table. New alarms use the
+stable shared IDs.
+Arabic RTL, bundled fonts and user-gender resource selection stay in shared UI.
 
-## iOS — requires macOS, Xcode and JDK 21
+## Platform capabilities
 
-1. Install Xcode, accept its license, and select its command-line tools. Keep Android
-   SDK 36 configured via `ANDROID_HOME` or root `local.properties`, because the
-   Gradle project also configures the existing Android host.
-2. Set `JAVA_HOME` to JDK 21 (or install it so `/usr/libexec/java_home -v 21` finds it).
-3. Open `iosApp/iosApp.xcodeproj`; select the shared `iosApp` scheme.
-4. Select a simulator and Run. For a physical device, choose your development team
-   in Signing & Capabilities and an available bundle identifier.
-5. The first build downloads Kotlin/Native and Compose dependencies. The first build
-   phase calls `:composeApp:embedAndSignAppleFrameworkForXcode`, producing the correct
-   simulator/device framework before Swift compilation. It is statically linked.
+| Capability | Android | iOS |
+| --- | --- | --- |
+| Shared UI, navigation, business logic | Shared implementation | Shared implementation |
+| Firestore, Room, preferences, prayer HTTP | Working platform services | GitLive, bundled SQLite, NSUserDefaults, Darwin |
+| Notification/worker scheduling and permissions | Existing implementation retained | Explicit no-op; Android permission onboarding skipped |
+| Location | Play Services | Unavailable; existing Cairo fallback applies |
+| Bundled interaction sounds | MediaPlayer | Silent completion to keep interactions responsive |
+| Quran playback and audio downloads | ExoPlayer and existing downloads | Explicit unsupported errors, never fake successful downloads |
+| APK updates/store intents | Existing Android behavior | Android update policy disabled |
 
-The iOS host displays only the foundation placeholder, not the Android application.
-No existing screens, persistence, permissions, audio or Firebase services are shared yet.
+The iOS platform adapters are deliberate compiling fallbacks, not a claim of
+notification/audio/location feature parity. Implement native capabilities behind
+the existing ports without changing shared screen or domain contracts.
 
-Optional command-line checks on macOS:
+## Verification
+
+Use JDK 21 and Android SDK 36:
 
 ```sh
-./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
+./gradlew :composeApp:compileCommonMainKotlinMetadata :app:assembleDebug
+./gradlew :composeApp:testDebugUnitTest :app:testDebugUnitTest
+./gradlew :app:compileDebugAndroidTestKotlin :composeApp:lintDebug :app:lintDebug
+```
+
+On macOS with Xcode and JDK 21, open `iosApp/iosApp.xcodeproj`, select the `iosApp`
+scheme and run on a simulator. The framework build phase runs Gradle before Swift
+compilation. Select a development team for physical devices. Keep Android SDK 36
+configured because Gradle also configures the Android host.
+
+```sh
+./gradlew :composeApp:compileKotlinIosX64 :composeApp:compileKotlinIosArm64 \
+  :composeApp:compileKotlinIosSimulatorArm64
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -configuration Debug -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
-Use `linkDebugFrameworkIosX64` for an Intel simulator or
-`linkDebugFrameworkIosArm64` for a device framework. Apple targets cannot be built
-or run on Linux; validate both a framework and the SwiftUI host on macOS before merging.
+Linux cannot compile or link Apple targets. A successful common metadata build
+and an Android build do not substitute for the macOS checks above. Run device
+smoke tests for existing notifications, cached profiles and Quran audio before
+release; JVM checks cannot exercise OS permission or playback behavior.

@@ -7,29 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import com.menna.nabatan_7asena.core.worker.DailyManagerWorker
-import com.menna.nabatan_7asena.presentation.MainScreenHolder
-import com.menna.nabatan_7asena.presentation.MainViewModel
-import com.menna.nabatan_7asena.presentation.common.LocalUserGender
-import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
-import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
-import com.menna.nabatan_7asena.presentation.screens.settings.SettingsScreen
-import com.menna.nabatan_7asena.presentation.screens.start.StartScreen
-import com.menna.nabatan_7asena.ui.theme.NabataAppTheme
+import com.menna.nabatan.shared.App
+import com.menna.nabatan.shared.AppNavigation
 import com.menna.nabatan_7asena.ui.theme.isNightFallback
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -37,150 +18,20 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private val viewModel: MainViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        var keepOnScreen = true
-        splashScreen.setKeepOnScreenCondition { keepOnScreen }
-        lifecycleScope.launch {
-            delay(1000)
-            keepOnScreen = false
-        }
-
-        // 1. نحسب حالة الليل والنهار مرة واحدة هنا
-        val isNight = isNightFallback()
-
-        // 2. نظبط لون الـ Status Bar بناءً على الحالة
-        // إذا كان ليل (dark) يخلي الأيقونات بيضاء، وإذا كان نهار (light) يخلي الأيقونات سوداء
-        enableEdgeToEdge(
-            statusBarStyle = if (isNight) {
-                SystemBarStyle.dark(Color.TRANSPARENT)
-            } else {
-                SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-            },
-            navigationBarStyle = if (isNight) {
-                SystemBarStyle.dark(Color.TRANSPARENT)
-            } else {
-                SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-            }
-        )
-
-        viewModel.enableDailyAutoScheduling()
-
-        setContent {
-            val navController = rememberNavController()
-
-            val intent = intent
-            LaunchedEffect(intent) {
-                checkIntentAndNavigate(intent, navController)
-            }
-
-            DisposableEffect(Unit) {
-                val listener = androidx.core.util.Consumer<Intent> { newIntent ->
-                    checkIntentAndNavigate(newIntent, navController)
-                }
-                addOnNewIntentListener(listener)
-                onDispose { removeOnNewIntentListener(listener) }
-            }
-
-            // 3. تمرير حالة الليل والنهار لغلاف الثيم الأساسي
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            CompositionLocalProvider(LocalUserGender provides uiState.gender) {
-                NabataAppTheme(isNight = isNight) {
-                    NavHost(navController = navController, startDestination = "splash") {
-
-                        composable("splash") {
-                            StartScreen(
-                                onNavigateToHome = {
-                                    navController.navigate("home") { popUpTo("splash") { inclusive = true } }
-                                },
-                                onNavigateToOnboarding = {
-                                    navController.navigate("onboarding") { popUpTo("splash") { inclusive = true } }
-                                },
-                                onNavigateToLogin = {
-                                    navController.navigate("login") { popUpTo("splash") { inclusive = true } }
-                                }
-                            )
-                        }
-
-                        composable("onboarding") {
-                            com.menna.nabatan_7asena.presentation.screens.onboarding.OnboardingScreen(
-                                onNavigateToLogin = {
-                                    startManagerWorkerImmediately()
-                                    navController.navigate("login") {
-                                        popUpTo("onboarding") { inclusive = true }
-                                    }
-                                }
-                            )
-                        }
-
-                        composable("login") {
-                            com.menna.nabatan_7asena.presentation.screens.login.LoginScreen(
-                                onNavigateToHome = {
-                                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
-                                }
-                            )
-                        }
-
-                        composable("settings") {
-                            SettingsScreen(
-                                onBack = { navController.popBackStack() },
-                                onLogout = {
-                                    navController.navigate("splash") { popUpTo(0) { inclusive = true } }
-                                }
-                            )
-                        }
-
-                        composable("home") {
-                            MainScreenHolder(
-                                openSettings = { navController.navigate("settings") }
-                            )
-                        }
-
-                        composable("sebha") { SebhaScreen() }
-                        composable("quran") { QuranScreen() }
-                    }
-                }
-            }
-        }
+        var waiting = true
+        splash.setKeepOnScreenCondition { waiting }
+        lifecycleScope.launch { delay(1000); waiting = false }
+        val style = if (isNightFallback()) SystemBarStyle.dark(Color.TRANSPARENT)
+            else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        handleIntent(intent)
+        setContent { App() }
     }
-
-    private fun startManagerWorkerImmediately() {
-        try {
-            val workRequest = OneTimeWorkRequestBuilder<DailyManagerWorker>()
-                .addTag("immediate_setup_work")
-                .build()
-
-            WorkManager.getInstance(this).enqueueUniqueWork(
-                "immediate_setup_work",
-                ExistingWorkPolicy.KEEP,
-                workRequest
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun checkIntentAndNavigate(
-        intent: Intent?,
-        navController: androidx.navigation.NavController
-    ) {
-        val destination = intent?.getStringExtra("DESTINATION")
-        when (destination) {
-            "sebha" -> {
-                navController.navigate("sebha") {
-                    popUpTo("home") { inclusive = false }
-                }
-            }
-            "quran" -> {
-                navController.navigate("quran") {
-                    popUpTo("home") { inclusive = false }
-                }
-            }
-        }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); handleIntent(intent) }
+    private fun handleIntent(intent: Intent?) {
+        AppNavigation.destination.value = intent?.getStringExtra("DESTINATION_ROUTE") ?: intent?.getStringExtra("DESTINATION")
     }
 }

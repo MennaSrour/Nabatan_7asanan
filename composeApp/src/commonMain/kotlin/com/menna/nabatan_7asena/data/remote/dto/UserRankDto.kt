@@ -1,0 +1,12 @@
+package com.menna.nabatan_7asena.data.remote.dto
+
+import kotlinx.serialization.Serializable
+@Serializable
+data class UserRankDto(
+    val userId: String = "",
+    val name: String = "",
+    val gender: String = "BOY",
+    val totalStars: Int = 0,
+    val quranPartsFinished: Int = 0,
+    val avatarIndex: Int = 0
+)

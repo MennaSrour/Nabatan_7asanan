@@ -7,7 +7,7 @@ import org.junit.Test
 class DomainBoundaryTest {
     @Test
     fun domainSources_doNotDependOnPlatformOrOuterLayers() {
-        val domain = File("src/main/java/com/menna/nabatan_7asena/domain")
+        val domain = File("../composeApp/src/commonMain/kotlin/com/menna/nabatan_7asena/domain")
         assertTrue(domain.isDirectory)
         val forbiddenImport = Regex(
             "(?m)^import (android\\.|androidx\\.|java\\.|com\\.menna\\.nabatan_7asena\\.(data\\.|presentation\\.|core\\.|R(?:\\.|$)))"
