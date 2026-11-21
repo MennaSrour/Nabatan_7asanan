@@ -573,4 +573,14 @@
     <string name="quiz_official_one_attempt">محاولة رسمية واحدة. بدء التحدي يسجل محاولتك، حتى عند الخروج.</string>
     <string name="quiz_official_save_error_male">تعذّر حفظ نتيجتك، اضغط التالي للمحاولة مرة أخرى</string>
     <string name="quiz_official_save_error_female">تعذّر حفظ نتيجتك، اضغطي التالي للمحاولة مرة أخرى</string>
+    <string name="kids_shorts">فيديوهات قصيرة</string>
+    <string name="shorts_back">رجوع</string>
+    <string name="shorts_play">تشغيل الفيديو</string>
+    <string name="shorts_pause">إيقاف الفيديو مؤقتًا</string>
+    <string name="shorts_mute">كتم الصوت</string>
+    <string name="shorts_unmute">تشغيل الصوت</string>
+    <string name="shorts_like">أعجبني، أضف نجمة</string>
+    <string name="shorts_unlike">إزالة النجمة</string>
+    <string name="shorts_playback_error">تعذّر تشغيل الفيديو</string>
+    <string name="shorts_retry">حاول مرة أخرى</string>
 </resources>

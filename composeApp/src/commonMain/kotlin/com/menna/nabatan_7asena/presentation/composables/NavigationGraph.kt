@@ -1,5 +1,8 @@
 package com.menna.nabatan_7asena.presentation.composables
 
+import com.menna.nabatan_7asena.core.config.FeatureFlags
+import com.menna.nabatan_7asena.presentation.screens.shorts.KIDS_SHORTS_ROUTE
+import com.menna.nabatan_7asena.presentation.screens.shorts.KidsShortsScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
@@ -49,6 +52,11 @@ fun NavigationGraph(
             CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
                 com.menna.nabatan_7asena.presentation.screens.home.GardenScreen(
                     com.menna.nabatan_7asena.platform.platformHomeViewModel(), onBack = { navController.popBackStack() })
+            }
+        }
+        if (FeatureFlags.ENABLE_KIDS_SHORTS) {
+            composable(KIDS_SHORTS_ROUTE) {
+                KidsShortsScreen(onBack = { navController.popBackStack() })
             }
         }
         composable("sebha") { SebhaScreen() }

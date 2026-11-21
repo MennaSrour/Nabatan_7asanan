@@ -1,6 +1,9 @@
 package com.menna.nabatan_7asena.data.remote
 
 import com.menna.nabatan_7asena.platform.Log
+import com.menna.nabatan_7asena.data.remote.dto.KidsShortDto
+import com.menna.nabatan_7asena.domain.entity.KidsShort
+import kotlinx.coroutines.CancellationException
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
@@ -17,6 +20,24 @@ class FirebaseDataSource constructor(
         check(FirebaseAvailability.isConfigured) { "Firebase is not configured for this host" }
         return firestoreProvider()
     }
+    internal suspend fun getKidsShorts(): List<KidsShort> =
+        firestore.collection("kids_shorts")
+            .where { "isActive" equalTo true }
+            .get()
+            .documents
+            .mapNotNull { document ->
+                try {
+                    document.data<KidsShortDto>().toDomain(document.id)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Log.w("KidsShorts", "Skipping invalid clip document ${document.id}")
+                    null
+                }
+            }
+            .sortedWith(compareBy(KidsShort::order, KidsShort::id))
+            .distinctBy(KidsShort::id)
+
     suspend fun getDailyPlan(dayId: Int): DailyPlanDto? {
         try {
             Log.d("DailyPlanDebug", "جاري البحث عن خطة يوم رقم: $dayId")
