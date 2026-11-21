@@ -49,7 +49,7 @@ class AndroidQuizViewModel @Inject constructor(services: SharedServices) : QuizV
 actual fun platformQuizViewModel(): QuizViewModel = hiltViewModel<AndroidQuizViewModel>()
 
 @HiltViewModel
-class AndroidLeaderboardViewModel @Inject constructor(services: SharedServices) : LeaderboardViewModel(services.getLeaderboardUseCase, services.getCurrentUserUseCase)
+class AndroidLeaderboardViewModel @Inject constructor(services: SharedServices) : LeaderboardViewModel(services.getLeaderboardUseCase, services.getCurrentUserUseCase, services.getCurrentUserRankUseCase)
 
 @Composable
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = hiltViewModel<AndroidLeaderboardViewModel>()

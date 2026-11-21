@@ -41,6 +41,7 @@ class SharedServices(
     val decrementQuranPartUseCase = DecrementQuranPartUseCase(userRepository)
     val getDailyActivitiesUseCase = GetDailyActivitiesUseCase(dailyRepository)
     val getLeaderboardUseCase = GetLeaderboardUseCase(userRepository)
+    val getCurrentUserRankUseCase = GetCurrentUserRankUseCase(userRepository)
     val getQuranProgressUseCase = GetQuranProgressUseCase(quranRepository)
     val getRecentQuizWinnersUseCase = GetRecentQuizWinnersUseCase(quizRepository)
     val getSuggestedTasksUseCase = GetSuggestedTasksUseCase(dailyRepository)

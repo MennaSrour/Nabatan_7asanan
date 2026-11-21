@@ -5,7 +5,6 @@ import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 
 class FakeUserRepository : UserRepository {
     val user = MutableStateFlow(User("saved-user", "Test", User.Gender.GIRL, 50, 3, 2, avatarIndex = 1))
@@ -19,7 +18,14 @@ class FakeUserRepository : UserRepository {
         saveAvatar(avatarIndex)
     }
     override suspend fun registerUser(user: User) { this.user.value = user }
-    override fun getLeaderboardResource() = flowOf<Resource<List<LeaderboardEntry>>>(Resource.Success(emptyList()))
+    val leaderboard = MutableStateFlow<Resource<List<LeaderboardEntry>>>(Resource.Success(emptyList()))
+    val rankRequests = mutableListOf<Int>()
+    var fetchRank: suspend (Int) -> Resource<Long> = { Resource.Success(124L) }
+    override fun getLeaderboardResource() = leaderboard
+    override suspend fun getUserRank(totalStars: Int): Resource<Long> {
+        rankRequests += totalStars
+        return fetchRank(totalStars)
+    }
     override suspend fun syncUserScore(user: User) = Unit
     override suspend fun updateUserName(newName: String) { user.value = user.value.copy(name = newName) }
     override suspend fun resetAllProgress() = Unit
