@@ -54,6 +54,7 @@ jobs:
               - '**/src/native*/**'
               - 'iosApp/**'
               - '.github/scripts/ios-release.sh'
+              - '.github/scripts/ci-run.sh'
               - 'docs/IOS_RELEASE_SETUP.md'
       # Secrets cannot be used directly in a job-level `if` expression.
       - name: Detect configured signing (trusted events only)
@@ -149,7 +150,7 @@ jobs:
       - name: Run shared tests on the available simulator architecture
         run: |
           if [[ "$(uname -m)" == arm64 ]]; then target=iosSimulatorArm64Test; else target=iosX64Test; fi
-          ./gradlew --build-cache --parallel --max-workers=2 ":composeApp:$target"
+          bash .github/scripts/ci-run.sh ios-tests ./gradlew --build-cache --parallel --max-workers=2 ":composeApp:$target"
       - name: Build unsigned simulator app
         run: |
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
@@ -165,7 +166,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-test-reports
-          path: composeApp/build/reports/tests/
+          path: |
+            composeApp/build/reports/tests/
+            .ci/ios-tests.log
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/upload-artifact@v4
