@@ -13,7 +13,7 @@ import org.junit.Test
 class GenderedStringTest {
     private val strings: Map<String, String> by lazy {
         val nodes = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-            .parse(File("src/main/res/values/strings.xml"))
+            .parse(File("../composeApp/src/commonMain/composeResources/values/strings.xml"))
             .getElementsByTagName("string")
         (0 until nodes.length).associate { index ->
             val node = nodes.item(index)
