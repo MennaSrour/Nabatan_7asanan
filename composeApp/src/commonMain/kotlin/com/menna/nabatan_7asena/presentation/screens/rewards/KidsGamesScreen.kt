@@ -17,7 +17,7 @@ import com.menna.nabatan_7asena.platform.platformKidsRewardsViewModel
 internal fun KidsGamesScreen(
     onBack: () -> Unit,
     onGame: (KidsGame) -> Unit,
-    viewModel: KidsRewardsViewModel = platformKidsRewardsViewModel()
+    viewModel: KidsRewardsViewModel
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     RewardsPage("ألعاب نباتا حسنا", onBack) {

@@ -1,6 +1,8 @@
 package com.menna.nabatan_7asena.presentation.composables
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.menna.nabatan_7asena.platform.platformKidsRewardsViewModel
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -28,6 +30,8 @@ fun NavigationGraph(
     navController: NavHostController,
     openSettings: () -> Unit
 ) {
+    val rewards = platformKidsRewardsViewModel()
+    LaunchedEffect(rewards) { rewards.syncWhileOpen() }
     NavHost(
         navController = navController,
         startDestination = "home"
@@ -65,13 +69,15 @@ fun NavigationGraph(
             DailyWheelScreen(
                 onBack = { navController.popBackStack() },
                 onGames = { navController.navigate(GamesRoute) { launchSingleTop = true } },
-                onBonus = { navController.navigate(gameRoute(KidsGame.BONUS)) { launchSingleTop = true } }
+                onBonus = { navController.navigate(gameRoute(KidsGame.BONUS)) { launchSingleTop = true } },
+                viewModel = rewards
             )
         }
         composable(GamesRoute) {
             KidsGamesScreen(
                 onBack = { navController.popBackStack() },
-                onGame = { game -> navController.navigate(gameRoute(game)) { launchSingleTop = true } }
+                onGame = { game -> navController.navigate(gameRoute(game)) { launchSingleTop = true } },
+                viewModel = rewards
             )
         }
         KidsGame.entries.forEach { game ->

@@ -21,6 +21,15 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertReward(reward: DailyRewardEntity): Long
 
+    @Query("""
+        UPDATE daily_rewards SET prize = :prize, stars = :stars, settled = 1, earnedHere = :earnedHere, synced = :synced
+        WHERE profileId = :profileId AND day = :day AND kind = :kind AND claimId = :claimId AND settled = 0
+    """)
+    suspend fun setRewardSettlement(
+        profileId: String, day: String, kind: String, claimId: String,
+        prize: String, stars: Int, earnedHere: Boolean, synced: Boolean
+    ): Int
+
     @Query("UPDATE daily_rewards SET synced = 1 WHERE profileId = :profileId AND day = :day AND kind = :kind")
     suspend fun markRewardSynced(profileId: String, day: String, kind: String)
 
@@ -36,14 +45,29 @@ interface AppDao {
     suspend fun creditRewardStars(profileId: String, stars: Int): Int
 
     @Transaction
+    suspend fun settleReward(reward: DailyRewardEntity): Boolean {
+        val updated = setRewardSettlement(
+            reward.profileId, reward.day, reward.kind, reward.claimId,
+            reward.prize, reward.stars, reward.earnedHere, reward.synced
+        )
+        if (updated == 0) return false
+        creditRewardBalance(reward)
+        return true
+    }
+
+    @Transaction
     suspend fun claimReward(reward: DailyRewardEntity): Boolean {
         val latest = latestRewardDate(reward.profileId, reward.kind)
         if (latest != null && latest >= reward.day) return false
+        if (insertReward(reward) == -1L) return false
+        if (reward.settled) creditRewardBalance(reward)
+        return true
+    }
+
+    private suspend fun creditRewardBalance(reward: DailyRewardEntity) {
         val storedId = if (reward.profileId == "local") "" else reward.profileId
         if (storedId.isEmpty()) ensureStats(UserStatsEntity(name = "بطل"))
-        if (insertReward(reward) == -1L) return false
         check(creditRewardStars(storedId, reward.stars) == 1) { "Profile changed" }
-        return true
     }
 
     @Query("""

@@ -9,4 +9,4 @@ data class VerseBuilderDto(val reference: String, val words: List<String>)
 data class SpeedQuestionDto(val question: String, val choices: List<String>, val correctIndex: Int)
 
 @Serializable
-data class WheelClaimDto(val prize: String)
+data class WheelClaimDto(val prize: String, val claimId: String = "")

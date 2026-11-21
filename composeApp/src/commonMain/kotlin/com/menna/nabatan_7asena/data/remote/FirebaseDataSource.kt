@@ -70,10 +70,14 @@ class FirebaseDataSource constructor(
         return if (snapshot.exists) snapshot.data<WheelClaimDto>() else null
     }
 
-    suspend fun backupWheelClaim(profileId: String, day: String, claim: WheelClaimDto) {
+    suspend fun claimWheel(profileId: String, day: String, claim: WheelClaimDto): WheelClaimDto {
         val document = wheelClaim(profileId, day)
-        firestore.runTransaction {
-            if (!get(document).exists) set(document, claim)
+        return firestore.runTransaction {
+            val existing = get(document)
+            if (existing.exists) existing.data<WheelClaimDto>() else {
+                set(document, claim)
+                claim
+            }
         }
     }
 

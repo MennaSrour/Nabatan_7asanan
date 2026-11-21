@@ -73,4 +73,28 @@ class LegacyDatabaseCompatibilityTest {
             database.close()
         }
     }
+
+    @Test fun reservedWheelCreditsStarsOnlyWhenTheClaimSettles() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 100))
+            val reservation = DailyRewardEntity(
+                "saved", "2026-11-21", "wheel", "STARS_50", 0,
+                synced = false, settled = false, claimId = "original"
+            )
+            assertTrue(dao.claimReward(reservation))
+            assertFalse(dao.claimReward(reservation.copy(claimId = "second")))
+            assertEquals(100, dao.getUserStats().first()?.totalStars)
+            val settled = reservation.copy(stars = 50, settled = true)
+            assertTrue(dao.settleReward(settled))
+            assertFalse(dao.settleReward(settled))
+            assertEquals(150, dao.getUserStats().first()?.totalStars)
+            assertEquals(listOf(settled), dao.pendingRewards("saved"))
+        } finally {
+            database.close()
+        }
+    }
 }

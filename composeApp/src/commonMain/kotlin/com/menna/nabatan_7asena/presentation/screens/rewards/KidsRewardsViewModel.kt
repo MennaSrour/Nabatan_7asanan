@@ -54,20 +54,20 @@ open class KidsRewardsViewModel(
     private val _payout = MutableStateFlow<GamePayout?>(null)
     internal val payout = _payout.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            account.filterNotNull().collectLatest { current ->
-                while (true) {
-                    sync(current)
-                    delay(30_000)
-                }
+    internal suspend fun syncWhileOpen() {
+        account.filterNotNull().collectLatest { current ->
+            while (true) {
+                sync(current)
+                delay(30_000)
             }
         }
     }
 
     internal fun spinWheel() {
         val current = account.value ?: return
-        if (status.value?.prize != null || _spin.value == SpinState.Saving || _spin.value is SpinState.Won) return
+        val currentStatus = status.value ?: return
+        if (currentStatus.prize != null || currentStatus.spinPending ||
+            _spin.value == SpinState.Saving || _spin.value is SpinState.Won) return
         _spin.value = SpinState.Saving
         viewModelScope.launch {
             try {

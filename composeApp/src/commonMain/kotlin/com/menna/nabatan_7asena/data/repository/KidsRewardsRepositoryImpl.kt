@@ -18,38 +18,59 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDate
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class KidsRewardsRepositoryImpl(
     private val dao: AppDao,
     private val remote: FirebaseDataSource,
     private val garden: GardenRepository
 ) : KidsRewardsRepository {
     private val syncLock = Mutex()
+    private val wheelLock = Mutex()
 
     override fun observe(profileId: String, day: LocalDate) =
         combine(dao.observeRewards(profileId, day.toString()), garden.observe(profileId)) { records, progress ->
             val wheel = records.firstOrNull { it.kind == WHEEL }
             DailyRewardStatus(
-                prize = wheel?.let { decodePrize(it.prize) },
+                prize = wheel?.takeIf { it.settled }?.let { decodePrize(it.prize) },
                 rewardedGames = KidsGame.entries.filter { game -> records.any { it.kind == game.name } }.toSet(),
                 earnedHere = wheel?.earnedHere == true,
-                waterDelivered = (progress as? Resource.Success)?.data?.wheelRewardDays?.contains(wheel?.day) == true
+                waterDelivered = (progress as? Resource.Success)?.data?.wheelRewardDays?.contains(wheel?.day) == true,
+                spinPending = wheel?.settled == false
             )
         }
 
-    override suspend fun spin(profileId: String, day: LocalDate): WheelPrize? {
-        if (dao.latestRewardDate(profileId, WHEEL)?.let { it >= day.toString() } == true) return null
-        val backedUp = remotePrize(profileId, day)
-        if (backedUp != null) {
-            recordExistingSpin(profileId, day, backedUp)
-            return null
-        }
+    override suspend fun spin(profileId: String, day: LocalDate): WheelPrize? = wheelLock.withLock {
         val prize = WheelPrize.entries.random()
+        val reservation = DailyRewardEntity(
+            profileId, day.toString(), WHEEL, prize.name, 0, synced = false,
+            settled = false, claimId = Uuid.random().toString()
+        )
+        if (!dao.claimReward(reservation)) return@withLock null
+        val settled = finalizeWheel(reservation)
+        if (settled.earnedHere) decodePrize(settled.prize) else null
+    }
+
+    // The Room reservation survives a process exit while a server transaction is in flight.
+    private suspend fun finalizeWheel(reservation: DailyRewardEntity): DailyRewardEntity {
+        val claim = if (reservation.profileId == LOCAL) null else fetch {
+            remote.claimWheel(reservation.profileId, reservation.day, WheelClaimDto(reservation.prize, reservation.claimId))
+        }
+        val earnedHere = claim == null || claim.claimId == reservation.claimId
+        val prize = checkNotNull(decodePrize(if (earnedHere) reservation.prize else checkNotNull(claim).prize))
+        val settled = reservation.copy(
+            prize = prize.name,
+            stars = if (earnedHere) prize.stars else 0,
+            synced = !earnedHere,
+            earnedHere = earnedHere,
+            settled = true
+        )
         return withContext(NonCancellable) {
-            val record = DailyRewardEntity(profileId, day.toString(), WHEEL, prize.name, prize.stars, false)
-            if (!dao.claimReward(record)) return@withContext null
-            deliverWater(record)
-            prize
+            dao.settleReward(settled)
+            if (earnedHere) deliverWater(settled)
+            settled
         }
     }
 
@@ -62,12 +83,19 @@ class KidsRewardsRepositoryImpl(
     }
 
     override suspend fun sync(profileId: String, day: LocalDate) = syncLock.withLock {
-        for (record in dao.pendingRewards(profileId)) {
+        for (pending in dao.pendingRewards(profileId)) {
+            val record = if (pending.settled) pending else wheelLock.withLock {
+                // Another caller may have settled the same reservation while we waited for it.
+                val current = dao.pendingRewards(profileId).firstOrNull { it.claimId == pending.claimId }
+                    ?: return@withLock null
+                if (current.settled) current else finalizeWheel(current)
+            } ?: continue
+            if (record.synced) continue
             deliverWater(record)
             val synced = profileId == LOCAL || fetch {
                 if (record.kind == WHEEL) {
-                    remote.backupWheelClaim(profileId, record.day, WheelClaimDto(record.prize))
-                    if (decodePrize(record.prize)?.water != 0) check(garden.sync(profileId))
+                    remote.claimWheel(profileId, record.day, WheelClaimDto(record.prize, record.claimId))
+                    if ((decodePrize(record.prize)?.water ?: 0) > 0) check(garden.sync(profileId))
                 }
                 if (record.stars > 0) {
                     val stats = dao.getUserStats().first()?.takeIf { it.userId == profileId }
@@ -83,7 +111,11 @@ class KidsRewardsRepositoryImpl(
             if (synced) dao.markRewardSynced(profileId, record.day, record.kind)
         }
         if (dao.latestRewardDate(profileId, WHEEL)?.let { it >= day.toString() } != true) {
-            remotePrize(profileId, day)?.let { recordExistingSpin(profileId, day, it) }
+            remotePrize(profileId, day)?.let { prize ->
+                dao.claimReward(DailyRewardEntity(
+                    profileId, day.toString(), WHEEL, prize.name, 0, synced = true, earnedHere = false
+                ))
+            }
         }
     }
 
@@ -97,10 +129,6 @@ class KidsRewardsRepositoryImpl(
     private suspend fun remotePrize(profileId: String, day: LocalDate): WheelPrize? =
         if (profileId == LOCAL) null else fetch { remote.getWheelClaim(profileId, day.toString()) }
             ?.let { decodePrize(it.prize) }
-
-    private suspend fun recordExistingSpin(profileId: String, day: LocalDate, prize: WheelPrize) {
-        dao.claimReward(DailyRewardEntity(profileId, day.toString(), WHEEL, prize.name, 0, synced = true, earnedHere = false))
-    }
 
     override suspend fun verses(): List<VerseBuilderItem> {
         val items = fetch { remote.getVerseBuilderItems() }.orEmpty().mapNotNull { item ->

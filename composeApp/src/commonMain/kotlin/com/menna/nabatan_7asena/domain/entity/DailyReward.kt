@@ -21,7 +21,8 @@ data class DailyRewardStatus(
     val prize: WheelPrize? = null,
     val rewardedGames: Set<KidsGame> = emptySet(),
     val earnedHere: Boolean = false,
-    val waterDelivered: Boolean = false
+    val waterDelivered: Boolean = false,
+    val spinPending: Boolean = false
 )
 
 data class VerseBuilderItem(val reference: String, val words: List<String>)

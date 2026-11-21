@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.domain.entity.KidsGame
 import com.menna.nabatan_7asena.domain.entity.WheelPrize
-import com.menna.nabatan_7asena.platform.platformKidsRewardsViewModel
 import com.menna.nabatan_7asena.ui.theme.KidsFontFamily
 import kotlin.math.PI
 import kotlin.math.cos
@@ -40,7 +39,7 @@ internal fun DailyWheelScreen(
     onBack: () -> Unit,
     onGames: () -> Unit,
     onBonus: () -> Unit,
-    viewModel: KidsRewardsViewModel = platformKidsRewardsViewModel()
+    viewModel: KidsRewardsViewModel
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     val spin by viewModel.spin.collectAsStateWithLifecycle()
@@ -49,7 +48,7 @@ internal fun DailyWheelScreen(
     val won = (spin as? SpinState.Won)?.prize
     val prize = if (spin == SpinState.Saving) null else won ?: status?.prize
     var animationFinished by remember { mutableStateOf(false) }
-    val revealed = prize != null && (won == null || animationFinished)
+    val revealed = won == null || animationFinished
 
     LaunchedEffect(won) {
         if (won != null) {
@@ -59,12 +58,13 @@ internal fun DailyWheelScreen(
             sparkles.animateTo(1f, tween(1450, easing = LinearEasing))
             viewModel.dismissSpin()
         } else {
+            sparkles.snapTo(1f)
             animationFinished = false
             rotation.snapTo(0f)
         }
     }
 
-    RewardsPage("عجلة المكافآت اليومية", onBack) {
+    RewardsPage("عجلة المكافآت اليومية", onBack = { viewModel.dismissSpin(); onBack() }) {
         RewardText("لفة مجانية واحدة كل يوم", size = 21)
         Wheel(if (won != null) rotation.value else -(prize?.ordinal ?: 0) * Slice, sparkles.value)
         when {
@@ -83,16 +83,18 @@ internal fun DailyWheelScreen(
                 }
             }
             spin == SpinState.Failed -> RewardText("تعذّر حفظ الهدية. حاول مرة أخرى.")
-            spin == SpinState.Saving -> RewardText("جارٍ تجهيز الهدية…")
+            spin == SpinState.Saving || status?.spinPending == true -> RewardText("جارٍ تجهيز الهدية…")
             won != null -> RewardText("العجلة تدور…")
         }
         if (prize == null) {
             RewardButton("أدر العجلة", viewModel::spinWheel, Modifier.fillMaxWidth(),
-                enabled = status != null && spin != SpinState.Saving, color = RewardGold)
+                enabled = status?.spinPending == false && spin != SpinState.Saving, color = RewardGold)
         } else if (revealed && prize == WheelPrize.BONUS_ROUND) {
-            RewardButton(KidsGame.BONUS.title, onBonus, Modifier.fillMaxWidth(), color = RewardGold)
+            RewardButton(KidsGame.BONUS.title, { viewModel.dismissSpin(); onBonus() },
+                Modifier.fillMaxWidth(), color = RewardGold)
         }
-        RewardButton("ألعاب نباتا حسنا", onGames, Modifier.fillMaxWidth(), enabled = won == null || revealed)
+        RewardButton("ألعاب نباتا حسنا", { viewModel.dismissSpin(); onGames() },
+            Modifier.fillMaxWidth(), enabled = revealed)
     }
 }
 
