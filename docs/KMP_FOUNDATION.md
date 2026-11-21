@@ -15,9 +15,12 @@
 - `iosApp` is the SwiftUI/Xcode host. Both hosts render the same `App()`.
 
 The static `ComposeApp` framework targets `iosX64`, `iosArm64` and
-`iosSimulatorArm64`. Kotlin/Compose compiler is 2.2.10; Compose Multiplatform is
-1.9.0. Navigation and lifecycle use their JetBrains multiplatform distributions.
-Hilt remains an Android implementation detail.
+`iosSimulatorArm64`. Kotlin/Compose compiler is 2.2.20; Compose Multiplatform is
+1.9.1. Navigation and lifecycle use their JetBrains multiplatform distributions.
+Hilt remains an Android implementation detail. Lifecycle 2.9.5 and Navigation
+2.9.1 align with Compose 1.9.1 and use SavedState 1.3.5, which delegates the
+native Compose state implementation to AndroidX instead of linking duplicate
+`LocalSavedStateRegistryOwner` symbols.
 
 ## Firebase
 
