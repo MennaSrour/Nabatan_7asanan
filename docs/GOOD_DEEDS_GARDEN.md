@@ -46,3 +46,32 @@ local restore, profile isolation, corrupt/failed persistence, concurrent waterin
 backup failure/cancellation, device identity, and mutations during an upload.
 Visual appearance, motion/accessibility settings and native iOS rendering still
 need device review; common metadata and Android builds check shared API usage.
+
+## Garden shop
+
+The Garden screen opens an Arabic RTL shop sheet with six Canvas decorations:
+butterflies (20 stars), birds (25), extra flowers (10), lantern (30), rainbow (35)
+and magical stars (15). All stages can equip them. Butterflies are now an equipped
+shop decoration rather than an automatic maturity effect; ordinary stage blossoms,
+meadow flowers and night-sky stars remain part of the base scene.
+
+The spendable shop balance is `max(0, current achievement stars - spentStars)`.
+Achievement/leaderboard stars remain unchanged by shopping. This preserves ranking
+and existing task undo/award behavior. If an achievement is undone, the shop balance
+can fall to zero; owned items are retained, and subsequent earnings count against
+the same spent total. There is no negative balance or refund from toggling an item.
+
+The repository reads the current matching Room profile's star total inside its
+serialized purchase operation. Price, currency spent, ownership, automatic equip
+and revision are committed together in the existing local JSON snapshot before
+publishing. Repeated buys of an owned item are no-ops; insufficient funds, a changed
+profile, or a failed save cannot charge/unlock it. Equip operations require ownership
+and never cost stars. Pre-shop snapshots decode with empty ownership/equipment and
+zero spending, preserving XP, water and reward ledgers.
+
+Shop fields join the existing per-profile, per-device Firestore backup and pending
+revision/retry mechanism. This remains a local game wallet with cloud backup, not a
+shared multi-device transactional economy or cloud-restore service. Purchases do not
+change leaderboard documents. The UI announces successful saved purchases with a
+Canvas confetti banner; reopening the shop does not replay the celebration. Shop
+idle animation stops outside the STARTED lifecycle state.
