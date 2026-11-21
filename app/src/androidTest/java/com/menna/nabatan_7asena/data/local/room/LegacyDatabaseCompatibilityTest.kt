@@ -3,6 +3,10 @@ package com.menna.nabatan_7asena.data.local.room
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.menna.nabatan_7asena.data.local.GardenStorage
+import com.menna.nabatan_7asena.data.repository.GardenRepositoryImpl
+import com.menna.nabatan_7asena.domain.entity.GardenDecoration
+import com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
@@ -93,6 +97,38 @@ class LegacyDatabaseCompatibilityTest {
             assertFalse(dao.settleReward(settled))
             assertEquals(150, dao.getUserStats().first()?.totalStars)
             assertEquals(listOf(settled), dao.pendingRewards("saved"))
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test fun wheelStarsCanBeSpentInTheGardenShop() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 5))
+            val storage = object : GardenStorage {
+                private var snapshot: String? = null
+                override fun read() = snapshot
+                override fun write(value: String) { snapshot = value }
+            }
+            val garden = GardenRepositoryImpl(
+                storage = storage,
+                earnedStars = { id -> dao.getUserStats().first()?.takeIf { it.userId == id }?.totalStars },
+                backup = { _, _, _ -> }
+            )
+            val decoration = GardenDecoration.BUTTERFLIES
+            val priorResult = runCatching { garden.buy("saved", decoration) }
+            assertTrue(priorResult.exceptionOrNull() is InsufficientGardenStars)
+
+            assertTrue(dao.claimReward(DailyRewardEntity("saved", "2026-11-21", "wheel", "STARS_20", 20, false)))
+            val purchase = garden.buy("saved", decoration)
+            assertTrue(purchase.purchased)
+            assertTrue(decoration.id in purchase.progress.equippedItems)
+            assertEquals(decoration.price, purchase.progress.spentStars)
+            assertEquals(25, dao.getUserStats().first()?.totalStars)
         } finally {
             database.close()
         }
