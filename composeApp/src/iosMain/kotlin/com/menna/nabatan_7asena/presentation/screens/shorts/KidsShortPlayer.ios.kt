@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.coroutines.delay
 import platform.AVFoundation.*
+import platform.CoreGraphics.CGRectMake
 import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
@@ -92,7 +93,7 @@ internal actual fun KidsShortPlayer(
     )
 }
 
-private class ShortVideoView(player: AVPlayer) : UIView() {
+private class ShortVideoView(player: AVPlayer) : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
     val videoLayer = AVPlayerLayer.playerLayerWithPlayer(player).apply {
         videoGravity = AVLayerVideoGravityResizeAspect
     }
