@@ -21,6 +21,7 @@ private data class GardenSnapshot(val version: Int = 1, val deviceId: String, va
 @OptIn(ExperimentalUuidApi::class)
 class GardenRepositoryImpl(
     private val storage: GardenStorage = PlatformGardenStorage(),
+    private val earnedStars: suspend (String) -> Int? = { null },
     private val backup: suspend (String, String, GardenProgress) -> Unit
 ) : GardenRepository {
     private val json = Json { ignoreUnknownKeys = true }
@@ -59,7 +60,19 @@ class GardenRepositoryImpl(
         return GardenWatering(progress, applied)
     }
 
-    private suspend fun update(profileId: String, transform: (GardenProgress) -> GardenProgress): GardenProgress = mutex.withLock {
+    override suspend fun buy(profileId: String, item: GardenDecoration): GardenPurchase {
+        var purchased = false
+        val progress = update(profileId) {
+            val stars = earnedStars(profileId) ?: error("Garden profile changed or is unavailable")
+            buyGardenDecoration(it, item, stars).also { result -> purchased = result.purchased }.progress
+        }
+        return GardenPurchase(progress, purchased)
+    }
+
+    override suspend fun equip(profileId: String, item: GardenDecoration, equipped: Boolean): GardenProgress =
+        update(profileId) { equipGardenDecoration(it, item, equipped) }
+
+    private suspend fun update(profileId: String, transform: suspend (GardenProgress) -> GardenProgress): GardenProgress = mutex.withLock {
         check(loadError == null) { "Garden storage could not be read" }
         require(profileId.isNotBlank())
         val current = state.value.profiles[profileId] ?: GardenProgress()

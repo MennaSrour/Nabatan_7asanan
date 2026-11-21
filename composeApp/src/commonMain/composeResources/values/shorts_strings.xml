@@ -1,0 +1,12 @@
+<resources>
+    <string name="kids_shorts">فيديوهات قصيرة</string>
+    <string name="shorts_back">رجوع</string>
+    <string name="shorts_play">تشغيل الفيديو</string>
+    <string name="shorts_pause">إيقاف الفيديو مؤقتًا</string>
+    <string name="shorts_mute">كتم الصوت</string>
+    <string name="shorts_unmute">تشغيل الصوت</string>
+    <string name="shorts_like">أعجبني، أضف نجمة</string>
+    <string name="shorts_unlike">إزالة النجمة</string>
+    <string name="shorts_playback_error">تعذّر تشغيل الفيديو</string>
+    <string name="shorts_retry">حاول مرة أخرى</string>
+</resources>

@@ -12,10 +12,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 
-internal data class GardenFrame(val stage: Float, val phase: Float, val water: Float, val night: Boolean = false)
+internal data class GardenFrame(val stage: Float, val phase: Float, val water: Float, val night: Boolean = false, val equipped: Set<String> = emptySet())
 
 @Composable
-internal fun GardenScene(stage: Int, profileId: String, wateringSequence: Long, description: String, modifier: Modifier = Modifier, night: Boolean = false) {
+internal fun GardenScene(stage: Int, profileId: String, wateringSequence: Long, description: String, modifier: Modifier = Modifier, night: Boolean = false, equippedItems: Set<String> = emptySet()) {
     val growth = animateFloatAsState(stage.toFloat(), tween(1800), label = "gardenGrowth")
     val active = LocalLifecycleOwner.current.lifecycle.currentStateAsState().value.isAtLeast(Lifecycle.State.STARTED)
     val phase = if (active) rememberInfiniteTransition(label = "gardenWind").animateFloat(0f, 1f,
@@ -29,12 +29,14 @@ internal fun GardenScene(stage: Int, profileId: String, wateringSequence: Long, 
         water.animateTo(1f, tween(1600, easing = LinearEasing))
     }
     Canvas(modifier.semantics { contentDescription = description }) {
-        val frame = GardenFrame(growth.value, phase.value, if (water.isRunning) water.value else 0f, night)
+        val frame = GardenFrame(growth.value, phase.value, if (water.isRunning) water.value else 0f, night, equippedItems)
         withTransform({ scale(size.width / 1000f, size.height / 640f, Offset.Zero) }) {
             drawGardenLandscape(frame)
+            drawEquippedGarden(frame, background = true)
             drawGardenTree(frame)
             if (night) drawRect(androidx.compose.ui.graphics.Color(0xFF101D45).copy(alpha = 0.22f), size = androidx.compose.ui.geometry.Size(1000f, 640f))
             drawGardenEffects(frame)
+            drawEquippedGarden(frame, background = false)
         }
     }
 }

@@ -174,6 +174,7 @@ open class HomeViewModel constructor(
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
                     gardenProfileId = user.id,
+                    gardenEarnedStars = user.totalStars,
                     garden = garden,
                     isGardenUnavailable = gardenResult is Resource.Error,
                     gardenNeedsWater = garden?.lastWateredDate?.let { it < date.toString() } ?: true,
@@ -234,6 +235,10 @@ open class HomeViewModel constructor(
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
                         gardenProfileId = state.gardenProfileId,
+                        gardenEarnedStars = state.gardenEarnedStars,
+                        isGardenShopBusy = currentState.gardenProfileId == state.gardenProfileId && currentState.isGardenShopBusy,
+                        gardenShopError = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenShopError else null,
+                        gardenPurchaseSequence = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenPurchaseSequence else 0,
                         garden = state.garden,
                         isGardenUnavailable = state.isGardenUnavailable,
                         gardenNeedsWater = state.gardenNeedsWater,
@@ -262,6 +267,29 @@ open class HomeViewModel constructor(
             Resource.Success(gardenRepository.creditTasks(profileId, date, activities.filter { it.isCompleted }.map { it.id }.toSet()))
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { Resource.Error(e) }
+    }
+
+    override fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration) = updateGardenShop(item, null)
+    override fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean) = updateGardenShop(item, equipped)
+
+    private fun updateGardenShop(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean?) {
+        val owner = _uiState.value.gardenProfileId
+        if (owner.isBlank() || _uiState.value.isGardenShopBusy || _uiState.value.isGardenUnavailable) return
+        _uiState.update { it.copy(isGardenShopBusy = true, gardenShopError = null) }
+        viewModelScope.launch {
+            try {
+                val purchase = if (equipped == null) gardenRepository.buy(owner, item) else null
+                if (purchase == null) gardenRepository.equip(owner, item, requireNotNull(equipped))
+                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(
+                    gardenPurchaseSequence = it.gardenPurchaseSequence + if (purchase?.purchased == true) 1 else 0) }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(gardenShopError =
+                    if (e is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars)
+                        com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
+                    else com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed) }
+            } finally { _uiState.update { if (it.gardenProfileId == owner) it.copy(isGardenShopBusy = false) else it } }
+        }
     }
 
     override fun openGarden() { _uiMessage.trySend(HomeEffect.NavigateToGarden) }
