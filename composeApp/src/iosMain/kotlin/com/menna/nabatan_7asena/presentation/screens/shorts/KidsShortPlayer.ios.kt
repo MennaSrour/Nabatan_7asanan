@@ -41,7 +41,7 @@ internal actual fun KidsShortPlayer(
         LaunchedEffect(uri) { onState(VideoState.Failed) }
         return
     }
-    val player = remember(url) { AVPlayer.playerWithURL(url) }
+    val player = remember(url) { AVPlayer.playerWithURL(url) as AVPlayer }
     val viewState by rememberUpdatedState(onState)
     val shouldPlay by rememberUpdatedState(playing)
 
