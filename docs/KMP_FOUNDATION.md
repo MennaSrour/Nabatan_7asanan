@@ -52,7 +52,7 @@ for Xcode app builds, which retain Swift Package Manager integration. CI passes
 `-PnativeTestArchitecture=arm64` (or `x86_64` on Intel) to build only its runner
 architecture; omitting that optional property keeps CocoaPods defaults.
 
-The Xcode project links FirebaseCore, FirebaseFirestore and FirebaseRemoteConfig
+The Xcode project links FirebaseCore, FirebaseAuth, FirebaseFirestore and FirebaseRemoteConfig
 through the official Firebase Swift package (11.x, compatible with GitLive 2.1's
 native SDK baseline). No service-account keys belong in either client.
 

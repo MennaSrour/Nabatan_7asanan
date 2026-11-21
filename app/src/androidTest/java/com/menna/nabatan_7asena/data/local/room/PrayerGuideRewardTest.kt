@@ -13,7 +13,8 @@ import org.junit.Test
 class PrayerGuideRewardTest {
     @Test fun simultaneousClaimsAwardStarsOnlyOncePerDay() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build().use { database ->
+        val database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
             val dao = database.appDao()
             dao.insertUserStats(UserStatsEntity(userId = "child", totalStars = 48, currentStreak = 2))
 
@@ -24,6 +25,8 @@ class PrayerGuideRewardTest {
             assertEquals(2, dao.getUserStats().first()?.currentStreak)
             assertTrue(dao.awardPrayerGuideBonus("2026-11-22", "child"))
             assertEquals(58, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
         }
     }
 }
