@@ -9,7 +9,7 @@ import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 @Composable
 fun HomeOverlays(state: HomeUiState, actions: HomeActions, showAddSheet: Boolean, onCloseSheet: () -> Unit) {
     if (state.showCelebration) CelebrationOverlay(actions::dismissCelebration)
-    if (showAddSheet) AddTaskBottomSheet(onDismiss = onCloseSheet, suggestions = state.suggestions,
+    if (showAddSheet) AddTaskBottomSheet(onDismiss = onCloseSheet, suggestions = state.suggestions, existingTitles = state.tasks.map { it.title },
         onTaskSelected = { actions.onAddExtraTask(it); onCloseSheet() })
     state.currentRiddle?.takeIf { state.showChallengeDialog }?.let { riddle ->
         DailyChallengeDialog(riddle, actions::closeChallenge) { if (it) actions.onCorrectAnswer() }

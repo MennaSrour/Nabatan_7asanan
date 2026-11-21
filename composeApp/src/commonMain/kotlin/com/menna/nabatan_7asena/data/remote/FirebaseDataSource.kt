@@ -12,7 +12,7 @@ import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 
 class FirebaseDataSource constructor(
     private val firestoreProvider: () -> FirebaseFirestore = { Firebase.firestore }
-) {
+) : OfficialQuizRemote {
     private val firestore get(): FirebaseFirestore {
         check(FirebaseAvailability.isConfigured) { "Firebase is not configured for this host" }
         return firestoreProvider()
@@ -120,16 +120,45 @@ class FirebaseDataSource constructor(
     }
 
     /** رفع نتيجة طفل لمسابقة أسبوع معيّن — set (مش add) عشان لو حاول يرسل تاني يستبدل مش يتكرر */
-    suspend fun submitQuizScore(weekId: String, dto: QuizScoreDto) {
-        try {
-            firestore.collection("quiz_scores")
-                .document(weekId)
-                .collection("entries")
-                .document(dto.userId)
-                .set(dto)
-        } catch (e: Exception) {
-            Log.e("FirebaseDataSource", "حدث خطأ في رفع نتيجة المسابقة لـ ${dto.userId}", e)
-            throw e
+    override suspend fun getOfficialQuizAttempt(weekId: String, userId: String): QuizScoreDto? {
+        val scores = firestore.collection("quiz_scores").document(weekId).collection("entries").document(userId)
+        val score = scores.get(dev.gitlive.firebase.firestore.Source.SERVER)
+        if (score.exists) return score.data<QuizScoreDto>()
+        val attempt = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(userId)
+            .get(dev.gitlive.firebase.firestore.Source.SERVER)
+        return if (attempt.exists) attempt.data<QuizScoreDto>() else null
+    }
+
+    override suspend fun reserveOfficialQuizAttempt(weekId: String, dto: QuizScoreDto): Pair<QuizScoreDto, Boolean> {
+        val reservation = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(dto.userId)
+        val score = firestore.collection("quiz_scores").document(weekId).collection("entries").document(dto.userId)
+        return firestore.runTransaction {
+            val savedScore = get(score)
+            val savedAttempt = get(reservation)
+            when {
+                savedScore.exists -> savedScore.data<QuizScoreDto>() to false
+                savedAttempt.exists -> savedAttempt.data<QuizScoreDto>() to false
+                else -> { set(reservation, dto); dto to true }
+            }
+        }
+    }
+
+    override suspend fun finishOfficialQuizAttempt(weekId: String, userId: String, token: String, score: Int): QuizScoreDto {
+        val reservation = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(userId)
+        val result = firestore.collection("quiz_scores").document(weekId).collection("entries").document(userId)
+        return firestore.runTransaction {
+            val existing = get(result)
+            val started = get(reservation)
+            if (existing.exists) existing.data<QuizScoreDto>()
+            else {
+                check(started.exists) { "Official attempt was not reserved" }
+                val saved = started.data<QuizScoreDto>()
+                check(saved.token == token && token.isNotBlank()) { "Official attempt does not match" }
+                val finished = saved.copy(score = score, completed = true)
+                set(result, finished)
+                set(reservation, finished)
+                finished
+            }
         }
     }
 

@@ -14,6 +14,7 @@ interface QuranActions {
     fun togglePlaylistPlayback()
     fun nextPlaylistSurah()
     fun previousPlaylistSurah()
+    fun setPlaylistRepeatCount(count: Int)
     fun togglePlaylistRepeat()
     fun onOpenRepeatBottomSheet(surahId: Int)
     fun onDismissRepeatBottomSheet()

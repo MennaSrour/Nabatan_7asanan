@@ -20,5 +20,8 @@ data class PlaylistPlaybackState(
     val name: String,
     val tracks: List<PlaylistTrack>,
     val currentIndex: Int = 0,
-    val repeat: Boolean = false
-)
+    val repeatCount: Int = 1,
+    val completedLoops: Int = 0
+) {
+    val repeat: Boolean get() = repeatCount == INFINITE_REPEATS
+}

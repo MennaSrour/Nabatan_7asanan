@@ -29,7 +29,7 @@ actual fun platformUpdateViewModel(): UpdateViewModel = viewModel { UpdateViewMo
 actual fun platformOnboardingViewModel(): OnboardingViewModel = viewModel { OnboardingViewModel(iosServices.permissions) }
 
 @Composable
-actual fun platformQuizViewModel(): QuizViewModel = viewModel { QuizViewModel(iosServices.getWeeklyStudyQuestionsUseCase, iosServices.getWeeklyCompetitionQuestionsUseCase, iosServices.isCompetitionDayUseCase, iosServices.submitCompetitionScoreUseCase, iosServices.getRecentQuizWinnersUseCase, iosServices.newScreenAudio()) }
+actual fun platformQuizViewModel(): QuizViewModel = viewModel { QuizViewModel(iosServices.getWeeklyStudyQuestionsUseCase, iosServices.getWeeklyCompetitionQuestionsUseCase, iosServices.isCompetitionDayUseCase, iosServices.officialQuizRepository, iosServices.getRecentQuizWinnersUseCase, iosServices.newScreenAudio()) }
 
 @Composable
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = viewModel { LeaderboardViewModel(iosServices.getLeaderboardUseCase, iosServices.getCurrentUserUseCase, iosServices.getCurrentUserRankUseCase) }

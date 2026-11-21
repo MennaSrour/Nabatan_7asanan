@@ -13,6 +13,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Button
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.alpha
+import com.menna.nabatan_7asena.domain.util.normalizeTaskTitle
+import com.menna.nabatan_7asena.resources.AppResources as R
+import com.menna.nabatan_7asena.resources.stringResource
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,9 +41,13 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 fun AddTaskBottomSheet(
     onDismiss: () -> Unit,
     onTaskSelected: (String) -> Unit,
-    suggestions: ExtraTasks
+    suggestions: ExtraTasks,
+    existingTitles: List<String> = emptyList()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var customTitle by remember { mutableStateOf("") }
+    val existing = existingTitles.map(::normalizeTaskTitle).toSet()
+    val duplicate = normalizeTaskTitle(customTitle) in existing
     var selectedCategory by remember { mutableStateOf("نوافل") }
 
     ModalBottomSheet(
@@ -45,7 +57,7 @@ fun AddTaskBottomSheet(
         shape = SummerTheme.shapes.bottomSheet
     ) {
         Column(
-            modifier = Modifier
+            modifier = Modifier.imePadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal)
                 .padding(bottom = SummerTheme.dimensions.paddingScreenBottom)
         ) {
@@ -113,7 +125,14 @@ fun AddTaskBottomSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(customTitle, onValueChange = { customTitle = it }, singleLine = true,
+                label = { Text(stringResource(R.string.task_custom_title)) }, isError = duplicate,
+                supportingText = { if (duplicate) Text(stringResource(R.string.task_duplicate)) }, modifier = Modifier.fillMaxWidth())
+            Button(onClick = { onTaskSelected(customTitle.trim()); onDismiss() }, enabled = normalizeTaskTitle(customTitle).isNotBlank() && !duplicate) {
+                Text(stringResource(R.string.task_custom_add))
+            }
+            Spacer(Modifier.height(12.dp))
 
             val items = when (selectedCategory) {
                 "نوافل" -> listOf(
@@ -153,23 +172,27 @@ fun AddTaskBottomSheet(
                     verticalArrangement = Arrangement.spacedBy(SummerTheme.dimensions.paddingMedium)
                 ) {
                     items(items) { title ->
+                        val added = normalizeTaskTitle(title) in existing
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(SummerTheme.shapes.taskCard)
                                 .background(SummerTheme.colors.cardBackground)
                                 .border(1.5.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.3f), SummerTheme.shapes.taskCard)
-                                .clickable { onTaskSelected(title); onDismiss() }
+                                .alpha(if (added) 0.55f else 1f)
+                                .clickable(enabled = !added) { onTaskSelected(title); onDismiss() }
                                 .padding(SummerTheme.dimensions.paddingLarge),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
                                 text = title,
+                                modifier = Modifier.weight(1f),
                                 style = SummerTheme.typography.taskTitle,
                                 color = SummerTheme.colors.textDarkBrown
                             )
-                            Icon(
+                            if (added) Text(stringResource(R.string.task_added), color = SummerTheme.colors.textBrown)
+                            else Icon(
                                 imageVector = Icons.Rounded.Star,
                                 contentDescription = null,
                                 tint = SummerTheme.colors.goldWarm,

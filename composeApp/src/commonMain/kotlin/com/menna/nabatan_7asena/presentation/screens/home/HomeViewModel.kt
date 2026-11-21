@@ -264,6 +264,8 @@ open class HomeViewModel constructor(
         catch (e: Exception) { Resource.Error(e) }
     }
 
+    override fun openGarden() { _uiMessage.trySend(HomeEffect.NavigateToGarden) }
+
     override fun waterGarden() {
         val current = _uiState.value
         if (current.isWateringGarden || current.gardenProfileId.isBlank() || (current.garden?.waterDrops ?: 0) <= 0) return
@@ -373,12 +375,19 @@ open class HomeViewModel constructor(
         }
     }
 
+    private var addingTask = false
+
     override fun onAddExtraTask(title: String) {
+        if (addingTask) return
+        addingTask = true
         viewModelScope.launch {
-            val res = addExtraTaskUseCase(title)
-            if (res is Resource.Error) {
-                sendMessage(res.throwable?.message ?: "Failed to add task")
-            }
+            try {
+                val res = addExtraTaskUseCase(title, _uiState.value.tasks.map { it.title })
+                if (res is Resource.Error) sendMessage(com.menna.nabatan_7asena.resources.getResourceString(
+                    if (res.throwable is com.menna.nabatan_7asena.domain.util.DuplicateDailyTaskException)
+                        com.menna.nabatan_7asena.resources.AppResources.string.task_duplicate
+                    else com.menna.nabatan_7asena.resources.AppResources.string.task_add_failed))
+            } finally { addingTask = false }
         }
     }
 

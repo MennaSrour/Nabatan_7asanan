@@ -185,6 +185,7 @@ fun QuizFlashCardView(
 
                     Spacer(Modifier.height(18.dp))
 
+                    state.errorMessage?.let { ErrorNote(genderedStringResource(it)) }
                     NextButtonArea(
                         visible = card.isFlipped,
                         isLast = state.currentIndex + 1 >= cards.size,

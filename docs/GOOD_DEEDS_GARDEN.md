@@ -1,7 +1,9 @@
 # Good deeds garden
 
 The Home garden is drawn entirely with shared Compose Canvas paths, gradients and
-layers. The compact card expands into a scrollable garden dialog. Seed, sprout,
+layers. Home contains a compact stage/drop preview that opens the dedicated full-screen garden route.
+The garden shares the Home ViewModel owner, hides the floating navigation bar,
+and uses the Home day/night state for sky, moon/stars and tree lighting. Seed, sprout,
 sapling, young tree, blooming tree and fruiting garden begin at 0, 2, 8, 18, 35 and
 60 garden XP respectively. Stage is derived from persisted XP, so there is no
 separate level value that can drift out of sync. The mature garden keeps growing

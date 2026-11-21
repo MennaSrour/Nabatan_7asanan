@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,7 +30,21 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 @Composable
-fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit) {
+fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit,
+    attempt: com.menna.nabatan_7asena.domain.entity.OfficialQuizAttempt? = null, statusAvailable: Boolean = true, starting: Boolean = false) {
+    if (attempt != null || !statusAvailable) {
+        androidx.compose.material3.Surface(color = SummerTheme.colors.dialogBackground, shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)) {
+            androidx.compose.foundation.layout.Column(Modifier.padding(20.dp)) {
+                androidx.compose.material3.Text(com.menna.nabatan_7asena.resources.stringResource(
+                    if (attempt?.completed == true) com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_finished
+                    else if (attempt != null) com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_used
+                    else com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_unavailable))
+                attempt?.let { androidx.compose.material3.Text(com.menna.nabatan_7asena.resources.stringResource(
+                    com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_score, it.score)) }
+            }
+        }
+        return
+    }
     val pulse = if (isCompetitionDay) rememberCompetitionPulse() else 1f
     val shake = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -51,6 +66,7 @@ fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit) {
             .rotate(if (isCompetitionDay) 1.2f else 0f)
     ) {
         ChunkyButton(
+            enabled = !starting,
             onClick = {
                 if (isCompetitionDay) {
                     onClick()
@@ -72,7 +88,7 @@ fun CompetitionEntryCard(isCompetitionDay: Boolean, onClick: () -> Unit) {
                 EntryCardContent(
                     emoji = "🏆",
                     title = genderedStringResource(GenderedStrings.quizStartCompetitionTitle),
-                    subtitle = genderedStringResource(GenderedStrings.quizCompetitionHint),
+                    subtitle = com.menna.nabatan_7asena.resources.stringResource(com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_one_attempt),
                     titleColor = Color.White,
                     subtitleColor = Color.White.copy(alpha = 0.92f),
                     emojiModifier = Modifier.rotate(trophyTilt)

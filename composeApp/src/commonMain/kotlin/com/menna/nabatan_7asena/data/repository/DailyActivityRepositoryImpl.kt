@@ -16,6 +16,8 @@ import com.menna.nabatan_7asena.domain.entity.DailyContent
 import com.menna.nabatan_7asena.domain.entity.ExtraTasks
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 import com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
@@ -145,11 +147,15 @@ class DailyActivityRepositoryImpl constructor(
         return domainPlan
     }
 
-    override suspend fun addExtraTask(title: String) {
-        val randomId = Random.nextInt(1000, 99999)
+    private val addTaskMutex = Mutex()
+
+    override suspend fun addExtraTask(title: String) = addTaskMutex.withLock {
         val todayDate = getTodayDate()
-        val extraTask = ExtraTaskEntity(id = randomId, date = todayDate, title = title)
-        appDao.insertExtraTask(extraTask)
+        val existing = appDao.getExtraTasksForDate(todayDate).firstOrNull().orEmpty()
+        com.menna.nabatan_7asena.domain.util.requireNewDailyTask(title, existing.map { it.title })
+        var randomId: Int
+        do { randomId = Random.nextInt(1000, 99999) } while (existing.any { it.id == randomId })
+        appDao.insertExtraTask(ExtraTaskEntity(id = randomId, date = todayDate, title = title.trim()))
     }
 
     override suspend fun completeDailyActivity(activity: Activity) {

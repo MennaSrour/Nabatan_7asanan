@@ -22,7 +22,8 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 fun QuizOverviewContent(
     state: QuizUiState,
     onStudyClick: () -> Unit,
-    onCompetitionClick: () -> Unit
+    onCompetitionClick: () -> Unit,
+    onRetryOfficial: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -61,10 +62,13 @@ fun QuizOverviewContent(
                     }
                 }
 
+                if (!state.officialStatusAvailable) androidx.compose.material3.TextButton(onClick = onRetryOfficial) {
+                    androidx.compose.material3.Text(com.menna.nabatan_7asena.resources.stringResource(com.menna.nabatan_7asena.resources.AppResources.string.quiz_official_retry))
+                }
                 Spacer(Modifier.height(28.dp))
                 if (state.isCompetitionDay) {
                     Box(modifier = Modifier.popIn(delayMillis = 150)) {
-                        CompetitionEntryCard(isCompetitionDay = true, onClick = onCompetitionClick)
+                        CompetitionEntryCard(isCompetitionDay = true, onClick = onCompetitionClick, attempt = state.officialAttempt, statusAvailable = state.officialStatusAvailable, starting = state.startingCompetition)
                     }
                     Spacer(Modifier.height(20.dp))
                     Box(modifier = Modifier.popIn(delayMillis = 300)) {
@@ -76,7 +80,7 @@ fun QuizOverviewContent(
                     }
                     Spacer(Modifier.height(20.dp))
                     Box(modifier = Modifier.popIn(delayMillis = 300)) {
-                        CompetitionEntryCard(isCompetitionDay = false, onClick = onCompetitionClick)
+                        CompetitionEntryCard(isCompetitionDay = false, onClick = onCompetitionClick, attempt = state.officialAttempt, statusAvailable = state.officialStatusAvailable, starting = state.startingCompetition)
                     }
                 }
             }

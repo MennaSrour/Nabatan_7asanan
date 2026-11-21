@@ -36,8 +36,8 @@ private fun MushafPage(page: Int, ayahs: List<AyahModel>, state: QuranUiState, a
     val q = SummerTheme.quran
     var fallback by remember(page) { mutableStateOf(false) }
     Surface(color = q.headerEnd, shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(1.dp, q.border), modifier = Modifier.fillMaxSize().padding(12.dp)) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        border = BorderStroke(1.dp, q.border), modifier = Modifier.fillMaxSize().padding(horizontal = 5.dp, vertical = 6.dp)) {
+        Column(Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
             MushafPageActions(ayahs, state, actions)
             MushafPageBody(ayahs, audioAyah(state.audioState), actions, { fallback = it }, Modifier.weight(1f))
             HorizontalDivider(color = q.border)
@@ -52,14 +52,14 @@ private fun MushafPageActions(ayahs: List<AyahModel>, state: QuranUiState, actio
     val target = mushafBookmarkTarget(ayahs, audioAyah(state.audioState), saved) ?: return
     val marked = ayahs.any { (it.suraNo to it.ayaNo) == saved }
     val purple = SummerTheme.quran.accentStrong
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-        IconButton(onClick = { actions.downloadSurah(target.suraNo) }) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+        IconButton(modifier = Modifier.size(40.dp), onClick = { actions.downloadSurah(target.suraNo) }) {
             Icon(Icons.Rounded.Download, stringResource(R.string.quran_download_surah), tint = purple)
         }
-        IconButton(onClick = { actions.onOpenRepeatBottomSheet(target.suraNo) }) {
+        IconButton(modifier = Modifier.size(40.dp), onClick = { actions.onOpenRepeatBottomSheet(target.suraNo) }) {
             Icon(Icons.Rounded.Repeat, genderedStringResource(GenderedStrings.quranRepeatMemorize), tint = purple)
         }
-        IconButton(onClick = { actions.saveBookmark(target.suraNo, target.ayaNo) }) {
+        IconButton(modifier = Modifier.size(40.dp), onClick = { actions.saveBookmark(target.suraNo, target.ayaNo) }) {
             Icon(if (marked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
                 stringResource(R.string.quran_bookmark_page, arabicIndic(target.ayaNo)), tint = purple)
         }
@@ -68,7 +68,7 @@ private fun MushafPageActions(ayahs: List<AyahModel>, state: QuranUiState, actio
 
 @Composable
 private fun MushafPageFooter(page: Int, fallback: Boolean) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), horizontalArrangement = Arrangement.Center,
+    Row(Modifier.fillMaxWidth().heightIn(min = 26.dp), horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.quran_page_label, arabicIndic(page)), color = SummerTheme.quran.accentStrong)
         if (fallback) Icon(Icons.Rounded.UnfoldMore, stringResource(R.string.quran_small_page_hint),

@@ -1,6 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.home
 
 interface HomeActions {
+    fun openGarden()
     fun waterGarden()
     fun onTaskClicked(item: HomeUiState.UiTaskItem)
     fun retryLoadingData()

@@ -4,6 +4,8 @@ import com.menna.nabatan_7asena.resources.AppResources as R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val gardenEnter = GenderedString(R.string.garden_enter_male, R.string.garden_enter_female)
+    val quizOfficialSaveError = GenderedString(R.string.quiz_official_save_error_male, R.string.quiz_official_save_error_female)
     val gardenWater = GenderedString(R.string.garden_water_male, R.string.garden_water_female)
     val challengeCorrectAnswer = GenderedString(R.string.challenge_correct_answer_male, R.string.challenge_correct_answer_female)
     val challengeWrongAnswer = GenderedString(R.string.challenge_wrong_answer_male, R.string.challenge_wrong_answer_female)

@@ -267,6 +267,8 @@ object AppResources {
         const val garden_close: Int = -275483138
         const val garden_drops: Int = -1299484716
         const val garden_earn_water: Int = -894455130
+        const val garden_enter_female: Int = -1689468748
+        const val garden_enter_male: Int = -1713917302
         const val garden_expand: Int = -1104575273
         const val garden_fruiting: Int = -400486611
         const val garden_fully_grown: Int = -2145043050
@@ -392,6 +394,10 @@ object AppResources {
         const val onboarding_welcome_description_male: Int = -1363656928
         const val onboarding_welcome_title_female: Int = -264575138
         const val onboarding_welcome_title_male: Int = -656570726
+        const val playlist_loop_infinite: Int = -687418361
+        const val playlist_loop_progress: Int = -1527523903
+        const val playlist_repeat_less: Int = -833897909
+        const val playlist_repeat_more: Int = -1766859542
         const val prayer_current_female: Int = -858646222
         const val prayer_current_male: Int = -1689989627
         const val prayer_next_female: Int = -660932317
@@ -424,6 +430,14 @@ object AppResources {
         const val quiz_loading_male: Int = -16045569
         const val quiz_next_question_female: Int = -34121425
         const val quiz_next_question_male: Int = -2039319430
+        const val quiz_official_finished: Int = -1029417273
+        const val quiz_official_one_attempt: Int = -1456499655
+        const val quiz_official_retry: Int = -1709378445
+        const val quiz_official_save_error_female: Int = -550479595
+        const val quiz_official_save_error_male: Int = -36163686
+        const val quiz_official_score: Int = -2040163647
+        const val quiz_official_unavailable: Int = -1182646074
+        const val quiz_official_used: Int = -2127120957
         const val quiz_overview_error_female: Int = -1905698245
         const val quiz_overview_error_male: Int = -160445431
         const val quiz_praise_clever_female: Int = -1239136854
@@ -651,10 +665,15 @@ object AppResources {
         const val streak_days_male: Int = -1918335186
         const val streak_female: Int = -582739220
         const val streak_male: Int = -1055154928
+        const val task_add_failed: Int = -2102522886
+        const val task_added: Int = -736971589
         const val task_charity_female: Int = -685261874
         const val task_charity_male: Int = -1620797109
         const val task_complete_female: Int = -1883495936
         const val task_complete_male: Int = -1490764031
+        const val task_custom_add: Int = -1604820731
+        const val task_custom_title: Int = -335157582
+        const val task_duplicate: Int = -380168274
         const val task_help_parents_female: Int = -1512264628
         const val task_help_parents_male: Int = -688970990
         const val task_learn_dua_female: Int = -1776436819
@@ -903,6 +922,8 @@ object ResourceCatalog {
         AppResources.string.garden_close to Res.string.garden_close,
         AppResources.string.garden_drops to Res.string.garden_drops,
         AppResources.string.garden_earn_water to Res.string.garden_earn_water,
+        AppResources.string.garden_enter_female to Res.string.garden_enter_female,
+        AppResources.string.garden_enter_male to Res.string.garden_enter_male,
         AppResources.string.garden_expand to Res.string.garden_expand,
         AppResources.string.garden_fruiting to Res.string.garden_fruiting,
         AppResources.string.garden_fully_grown to Res.string.garden_fully_grown,
@@ -1028,6 +1049,10 @@ object ResourceCatalog {
         AppResources.string.onboarding_welcome_description_male to Res.string.onboarding_welcome_description_male,
         AppResources.string.onboarding_welcome_title_female to Res.string.onboarding_welcome_title_female,
         AppResources.string.onboarding_welcome_title_male to Res.string.onboarding_welcome_title_male,
+        AppResources.string.playlist_loop_infinite to Res.string.playlist_loop_infinite,
+        AppResources.string.playlist_loop_progress to Res.string.playlist_loop_progress,
+        AppResources.string.playlist_repeat_less to Res.string.playlist_repeat_less,
+        AppResources.string.playlist_repeat_more to Res.string.playlist_repeat_more,
         AppResources.string.prayer_current_female to Res.string.prayer_current_female,
         AppResources.string.prayer_current_male to Res.string.prayer_current_male,
         AppResources.string.prayer_next_female to Res.string.prayer_next_female,
@@ -1060,6 +1085,14 @@ object ResourceCatalog {
         AppResources.string.quiz_loading_male to Res.string.quiz_loading_male,
         AppResources.string.quiz_next_question_female to Res.string.quiz_next_question_female,
         AppResources.string.quiz_next_question_male to Res.string.quiz_next_question_male,
+        AppResources.string.quiz_official_finished to Res.string.quiz_official_finished,
+        AppResources.string.quiz_official_one_attempt to Res.string.quiz_official_one_attempt,
+        AppResources.string.quiz_official_retry to Res.string.quiz_official_retry,
+        AppResources.string.quiz_official_save_error_female to Res.string.quiz_official_save_error_female,
+        AppResources.string.quiz_official_save_error_male to Res.string.quiz_official_save_error_male,
+        AppResources.string.quiz_official_score to Res.string.quiz_official_score,
+        AppResources.string.quiz_official_unavailable to Res.string.quiz_official_unavailable,
+        AppResources.string.quiz_official_used to Res.string.quiz_official_used,
         AppResources.string.quiz_overview_error_female to Res.string.quiz_overview_error_female,
         AppResources.string.quiz_overview_error_male to Res.string.quiz_overview_error_male,
         AppResources.string.quiz_praise_clever_female to Res.string.quiz_praise_clever_female,
@@ -1287,10 +1320,15 @@ object ResourceCatalog {
         AppResources.string.streak_days_male to Res.string.streak_days_male,
         AppResources.string.streak_female to Res.string.streak_female,
         AppResources.string.streak_male to Res.string.streak_male,
+        AppResources.string.task_add_failed to Res.string.task_add_failed,
+        AppResources.string.task_added to Res.string.task_added,
         AppResources.string.task_charity_female to Res.string.task_charity_female,
         AppResources.string.task_charity_male to Res.string.task_charity_male,
         AppResources.string.task_complete_female to Res.string.task_complete_female,
         AppResources.string.task_complete_male to Res.string.task_complete_male,
+        AppResources.string.task_custom_add to Res.string.task_custom_add,
+        AppResources.string.task_custom_title to Res.string.task_custom_title,
+        AppResources.string.task_duplicate to Res.string.task_duplicate,
         AppResources.string.task_help_parents_female to Res.string.task_help_parents_female,
         AppResources.string.task_help_parents_male to Res.string.task_help_parents_male,
         AppResources.string.task_learn_dua_female to Res.string.task_learn_dua_female,
