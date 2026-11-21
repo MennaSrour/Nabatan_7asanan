@@ -12,6 +12,9 @@ interface UserRepository {
 
     fun getLeaderboardResource(): Flow<Resource<List<LeaderboardEntry>>>
 
+    /** Competition rank: number of strictly greater scores plus one. */
+    suspend fun getUserRank(totalStars: Int): Resource<Long>
+
     suspend fun syncUserScore(user: User)
     suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int)
     suspend fun updateUserName(newName: String)

@@ -1,6 +1,9 @@
 package com.menna.nabatan_7asena.presentation.screens.leaderboard.composables
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,7 +38,13 @@ fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHos
 
         Scaffold(
             containerColor = Color.Transparent,
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            bottomBar = {
+                val inset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                Column(Modifier.padding(bottom = 76.dp + inset)) {
+                    CurrentUserRankCard(state)
+                }
+            }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -52,7 +61,7 @@ fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHos
                     LeaderboardEmptyState()
                 } else {
                     LazyColumn(
-                        contentPadding = PaddingValues(bottom = 100.dp),
+                        contentPadding = PaddingValues(bottom = 12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         item {
@@ -87,7 +96,7 @@ fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHos
                         }
 
                         val restOfList = state.list.drop(3)
-                        itemsIndexed(restOfList) { index, user ->
+                        itemsIndexed(restOfList, key = { _, user -> user.userId }) { index, user ->
                             LeaderboardItem(
                                 user = user,
                                 rank = index + 4,

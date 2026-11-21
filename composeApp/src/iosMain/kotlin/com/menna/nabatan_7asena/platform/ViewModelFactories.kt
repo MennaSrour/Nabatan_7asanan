@@ -32,7 +32,7 @@ actual fun platformOnboardingViewModel(): OnboardingViewModel = viewModel { Onbo
 actual fun platformQuizViewModel(): QuizViewModel = viewModel { QuizViewModel(iosServices.getWeeklyStudyQuestionsUseCase, iosServices.getWeeklyCompetitionQuestionsUseCase, iosServices.isCompetitionDayUseCase, iosServices.submitCompetitionScoreUseCase, iosServices.getRecentQuizWinnersUseCase, iosServices.newScreenAudio()) }
 
 @Composable
-actual fun platformLeaderboardViewModel(): LeaderboardViewModel = viewModel { LeaderboardViewModel(iosServices.getLeaderboardUseCase, iosServices.getCurrentUserUseCase) }
+actual fun platformLeaderboardViewModel(): LeaderboardViewModel = viewModel { LeaderboardViewModel(iosServices.getLeaderboardUseCase, iosServices.getCurrentUserUseCase, iosServices.getCurrentUserRankUseCase) }
 
 @Composable
 actual fun platformQuranViewModel(): QuranViewModel = viewModel { QuranViewModel(iosServices.saveQuranProgressUseCase, iosServices.getQuranProgressUseCase, iosServices.quranRepository, iosServices.quranAudio, iosServices.downloads, iosServices.bookmarks, iosServices.quranLibrary) }

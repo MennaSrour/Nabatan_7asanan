@@ -517,4 +517,8 @@
     <string name="quran_delete_confirm">هل تريد حذف هذه القائمة؟</string>
     <string name="quran_playlist_progress">%1$s من %2$s</string>
     <string name="quran_download_surah">تنزيل السورة</string>
+    <string name="leaderboard_your_rank">ترتيبك في غرس أمتنا</string>
+    <string name="leaderboard_rank_unavailable">الترتيب غير متاح الآن، حاول لاحقًا</string>
+    <string name="leaderboard_stars">النجوم</string>
+    <string name="leaderboard_quran_parts">أجزاء القرآن المكتملة</string>
 </resources>

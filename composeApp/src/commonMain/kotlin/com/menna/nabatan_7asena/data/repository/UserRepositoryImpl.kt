@@ -104,6 +104,15 @@ class UserRepositoryImpl constructor(
             }
         }
 
+    override suspend fun getUserRank(totalStars: Int): Resource<Long> = try {
+        Resource.Success(firebaseDataSource.getUserRank(totalStars))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e("UserRepositoryImpl", "Failed to aggregate leaderboard rank", e)
+        Resource.Error(e)
+    }
+
     override suspend fun updateNotificationPreference(category: String, enabled: Boolean) {
         val stats = dao.getUserStats().firstOrNull()
         stats?.let {

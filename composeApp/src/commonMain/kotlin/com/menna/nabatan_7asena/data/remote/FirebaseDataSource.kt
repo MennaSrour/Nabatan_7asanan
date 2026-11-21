@@ -50,6 +50,14 @@ class FirebaseDataSource constructor(
         }
     }
 
+    suspend fun getUserRank(totalStars: Int): Long {
+        val higherScores = firestore.collection("leaderboard")
+            .where { "totalStars" greaterThan totalStars }
+            .serverCount()
+        check(higherScores >= 0 && higherScores < Long.MAX_VALUE) { "Invalid leaderboard count" }
+        return higherScores + 1
+    }
+
     suspend fun uploadUserScore(dto: UserRankDto) {
         try {
             firestore.collection("leaderboard")

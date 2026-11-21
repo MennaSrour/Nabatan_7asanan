@@ -291,10 +291,14 @@ object AppResources {
         const val leaderboard_first_star_male: Int = -1201469973
         const val leaderboard_growing_female: Int = -1127122369
         const val leaderboard_growing_male: Int = -1979304552
+        const val leaderboard_quran_parts: Int = -984952272
+        const val leaderboard_rank_unavailable: Int = -1885086914
+        const val leaderboard_stars: Int = -577002982
         const val leaderboard_subtitle_female: Int = -647809694
         const val leaderboard_subtitle_male: Int = -250845355
         const val leaderboard_title_female: Int = -184932467
         const val leaderboard_title_male: Int = -391239531
+        const val leaderboard_your_rank: Int = -1755806110
         const val listen_female: Int = -1066733719
         const val listen_male: Int = -1381157107
         const val loading_female: Int = -997812178
@@ -890,10 +894,14 @@ object ResourceCatalog {
         AppResources.string.leaderboard_first_star_male to Res.string.leaderboard_first_star_male,
         AppResources.string.leaderboard_growing_female to Res.string.leaderboard_growing_female,
         AppResources.string.leaderboard_growing_male to Res.string.leaderboard_growing_male,
+        AppResources.string.leaderboard_quran_parts to Res.string.leaderboard_quran_parts,
+        AppResources.string.leaderboard_rank_unavailable to Res.string.leaderboard_rank_unavailable,
+        AppResources.string.leaderboard_stars to Res.string.leaderboard_stars,
         AppResources.string.leaderboard_subtitle_female to Res.string.leaderboard_subtitle_female,
         AppResources.string.leaderboard_subtitle_male to Res.string.leaderboard_subtitle_male,
         AppResources.string.leaderboard_title_female to Res.string.leaderboard_title_female,
         AppResources.string.leaderboard_title_male to Res.string.leaderboard_title_male,
+        AppResources.string.leaderboard_your_rank to Res.string.leaderboard_your_rank,
         AppResources.string.listen_female to Res.string.listen_female,
         AppResources.string.listen_male to Res.string.listen_male,
         AppResources.string.loading_female to Res.string.loading_female,
