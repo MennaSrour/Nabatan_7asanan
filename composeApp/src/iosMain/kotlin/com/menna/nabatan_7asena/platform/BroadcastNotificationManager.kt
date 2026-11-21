@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.platform
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIApplication
+import platform.UIKit.registerForRemoteNotifications
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
