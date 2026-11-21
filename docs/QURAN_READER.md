@@ -29,9 +29,18 @@ preserved. The UI adds standard ornate Arabic-Indic end markers such as `﴿٢٨
 
 All source text and the new markers passed font character-coverage checks. HarfBuzz
 shaping of all 6,236 decoded Ayahs produced zero missing glyphs. At a 2,048-unit em,
-observed ink extended to +3,758/-2,148 units, so the reader uses generous 80/84sp
-line heights and untrimmed first/last-line spacing for 24/26sp text. These static
-checks do not replace visual device checks at large accessibility font scales.
+observed ink extended to +3,758/-2,148 units, Cards retain generous 80sp line height for 24sp text. Mushaf pages independently
+measure their text, banners and Basmalah against the available body height, choosing
+the largest fitting size between 22sp and 13sp with 1.65× line spacing. At the
+minimum size, 1.55× spacing is tried before enabling a scrolling accessibility
+fallback. First/last-line gutters protect Quranic marks; no Ayahs are ellipsized.
+Device checks remain necessary for diacritic appearance and accessibility scales.
+
+Mushaf Surah starts, including mid-page starts, receive lavender/gold banners and
+centered Basmalah lines (except Tawbah; Fatiha uses its existing first Ayah).
+Download, repeat and bookmark actions share the top row. The page footer reserves
+clearance for the floating navigation bar and system navigation inset, subtracting
+any clearance already supplied by the playlist player.
 
 ## Playback ownership
 

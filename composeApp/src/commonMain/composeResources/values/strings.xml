@@ -521,4 +521,6 @@
     <string name="leaderboard_rank_unavailable">الترتيب غير متاح الآن، حاول لاحقًا</string>
     <string name="leaderboard_stars">النجوم</string>
     <string name="leaderboard_quran_parts">أجزاء القرآن المكتملة</string>
+    <string name="quran_surah_prefix">سُورَةُ</string>
+    <string name="quran_small_page_hint">مرّر لقراءة بقية الصفحة على الشاشة الصغيرة</string>
 </resources>
