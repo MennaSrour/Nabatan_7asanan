@@ -1,18 +1,15 @@
 package com.menna.nabatan_7asena.data.repository
 
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
-import com.menna.nabatan_7asena.data.remote.dto.QuizScoreDto
 import com.menna.nabatan_7asena.domain.entity.QuizQuestion
 import com.menna.nabatan_7asena.domain.entity.QuizWinner
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.repository.QuizRepository
-import com.menna.nabatan_7asena.domain.usecase.GetCurrentUserUseCase
 import com.menna.nabatan_7asena.domain.util.QuizWeek
-import kotlinx.coroutines.flow.firstOrNull
 
 class QuizRepositoryImpl constructor(
     private val remote: FirebaseDataSource,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val official: com.menna.nabatan_7asena.domain.repository.OfficialQuizRepository
 ) : QuizRepository {
 
     private var cachedAllQuestions: List<QuizQuestion>? = null
@@ -45,18 +42,8 @@ class QuizRepositoryImpl constructor(
     override fun isCompetitionDayToday(): Boolean = QuizWeek.isCompetitionDay()
 
     override suspend fun submitCompetitionScore(score: Int) {
-        val user = getCurrentUserUseCase().firstOrNull() ?: return
-        val weekId = QuizWeek.currentWeekId()
-        remote.submitQuizScore(
-            weekId = weekId,
-            dto = QuizScoreDto(
-                userId = user.id,
-                name = user.name,
-                gender = user.gender.toString(),
-                avatarIndex = user.avatarIndex,
-                score = score
-            )
-        )
+        val attempt = official.status() ?: error("No official attempt was reserved")
+        official.finish(attempt, score)
     }
 
     override suspend fun getRecentWeekWinners(): List<QuizWinner> {

@@ -106,6 +106,7 @@ open class QuranViewModel constructor(
     override fun togglePlaylistPlayback() = playback.togglePlaylistPlayback()
     override fun nextPlaylistSurah() = playback.nextPlaylistSurah()
     override fun previousPlaylistSurah() = playback.previousPlaylistSurah()
+    override fun setPlaylistRepeatCount(count: Int) = playback.setPlaylistRepeatCount(count)
     override fun togglePlaylistRepeat() = playback.togglePlaylistRepeat()
 
     private fun saveLibrary(action: () -> Unit) {

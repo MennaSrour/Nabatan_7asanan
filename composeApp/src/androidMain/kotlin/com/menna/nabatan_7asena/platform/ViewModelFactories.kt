@@ -43,7 +43,7 @@ class AndroidOnboardingViewModel @Inject constructor(services: SharedServices) :
 actual fun platformOnboardingViewModel(): OnboardingViewModel = hiltViewModel<AndroidOnboardingViewModel>()
 
 @HiltViewModel
-class AndroidQuizViewModel @Inject constructor(services: SharedServices) : QuizViewModel(services.getWeeklyStudyQuestionsUseCase, services.getWeeklyCompetitionQuestionsUseCase, services.isCompetitionDayUseCase, services.submitCompetitionScoreUseCase, services.getRecentQuizWinnersUseCase, services.newScreenAudio())
+class AndroidQuizViewModel @Inject constructor(services: SharedServices) : QuizViewModel(services.getWeeklyStudyQuestionsUseCase, services.getWeeklyCompetitionQuestionsUseCase, services.isCompetitionDayUseCase, services.officialQuizRepository, services.getRecentQuizWinnersUseCase, services.newScreenAudio())
 
 @Composable
 actual fun platformQuizViewModel(): QuizViewModel = hiltViewModel<AndroidQuizViewModel>()

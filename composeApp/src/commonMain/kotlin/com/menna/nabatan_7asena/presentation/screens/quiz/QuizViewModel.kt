@@ -17,15 +17,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeout
+import com.menna.nabatan_7asena.domain.entity.OfficialQuizAttempt
+import com.menna.nabatan_7asena.domain.entity.OfficialAttemptAlreadyUsed
 import kotlinx.coroutines.launch
 
 open class QuizViewModel constructor(
     private val getWeeklyStudyQuestions: GetWeeklyStudyQuestionsUseCase,
     private val getWeeklyCompetitionQuestions: GetWeeklyCompetitionQuestionsUseCase,
     private val isCompetitionDay: IsCompetitionDayUseCase,
-    private val submitCompetitionScore: SubmitCompetitionScoreUseCase,
+    private val official: com.menna.nabatan_7asena.domain.repository.OfficialQuizRepository,
     private val getRecentWinners: GetRecentQuizWinnersUseCase,
-    private val feedbackPlayer: ScreenAudioPlayer
+    private val feedbackPlayer: ScreenAudioPlayer,
+    private val today: () -> kotlinx.datetime.LocalDate = com.menna.nabatan_7asena.domain.util.QuizWeek::today
 ) : ViewModel(), QuizActions {
 
     private val _uiState = MutableStateFlow(QuizUiState())
@@ -34,34 +39,49 @@ open class QuizViewModel constructor(
     private val _effects = Channel<QuizEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    private var overviewDate: kotlinx.datetime.LocalDate? = null
+    private var overviewJob: Job? = null
+    private var activeAttempt: OfficialQuizAttempt? = null
+
     private var timerJob: Job? = null
 
     init {
         loadOverview()
     }
 
+    fun refreshAvailability() {
+        if (overviewDate != today() && _uiState.value.mode == QuizMode.NONE && !_uiState.value.startingCompetition) loadOverview()
+    }
+
+    override fun retryOfficialStatus() {
+        if (_uiState.value.mode == QuizMode.NONE && !_uiState.value.startingCompetition) loadOverview()
+    }
+
     private fun loadOverview() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        if (overviewJob?.isActive == true) return
+        overviewDate = today()
+        overviewJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, isCompetitionDay = isCompetitionDay(), errorMessage = null) }
             try {
-                val winners = getRecentWinners()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isCompetitionDay = isCompetitionDay(),
-                    winners = winners
-                )
+                val attempt = withTimeout(5000) { official.status() }
+                _uiState.update { it.copy(officialAttempt = attempt, officialStatusAvailable = true) }
             } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = GenderedStrings.quizOverviewError
-                )
-            }
+                if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+                _uiState.update { it.copy(officialStatusAvailable = false) }
+            } catch (e: Exception) { _uiState.update { it.copy(officialStatusAvailable = false) } }
+            try {
+                val winners = withTimeout(5000) { getRecentWinners() }
+                _uiState.update { it.copy(winners = winners) }
+            } catch (e: CancellationException) {
+                if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+            } catch (_: Exception) { }
+            _uiState.update { it.copy(isLoading = false) }
+            try { official.syncPending() } catch (e: CancellationException) { throw e } catch (_: Exception) { }
         }
     }
 
     override fun startStudyMode() {
+        if (_uiState.value.startingCompetition || _uiState.value.submittingCompetition || _uiState.value.mode == QuizMode.COMPETITION) return
         viewModelScope.launch {
             try {
                 val questions = getWeeklyStudyQuestions()
@@ -80,19 +100,26 @@ open class QuizViewModel constructor(
     }
 
     override fun startCompetitionMode() {
+        val current = _uiState.value
+        if (!isCompetitionDay() || current.mode != QuizMode.NONE || current.startingCompetition ||
+            !current.officialStatusAvailable || current.officialAttempt != null) return
+        _uiState.update { it.copy(startingCompetition = true) }
         viewModelScope.launch {
             try {
                 val questions = getWeeklyCompetitionQuestions()
-                _uiState.value = _uiState.value.copy(
-                    competitionCards = questions.map { QuizCardState(it) },
-                    preCompetitionCountdown = 3
-                )
+                check(questions.isNotEmpty()) { "No challenge questions" }
+                val attempt = withTimeout(5000) { official.begin() }
+                activeAttempt = attempt
+                _uiState.update { it.copy(officialAttempt = attempt, competitionCards = questions.map { question -> QuizCardState(question) }, preCompetitionCountdown = 3) }
                 runPreCompetitionCountdown()
+            } catch (e: OfficialAttemptAlreadyUsed) {
+                _uiState.update { it.copy(officialAttempt = e.attempt) }
             } catch (e: CancellationException) {
-                throw e
+                if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+                _uiState.update { it.copy(errorMessage = GenderedStrings.quizCompetitionError, officialStatusAvailable = false) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = GenderedStrings.quizCompetitionError)
-            }
+                _uiState.update { it.copy(errorMessage = GenderedStrings.quizCompetitionError) }
+            } finally { _uiState.update { it.copy(startingCompetition = false) } }
         }
     }
 
@@ -133,6 +160,7 @@ open class QuizViewModel constructor(
 
     override fun selectAnswer(choiceIndex: Int) {
         val state = _uiState.value
+        if (state.mode == QuizMode.NONE || state.submittingCompetition) return
         val isCompetition = state.mode == QuizMode.COMPETITION
         val cards = if (isCompetition) state.competitionCards else state.studyCards
         val index = state.currentIndex
@@ -177,8 +205,10 @@ open class QuizViewModel constructor(
 
     override fun goToNextCard() {
         val state = _uiState.value
+        if (state.mode == QuizMode.NONE || state.submittingCompetition) return
         val isCompetition = state.mode == QuizMode.COMPETITION
         val cards = if (isCompetition) state.competitionCards else state.studyCards
+        if (state.submittingCompetition || isCompetition && cards.getOrNull(state.currentIndex)?.isFlipped != true) return
         val nextIndex = state.currentIndex + 1
 
         if (nextIndex >= cards.size) {
@@ -190,21 +220,33 @@ open class QuizViewModel constructor(
         if (isCompetition) startQuestionTimer()
     }
 
-    private fun submitAndFinishCompetition() {
+    private fun submitAndFinishCompetition(exitToOverview: Boolean = false) {
+        val state = _uiState.value
+        val attempt = activeAttempt ?: return
+        if (state.submittingCompetition) return
+        _uiState.update { it.copy(submittingCompetition = true) }
         viewModelScope.launch {
-            val state = _uiState.value
             try {
-                submitCompetitionScore(state.competitionScore)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-            }
-            _uiState.value = state.copy(competitionFinished = true)
+                _uiState.update { it.copy(errorMessage = null) }
+                val saved = official.finish(attempt, state.competitionScore)
+                _uiState.update { current ->
+                    if (current.officialAttempt?.token != attempt.token) current
+                    else current.copy(officialAttempt = saved, competitionScore = saved.score, competitionFinished = true, submittingCompetition = false,
+                        mode = if (exitToOverview) QuizMode.NONE else current.mode, preCompetitionCountdown = null)
+                }
+                official.syncPending()
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _uiState.update { it.copy(errorMessage = GenderedStrings.quizOfficialSaveError) } }
+            finally { _uiState.update { it.copy(submittingCompetition = false) } }
         }
     }
 
     override fun exitQuiz() {
         timerJob?.cancel()
+        if (_uiState.value.mode == QuizMode.COMPETITION && !_uiState.value.competitionFinished) {
+            submitAndFinishCompetition(exitToOverview = true)
+            return
+        }
         _uiState.value = _uiState.value.copy(mode = QuizMode.NONE, streak = 0)
         loadOverview()
     }

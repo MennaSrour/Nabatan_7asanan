@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +74,14 @@ private fun defaultSky(name: String) = PRAYER_SKIES[name] ?: PrayerSky(
     labelAccent = Color(0xFF475569)
 )
 
+private fun prayerIconRes(name: String) = when (name) {
+    "الفجر" -> "fajr"
+    "الظهر" -> "zuhr_sun"
+    "العصر" -> "asr_sun"
+    "المغرب" -> "maghrib"
+    "العشاء" -> "ishaa"
+    else -> ""
+}
 
 @Composable
 fun PrayerTimesRow(
@@ -152,7 +161,18 @@ private fun PrayerCard(
                 .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HomeIconBadge(prayerBadgeStyle(prayer.title), Modifier.size(if (isFocused) 38.dp else 32.dp))
+            Box(
+                modifier = Modifier.size(if (isFocused) 34.dp else 28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                ClayAssetImage(
+                    resName = prayerIconRes(prayer.title),
+                    fallbackIcon = Icons.Rounded.Schedule,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = prayer.subtitle ?: "",

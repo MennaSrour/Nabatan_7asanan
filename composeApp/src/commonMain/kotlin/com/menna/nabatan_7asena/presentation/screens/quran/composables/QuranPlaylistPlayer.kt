@@ -30,6 +30,8 @@ fun QuranPlaylistPlayer(queue: PlaylistPlaybackState, audio: QuranAudioState, ac
         Column(Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("${queue.name} · ${QuranConstants.surahs[track.surahId - 1].name}", color = SummerTheme.quran.accentStrong)
             Text(stringResource(R.string.quran_playlist_progress, arabicIndic(queue.currentIndex + 1), arabicIndic(queue.tracks.size)))
+            Text(if (queue.repeatCount == INFINITE_REPEATS) stringResource(R.string.playlist_loop_infinite, arabicIndic(queue.completedLoops + 1))
+                else stringResource(R.string.playlist_loop_progress, arabicIndic(queue.completedLoops + 1), arabicIndic(queue.repeatCount)))
             Row(horizontalArrangement = Arrangement.Center) {
                 IconButton(onClick = actions::previousPlaylistSurah) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.quran_previous_surah)) }
                 IconButton(onClick = actions::togglePlaylistPlayback) {
@@ -37,9 +39,7 @@ fun QuranPlaylistPlayer(queue: PlaylistPlaybackState, audio: QuranAudioState, ac
                     else Icon(if (audio is QuranAudioState.Paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, stringResource(R.string.quran_play_pause))
                 }
                 IconButton(onClick = actions::nextPlaylistSurah) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, stringResource(R.string.quran_next_surah)) }
-                IconToggleButton(checked = queue.repeat, onCheckedChange = { actions.togglePlaylistRepeat() }) {
-                    Icon(Icons.Rounded.Repeat, stringResource(R.string.quran_repeat_playlist), tint = if (queue.repeat) SummerTheme.quran.accentStrong else SummerTheme.quran.textMuted)
-                }
+                QuranPlaylistRepeatControl(queue, actions)
                 IconButton(onClick = actions::stopAudio) { Icon(Icons.Rounded.Stop, genderedStringResource(GenderedStrings.quranStopPlayback)) }
             }
         }

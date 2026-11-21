@@ -11,6 +11,6 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 @OptIn(ExperimentalMaterial3Api::class)
 fun LazyListScope.homeSummaryItems(state: HomeUiState, actions: com.menna.nabatan_7asena.presentation.screens.home.HomeActions) {
     item { BentoStatsGrid(state.user, Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal, vertical = 6.dp)) }
-    item { com.menna.nabatan_7asena.presentation.screens.home.composables.garden.GardenCard(state, actions::waterGarden) }
+    item { com.menna.nabatan_7asena.presentation.screens.home.composables.garden.GardenCard(state, actions::openGarden) }
     item { DailyWisdomCard(state.dailyWisdom, Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal, vertical = 6.dp)) }
 }

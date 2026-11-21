@@ -17,5 +17,7 @@ data class QuizScoreDto(
     val name: String = "",
     val gender: String = "BOY",
     val avatarIndex: Int = 0,
-    val score: Int = 0
+    val score: Int = 0,
+    val token: String = "",
+    val completed: Boolean = true
 )

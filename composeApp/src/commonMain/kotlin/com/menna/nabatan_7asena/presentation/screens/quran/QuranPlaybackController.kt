@@ -80,7 +80,12 @@ class QuranPlaybackController(
     }
 
     fun togglePlaylistRepeat() {
-        _state.update { it.copy(playlist = it.playlist?.let { queue -> queue.copy(repeat = !queue.repeat) }) }
+        setPlaylistRepeatCount(if (_state.value.playlist?.repeat == true) 1 else INFINITE_REPEATS)
+    }
+
+    fun setPlaylistRepeatCount(count: Int) {
+        if (count != INFINITE_REPEATS && count !in 1..99) return
+        _state.update { it.copy(playlist = it.playlist?.copy(repeatCount = count, completedLoops = 0)) }
     }
 
     fun nextPlaylistSurah() = selectPlaylistTrack(1)
@@ -89,15 +94,17 @@ class QuranPlaybackController(
     private fun selectPlaylistTrack(delta: Int) {
         val queue = _state.value.playlist ?: return
         val next = queue.currentIndex + delta
+        val completed = if (next > queue.tracks.lastIndex) (queue.completedLoops.toLong() + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt() else queue.completedLoops
+        if (next > queue.tracks.lastIndex && queue.repeatCount != INFINITE_REPEATS && completed >= queue.repeatCount) { stop(); return }
         val index = when {
             next in queue.tracks.indices -> next
-            queue.repeat -> if (next < 0) queue.tracks.lastIndex else 0
-            next < 0 -> 0
-            else -> { stop(); return }
+            next > queue.tracks.lastIndex -> 0
+            queue.repeat -> queue.tracks.lastIndex
+            else -> 0
         }
         generation++
         player.stop()
-        _state.update { it.copy(playlist = queue.copy(currentIndex = index)) }
+        _state.update { it.copy(playlist = queue.copy(currentIndex = index, completedLoops = completed)) }
         playTrack(queue.tracks[index].surahId, 1)
     }
 

@@ -34,17 +34,17 @@ internal data class MushafTypography(val fontSizeSp: Float, val lineHeightSp: Fl
 
 /** Half-sp precision; never ellipsize Quran text or shrink below the readable minimum. */
 internal fun fitMushafTypography(fits: (Float, Float) -> Boolean): MushafTypography {
-    var low = 26 // 13sp
-    var high = 44 // 22sp
+    var low = 28 // 14sp
+    var high = 52 // 26sp
     var best: Int? = null
     while (low <= high) {
         val step = (low + high) / 2
         val size = step / 2f
-        if (fits(size, size * 1.65f)) { best = step; low = step + 1 }
+        if (fits(size, size * 1.8f)) { best = step; low = step + 1 }
         else high = step - 1
     }
-    best?.let { return MushafTypography(it / 2f, it / 2f * 1.65f, true) }
-    return MushafTypography(13f, 13f * 1.55f, fits(13f, 13f * 1.55f))
+    best?.let { return MushafTypography(it / 2f, it / 2f * 1.8f, true) }
+    return MushafTypography(13f, 13f * 1.7f, fits(13f, 13f * 1.7f))
 }
 
 internal fun mushafBookmarkTarget(

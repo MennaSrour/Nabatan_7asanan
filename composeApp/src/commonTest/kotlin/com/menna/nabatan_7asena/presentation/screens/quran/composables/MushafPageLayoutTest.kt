@@ -8,13 +8,13 @@ class MushafPageLayoutTest {
         val result = fitMushafTypography { size, _ -> size <= 18.3f }
         assertEquals(18f, result.fontSizeSp)
         assertTrue(result.fits)
-        assertEquals(22f, fitMushafTypography { _, _ -> true }.fontSizeSp)
+        assertEquals(26f, fitMushafTypography { _, _ -> true }.fontSizeSp)
     }
 
     @Test fun compactMinimumPrecedesScrollingFallback() {
-        val compact = fitMushafTypography { _, height -> height <= 21f }
+        val compact = fitMushafTypography { _, height -> height <= 23f }
         assertEquals(13f, compact.fontSizeSp)
-        assertEquals(13f * 1.55f, compact.lineHeightSp)
+        assertEquals(13f * 1.7f, compact.lineHeightSp)
         assertTrue(compact.fits)
         assertFalse(fitMushafTypography { _, _ -> false }.fits)
     }

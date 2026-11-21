@@ -31,8 +31,8 @@ All source text and the new markers passed font character-coverage checks. HarfB
 shaping of all 6,236 decoded Ayahs produced zero missing glyphs. At a 2,048-unit em,
 observed ink extended to +3,758/-2,148 units, Cards retain generous 80sp line height for 24sp text. Mushaf pages independently
 measure their text, banners and Basmalah against the available body height, choosing
-the largest fitting size between 22sp and 13sp with 1.65× line spacing. At the
-minimum size, 1.55× spacing is tried before enabling a scrolling accessibility
+the largest fitting size between 26sp and 14sp with 1.8× line spacing. A 13sp safety size with
+1.7× spacing is tried before enabling a scrolling accessibility
 fallback. First/last-line gutters protect Quranic marks; no Ayahs are ellipsized.
 Device checks remain necessary for diacritic appearance and accessibility scales.
 

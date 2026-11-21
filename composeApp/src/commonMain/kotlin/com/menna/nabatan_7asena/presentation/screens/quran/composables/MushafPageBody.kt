@@ -21,7 +21,7 @@ import com.menna.nabatan_7asena.resources.stringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlin.math.ceil
 
-private val SectionGap = 3.dp
+private val SectionGap = 2.dp
 
 @Composable
 internal fun MushafPageBody(
@@ -76,7 +76,7 @@ private fun measuredSections(
 private fun sectionPaddingPx(section: MushafSection, size: Float, density: Density): Int = with(density) {
     when (section) {
         is MushafSection.Banner -> 4.dp.roundToPx()
-        is MushafSection.Verses -> ceil((size * 0.75f).sp.toPx()).toInt() // Space for tall first/last-line Quranic marks.
+        is MushafSection.Verses -> ceil((size * 0.5f).sp.toPx()).toInt() // Space for tall first/last-line Quranic marks.
         MushafSection.Basmalah -> 2.dp.roundToPx()
     }
 }

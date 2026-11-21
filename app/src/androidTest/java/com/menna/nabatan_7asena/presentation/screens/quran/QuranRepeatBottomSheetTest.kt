@@ -68,6 +68,7 @@ class QuranRepeatBottomSheetTest {
         override fun togglePlaylistPlayback() = Unit
         override fun nextPlaylistSurah() = Unit
         override fun previousPlaylistSurah() = Unit
+        override fun setPlaylistRepeatCount(count: Int) = Unit
         override fun togglePlaylistRepeat() = Unit
         override fun onOpenRepeatBottomSheet(surahId: Int) = Unit
         override fun onDismissRepeatBottomSheet() = Unit

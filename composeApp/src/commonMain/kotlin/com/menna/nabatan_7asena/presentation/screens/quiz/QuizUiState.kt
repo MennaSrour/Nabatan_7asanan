@@ -17,6 +17,10 @@ data class QuizCardState(
 data class QuizUiState(
     val isLoading: Boolean = true,
     val isCompetitionDay: Boolean = false,
+    val officialAttempt: com.menna.nabatan_7asena.domain.entity.OfficialQuizAttempt? = null,
+    val officialStatusAvailable: Boolean = false,
+    val startingCompetition: Boolean = false,
+    val submittingCompetition: Boolean = false,
     val winners: List<QuizWinner> = emptyList(),
     val studyCards: List<QuizCardState> = emptyList(),
     val competitionCards: List<QuizCardState> = emptyList(),

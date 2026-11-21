@@ -12,6 +12,7 @@ import com.menna.nabatan_7asena.data.update.*
 import com.menna.nabatan_7asena.core.audio.*
 import com.menna.nabatan_7asena.core.alarm.GlobalAlarmManager
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
+import kotlinx.coroutines.flow.first
 
 class SharedServices(
     val dao: AppDao,
@@ -35,7 +36,8 @@ class SharedServices(
     val getCurrentUserUseCase = GetCurrentUserUseCase(userRepository)
     val dailyRepository: DailyActivityRepository = DailyActivityRepositoryImpl(dao, firebase, getPrayerTimesUseCase, bookmarks)
     val quranRepository: QuranRepository = QuranRepositoryImpl(dao, bookmarks)
-    val quizRepository: QuizRepository = QuizRepositoryImpl(firebase, getCurrentUserUseCase)
+    val officialQuizRepository: OfficialQuizRepository = OfficialQuizRepositoryImpl(firebase, { getCurrentUserUseCase().first() })
+    val quizRepository: QuizRepository = QuizRepositoryImpl(firebase, officialQuizRepository)
     val updateRepository: UpdateRepository = UpdateRepositoryImpl(UpdateRemoteDataSource())
     val addExtraTaskUseCase = AddExtraTaskUseCase(dailyRepository)
     val checkForUpdateUseCase = CheckForUpdateUseCase(updateRepository)

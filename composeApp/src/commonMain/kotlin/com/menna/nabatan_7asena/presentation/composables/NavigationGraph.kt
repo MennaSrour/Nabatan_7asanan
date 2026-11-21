@@ -1,6 +1,9 @@
 package com.menna.nabatan_7asena.presentation.composables
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -24,6 +27,7 @@ fun NavigationGraph(
         composable("home") {
             HomeScreen(
                 onNavigateToSettings = openSettings,
+                onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
                 onNavigateToQuran = {
                     navController.navigate("quran") {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -39,6 +43,13 @@ fun NavigationGraph(
                     }
                 }
             )
+        }
+        composable("garden") { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                com.menna.nabatan_7asena.presentation.screens.home.GardenScreen(
+                    com.menna.nabatan_7asena.platform.platformHomeViewModel(), onBack = { navController.popBackStack() })
+            }
         }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }

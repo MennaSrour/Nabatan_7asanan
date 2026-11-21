@@ -554,4 +554,23 @@
     <string name="garden_save_failed">تعذّر حفظ السقاية، حاول مرة أخرى</string>
     <string name="garden_unavailable">تعذّر قراءة حديقتك. لن نغيّر بياناتها المحفوظة.</string>
     <string name="garden_saved_locally">حديقتك محفوظة على جهازك، وتنتظر المزامنة</string>
+    <string name="garden_enter_male">ادخل حديقتك</string>
+    <string name="garden_enter_female">ادخلي حديقتك</string>
+    <string name="playlist_loop_progress">التكرار %1$s من %2$s</string>
+    <string name="playlist_loop_infinite">التكرار %1$s · بلا نهاية</string>
+    <string name="playlist_repeat_less">تقليل التكرار</string>
+    <string name="playlist_repeat_more">زيادة التكرار</string>
+    <string name="task_duplicate">المهمة موجودة في قائمة اليوم بالفعل، يمكن إضافة مهمة أخرى</string>
+    <string name="task_added">تمت الإضافة</string>
+    <string name="task_add_failed">تعذرت إضافة المهمة، يرجى المحاولة مرة أخرى</string>
+    <string name="task_custom_title">اسم مهمتك الجديدة</string>
+    <string name="task_custom_add">إضافة المهمة</string>
+    <string name="quiz_official_finished">أنهيت تحدي هذه الجمعة!</string>
+    <string name="quiz_official_used">محاولتك الرسمية لهذه الجمعة مسجلة</string>
+    <string name="quiz_official_score">نتيجتك: %1$d من 5</string>
+    <string name="quiz_official_unavailable">اتصل بالإنترنت للتحقق من محاولتك الرسمية</string>
+    <string name="quiz_official_retry">إعادة التحقق</string>
+    <string name="quiz_official_one_attempt">محاولة رسمية واحدة. بدء التحدي يسجل محاولتك، حتى عند الخروج.</string>
+    <string name="quiz_official_save_error_male">تعذّر حفظ نتيجتك، اضغط التالي للمحاولة مرة أخرى</string>
+    <string name="quiz_official_save_error_female">تعذّر حفظ نتيجتك، اضغطي التالي للمحاولة مرة أخرى</string>
 </resources>

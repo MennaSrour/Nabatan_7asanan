@@ -216,6 +216,37 @@ class QuranPlaybackControllerTest {
         assertFalse(playback.state.value.isRepeatModeActive)
     }
 
+    @Test fun playlistStopsAfterExactlyThreeCompleteLoops() {
+        playback.startPlaylist("counted", "Test", listOf(PlaylistTrack(1, 2), PlaylistTrack(2, 1)))
+        playback.setPlaylistRepeatCount(3)
+        repeat(3) { player.complete() }
+        assertEquals(1, playback.state.value.playlist?.completedLoops)
+        assertEquals(0, playback.state.value.playlist?.currentIndex)
+        repeat(5) { player.complete() }
+        assertEquals(2, playback.state.value.playlist?.completedLoops)
+        val last = player.track
+        player.complete()
+        assertNull(playback.state.value.playlist)
+        assertEquals(QuranAudioState.Idle, playback.state.value.audioState)
+        assertEquals(9, player.urls.size)
+        last.ended()
+        assertEquals(9, player.urls.size)
+    }
+
+    @Test fun customRepeatCountIsValidatedAndResetsLoopBudgetOnlyWhenChanged() {
+        playback.startPlaylist("counted", "Test", listOf(PlaylistTrack(1, 1)))
+        playback.setPlaylistRepeatCount(7)
+        repeat(2) { player.complete() }
+        assertEquals(2, playback.state.value.playlist?.completedLoops)
+        playback.setPlaylistRepeatCount(0)
+        playback.setPlaylistRepeatCount(100)
+        assertEquals(7, playback.state.value.playlist?.repeatCount)
+        playback.setPlaylistRepeatCount(2)
+        assertEquals(0, playback.state.value.playlist?.completedLoops)
+        repeat(2) { player.complete() }
+        assertNull(playback.state.value.playlist)
+    }
+
     private fun customRange(start: Int, end: Int, count: Int) {
         playback.openRepeatSheet(2, 4)
         playback.setScope(PlaybackScope.CUSTOM_RANGE)

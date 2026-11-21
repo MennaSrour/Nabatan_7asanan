@@ -19,7 +19,8 @@ fun QuizContent(state: QuizUiState, actions: QuizActions) {
             state.mode == QuizMode.NONE -> QuizOverviewContent(
                 state = state,
                 onStudyClick = actions::startStudyMode,
-                onCompetitionClick = actions::startCompetitionMode
+                onCompetitionClick = actions::startCompetitionMode,
+                onRetryOfficial = actions::retryOfficialStatus
             )
 
             else -> QuizFlashCardView(
