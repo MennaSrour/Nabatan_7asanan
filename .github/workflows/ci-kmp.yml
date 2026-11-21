@@ -153,7 +153,7 @@ jobs:
           bash .github/scripts/ci-run.sh ios-tests ./gradlew --build-cache --parallel --max-workers=2 ":composeApp:$target"
       - name: Build unsigned simulator app
         run: |
-          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+          bash .github/scripts/ci-run.sh ios-build xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
             -configuration Debug -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$PWD/.ci/DerivedData" \
@@ -169,6 +169,7 @@ jobs:
           path: |
             composeApp/build/reports/tests/
             .ci/ios-tests.log
+            .ci/ios-build.log
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/upload-artifact@v4
