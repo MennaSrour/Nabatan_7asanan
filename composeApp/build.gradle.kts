@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension
+import org.jetbrains.kotlin.gradle.targets.native.tasks.PodBuildTask
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -86,4 +88,26 @@ dependencies {
     add("kspIosX64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
+}
+
+// Standalone test executables need native SDK linking; the app continues to use SPM.
+if (providers.gradleProperty("firebaseNativeTests").orNull == "true") {
+    apply(plugin = "org.jetbrains.kotlin.native.cocoapods")
+    providers.gradleProperty("nativeTestArchitecture").orNull?.let { architecture ->
+        require(architecture in setOf("arm64", "x86_64")) { "Unsupported simulator architecture: $architecture" }
+        tasks.withType<PodBuildTask>().configureEach {
+            xcodeBuildSettings.put("ARCHS", architecture)
+            xcodeBuildSettings.put("ONLY_ACTIVE_ARCH", "YES")
+        }
+    }
+    (kotlin as ExtensionAware).extensions.configure<CocoapodsExtension> {
+        version = "1.0"
+        ios.deploymentTarget = "15.0"
+        listOf("FirebaseCore", "FirebaseFirestore", "FirebaseRemoteConfig").forEach { sdk ->
+            pod(sdk) {
+                version = libs.versions.firebaseIos.get()
+                linkOnly = true
+            }
+        }
+    }
 }

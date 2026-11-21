@@ -15,9 +15,12 @@
 - `iosApp` is the SwiftUI/Xcode host. Both hosts render the same `App()`.
 
 The static `ComposeApp` framework targets `iosX64`, `iosArm64` and
-`iosSimulatorArm64`. Kotlin/Compose compiler is 2.2.10; Compose Multiplatform is
-1.9.0. Navigation and lifecycle use their JetBrains multiplatform distributions.
-Hilt remains an Android implementation detail.
+`iosSimulatorArm64`. Kotlin/Compose compiler is 2.2.20; Compose Multiplatform is
+1.9.1. Navigation and lifecycle use their JetBrains multiplatform distributions.
+Hilt remains an Android implementation detail. Lifecycle 2.9.5 and Navigation
+2.9.1 align with Compose 1.9.1 and use SavedState 1.3.5, which delegates the
+native Compose state implementation to AndroidX instead of linking duplicate
+`LocalSavedStateRegistryOwner` symbols.
 
 ## Firebase
 
@@ -39,6 +42,15 @@ build copies the optional file to the bundle; Swift initializes Firebase before
 creating the Kotlin controller. Without the file, shared Firestore requests fail
 as recoverable data errors instead of accessing an unconfigured native SDK.
 Remote Config's Android Play Store update policy is disabled on iOS.
+
+Standalone Gradle iOS tests opt into CocoaPods **link-only** SDK dependencies:
+`./gradlew -PfirebaseNativeTests=true :composeApp:iosSimulatorArm64Test`. Install
+CocoaPods first (`pod --version`); the hosted macOS runner already includes it.
+This provides Firebase 11.15 frameworks and runtime search paths for test
+executables without generating duplicate GitLive cinterops. The flag is not used
+for Xcode app builds, which retain Swift Package Manager integration. CI passes
+`-PnativeTestArchitecture=arm64` (or `x86_64` on Intel) to build only its runner
+architecture; omitting that optional property keeps CocoaPods defaults.
 
 The Xcode project links FirebaseCore, FirebaseFirestore and FirebaseRemoteConfig
 through the official Firebase Swift package (11.x, compatible with GitLive 2.1's
