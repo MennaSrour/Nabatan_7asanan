@@ -5,11 +5,11 @@ import platform.Foundation.*
 
 actual object DateUtils {
     actual fun getCurrentHijriDate(offsetDays: Long): String {
-        val formatter = NSDateFormatter()
-        formatter.locale = NSLocale("ar_EG")
-        formatter.calendar =
-            NSCalendar.calendarWithIdentifier("islamic-umalqura") ?: NSCalendar.currentCalendar
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.stringFromDate(NSDate.dateWithTimeIntervalSinceNow(offsetDays * 86_400.0))
+        val calendar = NSCalendar.calendarWithIdentifier(NSCalendarIdentifierIslamicUmmAlQura)
+            ?: return "التاريخ الهجري"
+        val date = calendar.dateByAddingUnit(NSCalendarUnitDay, offsetDays, NSDate(), 0u)
+            ?: return "التاريخ الهجري"
+        val parts = calendar.components(NSCalendarUnitDay or NSCalendarUnitMonth or NSCalendarUnitYear, date)
+        return formatHijriDate(parts.day.toInt(), parts.month.toInt(), parts.year.toInt())
     }
 }

@@ -22,6 +22,6 @@ fun LazyListScope.homePrayerItems(state: HomeUiState, actions: HomeActions, tint
         if (state.hasPrayerLoadError) NoInternetState(
             title = genderedStringResource(GenderedStrings.homePrayerError), onRetry = actions::retryLoadingData,
             compact = true, modifier = Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal)
-        ) else PrayerTimesRow(state.tasks.filter { it.category == TaskCategory.PRAYER }, actions::onTaskChecked, Modifier.padding(vertical = 6.dp))
+        ) else PrayerTimesRow(state.tasks.filter { it.category == TaskCategory.PRAYER }, actions::onTaskChecked, Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
     }
 }

@@ -41,6 +41,7 @@ object GenderedStrings {
     val currentUserHighlight = GenderedString(R.string.current_user_highlight_male, R.string.current_user_highlight_female)
     val leaderboardFirstStar = GenderedString(R.string.leaderboard_first_star_male, R.string.leaderboard_first_star_female)
     val leaderboardEarnStars = GenderedString(R.string.leaderboard_earn_stars_male, R.string.leaderboard_earn_stars_female)
+    val treasureRemaining = GenderedString(R.string.treasure_remaining_male, R.string.treasure_remaining_female)
     val treasureCompleteTasks = GenderedString(R.string.treasure_complete_tasks_male, R.string.treasure_complete_tasks_female)
     val treasureOpen = GenderedString(R.string.treasure_open_male, R.string.treasure_open_female)
     val treasureUnlockHint = GenderedString(R.string.treasure_unlock_hint_male, R.string.treasure_unlock_hint_female)

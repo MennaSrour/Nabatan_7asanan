@@ -99,7 +99,7 @@ fun PrayerTimesRow(
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+        contentPadding = PaddingValues(vertical = 6.dp)
     ) {
         items(items = ordered, key = { it.id }) { prayer ->
             PrayerCard(
