@@ -169,6 +169,53 @@ class QuranPlaybackControllerTest {
         assertEquals(2, errors)
     }
 
+    @Test fun playlistPlaysAllAyahsAndSurahsInOrderThenStops() {
+        playback.startPlaylist("list", "Morning", listOf(PlaylistTrack(93, 2), PlaylistTrack(89, 1)))
+        repeat(3) { player.complete() }
+        assertEquals(listOf("93/1", "93/2", "89/1"), player.urls)
+        assertNull(playback.state.value.playlist)
+        assertEquals(QuranAudioState.Idle, playback.state.value.audioState)
+    }
+
+    @Test fun playlistRepeatRestartsWholeQueueAndCanBeDisabled() {
+        playback.startPlaylist("list", "Morning", listOf(PlaylistTrack(93, 1), PlaylistTrack(89, 1)))
+        playback.togglePlaylistRepeat()
+        repeat(2) { player.complete() }
+        assertEquals(listOf("93/1", "89/1", "93/1"), player.urls)
+        assertEquals(0, playback.state.value.playlist?.currentIndex)
+        playback.togglePlaylistRepeat()
+        repeat(2) { player.complete() }
+        assertNull(playback.state.value.playlist)
+    }
+
+    @Test fun skipIgnoresOldCallbacksAndPauseKeepsQueuePosition() {
+        playback.startPlaylist("list", "Morning", listOf(PlaylistTrack(93, 2), PlaylistTrack(89, 1)))
+        val previous = player.track
+        playback.nextPlaylistSurah()
+        previous.ended()
+        previous.failed(IllegalStateException("stale"))
+        assertEquals(1, playback.state.value.playlist?.currentIndex)
+        playback.togglePlaylistPlayback()
+        assertEquals(QuranAudioState.Paused(89, 1), playback.state.value.audioState)
+        playback.togglePlaylistPlayback()
+        assertEquals(QuranAudioState.Playing(89, 1), playback.state.value.audioState)
+        playback.previousPlaylistSurah()
+        assertEquals("93/1", player.urls.last())
+    }
+
+    @Test fun repeatMemorizationAndManualAyahTakeOverPlaylistCleanly() {
+        playback.startPlaylist("list", "Morning", listOf(PlaylistTrack(93, 2)))
+        val old = player.track
+        customRange(2, 3, 1)
+        assertNull(playback.state.value.playlist)
+        old.ended()
+        assertEquals("2/2", player.urls.last())
+        playback.startPlaylist("list", "Morning", listOf(PlaylistTrack(93, 2)))
+        playback.playAyah(89, 1)
+        assertNull(playback.state.value.playlist)
+        assertFalse(playback.state.value.isRepeatModeActive)
+    }
+
     private fun customRange(start: Int, end: Int, count: Int) {
         playback.openRepeatSheet(2, 4)
         playback.setScope(PlaybackScope.CUSTOM_RANGE)

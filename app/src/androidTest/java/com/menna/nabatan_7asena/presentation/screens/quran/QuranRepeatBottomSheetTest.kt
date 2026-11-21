@@ -55,6 +55,20 @@ class QuranRepeatBottomSheetTest {
     }
 
     private open class NoOpQuranActions : QuranActions {
+        override fun toggleViewMode() = Unit
+        override fun selectSurah(surahId: Int) = Unit
+        override fun createPlaylist(name: String) = Unit
+        override fun renamePlaylist(id: String, name: String) = Unit
+        override fun deletePlaylist(id: String) = Unit
+        override fun editPlaylist(id: String?) = Unit
+        override fun addPlaylistSurah(id: String, surah: Int) = Unit
+        override fun removePlaylistSurah(id: String, surah: Int) = Unit
+        override fun movePlaylistSurah(id: String, from: Int, to: Int) = Unit
+        override fun startPlaylist(id: String) = Unit
+        override fun togglePlaylistPlayback() = Unit
+        override fun nextPlaylistSurah() = Unit
+        override fun previousPlaylistSurah() = Unit
+        override fun togglePlaylistRepeat() = Unit
         override fun onOpenRepeatBottomSheet(surahId: Int) = Unit
         override fun onDismissRepeatBottomSheet() = Unit
         override fun onPlaybackScopeChanged(scope: PlaybackScope) = Unit

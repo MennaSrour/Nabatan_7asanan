@@ -23,7 +23,7 @@ import com.menna.nabatan_7asena.presentation.screens.quran.SurahDownloadState
 fun QuranSurahPage(pageIndex: Int, state: QuranUiState, actions: QuranActions, layout: QuranLayoutState) {
     val downloadStates = state.downloadStates
     val currentPageNumber = state.currentPageNumber
-    val quranFont = FontFamily(Font(R.font.amiri_regular))
+    val quranFont = quranFontFamily()
     val lazyListStates = layout.lazyListStates
     val currentSurahId = pageIndex + 1
     val surahInfo = QuranConstants.surahs[currentSurahId - 1]

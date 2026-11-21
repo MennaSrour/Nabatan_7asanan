@@ -20,6 +20,7 @@ fun QuranReaderScaffold(state: QuranUiState, actions: QuranActions, layout: Qura
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost   = { SnackbarHost(hostState = snackbarState) },
+        bottomBar = { state.playlistPlayback?.let { QuranPlaylistPlayer(it, state.audioState, actions) } },
         topBar = {
             QuranReaderTopBar(state, actions, layout)
         }
@@ -27,7 +28,10 @@ fun QuranReaderScaffold(state: QuranUiState, actions: QuranActions, layout: Qura
         Box(modifier = Modifier.fillMaxSize()) {
             QuranBackground()
 
-            QuranSurahPager(state, actions, layout, padding)
+            if (!state.isReaderReady) androidx.compose.material3.CircularProgressIndicator(Modifier.align(androidx.compose.ui.Alignment.Center))
+            else if (state.viewMode == com.menna.nabatan_7asena.presentation.screens.quran.QuranViewMode.MUSHAF)
+                QuranMushafPager(state, actions, layout, padding)
+            else QuranSurahPager(state, actions, layout, padding)
         }
     }
 }

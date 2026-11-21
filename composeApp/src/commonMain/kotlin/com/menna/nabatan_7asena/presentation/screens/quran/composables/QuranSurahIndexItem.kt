@@ -66,7 +66,7 @@ fun QuranSurahIndexItem(surah: com.menna.nabatan_7asena.domain.Surah, isSelected
         selected = isSelected,
         onClick  = {
             scope.launch {
-                pagerState.scrollToPage(surah.id - 1)
+                actions.selectSurah(surah.id)
                 drawerState.close()
             }
         },

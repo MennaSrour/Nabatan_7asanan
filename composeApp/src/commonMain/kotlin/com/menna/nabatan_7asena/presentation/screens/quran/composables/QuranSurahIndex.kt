@@ -19,7 +19,9 @@ fun QuranSurahIndex(state: QuranUiState, actions: QuranActions, layout: QuranLay
     val pagerState = layout.pagerState
     LazyColumn(contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
         items(QuranConstants.surahs) { surah ->
-            val isSelected = pagerState.currentPage == surah.id - 1
+            val isSelected = if (state.viewMode == com.menna.nabatan_7asena.presentation.screens.quran.QuranViewMode.MUSHAF)
+                state.mushafPages[state.currentPageNumber]?.firstOrNull()?.suraNo == surah.id
+            else pagerState.currentPage == surah.id - 1
             val dlState = downloadStates[surah.id] ?: SurahDownloadState()
             QuranSurahIndexItem(surah, isSelected, dlState, actions, layout)
         }
