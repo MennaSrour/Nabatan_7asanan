@@ -27,6 +27,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
@@ -46,7 +49,8 @@ open class HomeViewModel constructor(
     private val currentLocation: LocationTracker,
     private val audioPlayerManager: AudioPlayerManager,
     private val quranRepository: QuranRepository,
-    private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase
+    private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
+    private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository
 ) : ViewModel(), HomeActions {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -58,6 +62,9 @@ open class HomeViewModel constructor(
     private val playingTaskId = MutableStateFlow<Int?>(null)
     private val tempCompletedTaskIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     private var lastCompletedCount = -1
+
+    private var gardenSyncJob: Job? = null
+    private var gardenSyncProfile: String? = null
 
     private val retrySignal = MutableStateFlow(0)
 
@@ -129,8 +136,10 @@ open class HomeViewModel constructor(
             .flatMapLatest { (user, dailyContent, flowPair) ->
             val (activitiesFlow, currentPlayingId) = flowPair
 
-            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker) { activitiesAndBounds, tempStatusMap, _ ->
+            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker, gardenRepository.observe(user.id)) { activitiesAndBounds, tempStatusMap, _, observedGarden ->
                 val (domainActivities, bounds) = activitiesAndBounds
+                val gardenResult = creditGarden(user.id, date, domainActivities, observedGarden)
+                val garden = (gardenResult as? Resource.Success)?.data
                 val currentPartToRead = user.quranPartsFinished + 1
                 val nowMinutes = PrayerTimeline.nowMinutes()
 
@@ -164,6 +173,10 @@ open class HomeViewModel constructor(
                     user = user.toUiUser(),
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
+                    gardenProfileId = user.id,
+                    garden = garden,
+                    isGardenUnavailable = gardenResult is Resource.Error,
+                    gardenNeedsWater = garden?.lastWateredDate?.let { it < date.toString() } ?: true,
                     prayerDate = date,
                     previousIshaMinutes = bounds.first,
                     tomorrowFajrMinutes = bounds.second,
@@ -210,6 +223,8 @@ open class HomeViewModel constructor(
                     }
                 }
 
+                if (gardenSyncProfile != state.gardenProfileId) { gardenSyncJob?.cancel(); gardenSyncProfile = null }
+                if (state.garden?.syncPending == true && !state.isGardenUnavailable) requestGardenSync(state.gardenProfileId)
                 lastCompletedCount = completedCount
 
                 _uiState.update { currentState ->
@@ -218,6 +233,13 @@ open class HomeViewModel constructor(
                         user = state.user,
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
+                        gardenProfileId = state.gardenProfileId,
+                        garden = state.garden,
+                        isGardenUnavailable = state.isGardenUnavailable,
+                        gardenNeedsWater = state.gardenNeedsWater,
+                        isWateringGarden = currentState.gardenProfileId == state.gardenProfileId && currentState.isWateringGarden,
+                        gardenWateringSequence = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenWateringSequence else 0,
+                        gardenSaveFailed = currentState.gardenProfileId == state.gardenProfileId && currentState.gardenSaveFailed,
                         prayerDate = state.prayerDate,
                         previousIshaMinutes = state.previousIshaMinutes,
                         tomorrowFajrMinutes = state.tomorrowFajrMinutes,
@@ -227,6 +249,47 @@ open class HomeViewModel constructor(
                         hasPrayerLoadError = state.hasPrayerLoadError
                     )
                 }
+            }
+        }
+    }
+
+    private suspend fun creditGarden(
+        profileId: String, date: LocalDate, activities: List<Activity>,
+        observed: Resource<com.menna.nabatan_7asena.domain.entity.GardenProgress>
+    ): Resource<com.menna.nabatan_7asena.domain.entity.GardenProgress> {
+        if (observed is Resource.Error) return observed
+        return try {
+            Resource.Success(gardenRepository.creditTasks(profileId, date, activities.filter { it.isCompleted }.map { it.id }.toSet()))
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { Resource.Error(e) }
+    }
+
+    override fun waterGarden() {
+        val current = _uiState.value
+        if (current.isWateringGarden || current.gardenProfileId.isBlank() || (current.garden?.waterDrops ?: 0) <= 0) return
+        _uiState.update { it.copy(isWateringGarden = true, gardenSaveFailed = false) }
+        viewModelScope.launch {
+            try {
+                val next = gardenRepository.water(current.gardenProfileId, AppClock.today())
+                _uiState.update {
+                    if (it.gardenProfileId != current.gardenProfileId) it
+                    else it.copy(isWateringGarden = false, garden = next.progress, gardenWateringSequence = it.gardenWateringSequence + if (next.applied) 1 else 0)
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                _uiState.update { if (it.gardenProfileId == current.gardenProfileId) it.copy(isWateringGarden = false, gardenSaveFailed = true) else it }
+            }
+        }
+    }
+
+    private fun requestGardenSync(profileId: String) {
+        if (profileId.isBlank() || profileId == "local" || gardenSyncProfile == profileId && gardenSyncJob?.isActive == true) return
+        gardenSyncJob?.cancel()
+        gardenSyncProfile = profileId
+        gardenSyncJob = viewModelScope.launch {
+            while (isActive) {
+                if (withTimeoutOrNull(7000) { gardenRepository.sync(profileId) } == true) break
+                delay(60_000)
             }
         }
     }

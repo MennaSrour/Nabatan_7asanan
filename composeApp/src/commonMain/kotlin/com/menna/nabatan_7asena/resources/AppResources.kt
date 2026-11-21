@@ -263,6 +263,27 @@ object AppResources {
         const val dua_title_male: Int = -1035487583
         const val exit_female: Int = -1397492761
         const val exit_male: Int = -1004429151
+        const val garden_blooming: Int = -610915826
+        const val garden_close: Int = -275483138
+        const val garden_drops: Int = -1299484716
+        const val garden_earn_water: Int = -894455130
+        const val garden_expand: Int = -1104575273
+        const val garden_fruiting: Int = -400486611
+        const val garden_fully_grown: Int = -2145043050
+        const val garden_needs_water: Int = -1732992921
+        const val garden_next_stage: Int = -2071838554
+        const val garden_sapling: Int = -1857718548
+        const val garden_save_failed: Int = -901251292
+        const val garden_saved_locally: Int = -244090333
+        const val garden_scene_description: Int = -1612149708
+        const val garden_seed: Int = -409872772
+        const val garden_sprout: Int = -809496337
+        const val garden_title: Int = -677147565
+        const val garden_unavailable: Int = -249998899
+        const val garden_water_female: Int = -392739049
+        const val garden_water_hint: Int = -2072064136
+        const val garden_water_male: Int = -449500018
+        const val garden_young: Int = -677216601
         const val gender_boy_female: Int = -737908602
         const val gender_boy_male: Int = -965162277
         const val gender_girl_female: Int = -850149861
@@ -878,6 +899,27 @@ object ResourceCatalog {
         AppResources.string.dua_title_male to Res.string.dua_title_male,
         AppResources.string.exit_female to Res.string.exit_female,
         AppResources.string.exit_male to Res.string.exit_male,
+        AppResources.string.garden_blooming to Res.string.garden_blooming,
+        AppResources.string.garden_close to Res.string.garden_close,
+        AppResources.string.garden_drops to Res.string.garden_drops,
+        AppResources.string.garden_earn_water to Res.string.garden_earn_water,
+        AppResources.string.garden_expand to Res.string.garden_expand,
+        AppResources.string.garden_fruiting to Res.string.garden_fruiting,
+        AppResources.string.garden_fully_grown to Res.string.garden_fully_grown,
+        AppResources.string.garden_needs_water to Res.string.garden_needs_water,
+        AppResources.string.garden_next_stage to Res.string.garden_next_stage,
+        AppResources.string.garden_sapling to Res.string.garden_sapling,
+        AppResources.string.garden_save_failed to Res.string.garden_save_failed,
+        AppResources.string.garden_saved_locally to Res.string.garden_saved_locally,
+        AppResources.string.garden_scene_description to Res.string.garden_scene_description,
+        AppResources.string.garden_seed to Res.string.garden_seed,
+        AppResources.string.garden_sprout to Res.string.garden_sprout,
+        AppResources.string.garden_title to Res.string.garden_title,
+        AppResources.string.garden_unavailable to Res.string.garden_unavailable,
+        AppResources.string.garden_water_female to Res.string.garden_water_female,
+        AppResources.string.garden_water_hint to Res.string.garden_water_hint,
+        AppResources.string.garden_water_male to Res.string.garden_water_male,
+        AppResources.string.garden_young to Res.string.garden_young,
         AppResources.string.gender_boy_female to Res.string.gender_boy_female,
         AppResources.string.gender_boy_male to Res.string.gender_boy_male,
         AppResources.string.gender_girl_female to Res.string.gender_girl_female,

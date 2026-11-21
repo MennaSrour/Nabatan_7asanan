@@ -21,7 +21,7 @@ fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Uni
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
         item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme) }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
-            homeSummaryItems(state)
+            homeSummaryItems(state, actions)
             if (state.hasLoadError && state.tasks.isEmpty()) {
                 item { NoInternetState(title = genderedStringResource(GenderedStrings.homeLoadError), onRetry = actions::retryLoadingData) }
             } else {

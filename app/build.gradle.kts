@@ -73,6 +73,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation(libs.junit)
+    testImplementation(libs.datetime)
     testImplementation(libs.coroutines.test)
     androidTestImplementation("androidx.compose.material3:material3")
     androidTestImplementation(libs.androidx.junit)
