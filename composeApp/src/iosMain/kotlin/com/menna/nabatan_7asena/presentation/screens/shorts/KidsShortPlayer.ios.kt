@@ -15,13 +15,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.coroutines.delay
-import platform.AVFoundation.AVLayerVideoGravityResizeAspect
-import platform.AVFoundation.AVPlayer
-import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
-import platform.AVFoundation.AVPlayerItemFailedToPlayToEndTimeNotification
-import platform.AVFoundation.AVPlayerItemStatusFailed
-import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
-import platform.AVFoundation.AVPlayerLayer
+import platform.AVFoundation.*
 import platform.CoreMedia.kCMTimeZero
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
