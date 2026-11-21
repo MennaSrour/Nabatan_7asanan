@@ -93,7 +93,7 @@ fun AyahCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            "${ayah.ayaNo}",
+                            com.menna.nabatan_7asena.core.util.arabicIndic(ayah.ayaNo),
                             color      = q.accentStrong,
                             fontSize   = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -178,8 +178,9 @@ fun AyahCard(
 
             Spacer(Modifier.height(12.dp))
 
-            val displayText = remember(ayah.text) {
-                ayah.text.replace(Regex("[^\u0600-\u06FF\u0020\u06DD]"), "").trim()
+            val displayText = remember(ayah.text, ayah.ayaNo) {
+                com.menna.nabatan_7asena.domain.util.uthmaniText(ayah.text, ayah.ayaNo) +
+                    " " + com.menna.nabatan_7asena.core.util.ayahMarker(ayah.ayaNo)
             }
 
             Text(
@@ -187,7 +188,9 @@ fun AyahCard(
                 fontFamily = quranFont,
                 fontSize   = 24.sp,
                 textAlign  = TextAlign.Right,
-                lineHeight = 44.sp,
+                style = androidx.compose.ui.text.TextStyle(lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                    androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None)),
+                lineHeight = 80.sp,
                 color      = q.textPrimary,
                 modifier   = Modifier.fillMaxWidth()
             )

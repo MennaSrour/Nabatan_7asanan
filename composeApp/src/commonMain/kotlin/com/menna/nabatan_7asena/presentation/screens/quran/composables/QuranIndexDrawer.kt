@@ -44,8 +44,10 @@ fun QuranIndexDrawer(state: QuranUiState, actions: QuranActions, layout: QuranLa
             Box(modifier = Modifier.weight(1f)) {
                 if (indexTab == 0) {
                     QuranSurahIndex(state, actions, layout)
-                } else {
+                } else if (indexTab == 1) {
                     QuranJuzIndex(state, actions, layout)
+                } else {
+                    QuranPlaylistsIndex(state, actions, layout)
                 }
             }
             HorizontalDivider(color = q.accent.copy(alpha = 0.2f))

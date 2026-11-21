@@ -34,7 +34,8 @@ fun BasmalaCard(fontFamily: FontFamily) {
             Text(
                 text       = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
                 fontFamily = fontFamily,
-                fontSize   = 22.sp,
+                fontSize   = 24.sp,
+                lineHeight = 52.sp,
                 textAlign  = TextAlign.Center,
                 color      = q.accentStrong
             )

@@ -23,6 +23,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import com.menna.nabatan_7asena.data.local.QuranLibraryStore
 
 open class QuranViewModel constructor(
     private val saveUseCase: SaveQuranProgressUseCase,
@@ -30,7 +35,8 @@ open class QuranViewModel constructor(
     private val repository: QuranRepository,
     private val audioPlayer: QuranAudioPlayer,
     private val downloadManager: QuranAudioDownloadManager,
-    private val bookmarkStore: QuranBookmarkStore
+    private val bookmarkStore: QuranBookmarkStore,
+    private val library: QuranLibraryStore
 ) : ViewModel(), QuranActions {
 
     private val lastSavedPage = getUseCase.getLastPage()
@@ -54,17 +60,79 @@ open class QuranViewModel constructor(
     private val _ayahsBySurah = MutableStateFlow<Map<Int, List<AyahModel>>>(emptyMap())
     private val _position = MutableStateFlow(QuranReadingPosition())
     private val loadingSurahs = mutableSetOf<Int>()
+    private var navigationRequest: kotlinx.coroutines.Job? = null
     private val playbackState = combine(lastSavedPage, playback.state, _surahDownloadStates, _fullDownloadState) { page, audio, downloads, full ->
         QuranUiState(savedPage = page, audioState = audio.audioState, downloadStates = downloads, fullDownloadState = full,
             isRepeatBottomSheetVisible = audio.isRepeatBottomSheetVisible, repeatSurahId = audio.repeatSurahId,
             repeatAyahCount = audio.repeatAyahCount, playbackScope = audio.playbackScope,
             startAyah = audio.startAyah, endAyah = audio.endAyah, repeatCount = audio.repeatCount,
-            isRepeatModeActive = audio.isRepeatModeActive, remainingRepeats = audio.remainingRepeats)
+            isRepeatModeActive = audio.isRepeatModeActive, remainingRepeats = audio.remainingRepeats, playlistPlayback = audio.playlist)
     }
-    val uiState = combine(playbackState, _bookmarkedSurah, _bookmarkedAyah, _ayahsBySurah, _position) { playback, surah, ayah, content, position ->
+    private val baseUiState = combine(playbackState, _bookmarkedSurah, _bookmarkedAyah, _ayahsBySurah, _position) { playback, surah, ayah, content, position ->
         playback.copy(bookmarkedSurahId = surah, bookmarkedAyahNo = ayah, ayahsBySurah = content,
             activeJuz = position.juz, currentPageNumber = position.page)
+    }
+
+    private val pages = MutableStateFlow<Map<Int, List<AyahModel>>>(emptyMap())
+    private val readerReady = MutableStateFlow(false)
+    private val editingPlaylist = MutableStateFlow<String?>(null)
+    val uiState = combine(baseUiState, library.state, pages, readerReady, editingPlaylist) { ui, saved, content, ready, editing ->
+        ui.copy(viewMode = QuranViewMode.entries.firstOrNull { it.name == saved.viewMode } ?: QuranViewMode.CARDS,
+            playlists = saved.playlists, mushafPages = content, isReaderReady = ready, editingPlaylistId = editing)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), QuranUiState())
+
+    override fun toggleViewMode() = saveLibrary {
+        library.setMode(if (library.state.value.viewMode == "MUSHAF") "CARDS" else "MUSHAF")
+    }
+    override fun selectSurah(surahId: Int) = navigateToAyah(surahId, 1)
+    override fun createPlaylist(name: String) = saveLibrary { editingPlaylist.value = library.create(name) }
+    override fun renamePlaylist(id: String, name: String) = saveLibrary { library.rename(id, name) }
+    override fun deletePlaylist(id: String) = saveLibrary {
+        library.delete(id)
+        if (editingPlaylist.value == id) editingPlaylist.value = null
+        if (playback.state.value.playlist?.id == id) playback.stop()
+    }
+    override fun editPlaylist(id: String?) { editingPlaylist.value = id }
+    override fun addPlaylistSurah(id: String, surah: Int) = saveLibrary { library.addSurah(id, surah) }
+    override fun removePlaylistSurah(id: String, surah: Int) = saveLibrary { library.removeSurah(id, surah) }
+    override fun movePlaylistSurah(id: String, from: Int, to: Int) = saveLibrary { library.moveSurah(id, from, to) }
+    override fun startPlaylist(id: String) {
+        val playlist = library.state.value.playlists.firstOrNull { it.id == id } ?: return
+        if (!readerReady.value || playlist.surahIds.isEmpty()) return
+        val counts = pages.value.values.flatten().groupingBy { it.suraNo }.eachCount()
+        val tracks = playlist.surahIds.map { PlaylistTrack(it, counts[it] ?: 0) }
+        playback.startPlaylist(playlist.id, playlist.name, tracks)
+    }
+    override fun togglePlaylistPlayback() = playback.togglePlaylistPlayback()
+    override fun nextPlaylistSurah() = playback.nextPlaylistSurah()
+    override fun previousPlaylistSurah() = playback.previousPlaylistSurah()
+    override fun togglePlaylistRepeat() = playback.togglePlaylistRepeat()
+
+    private fun saveLibrary(action: () -> Unit) {
+        try { action() }
+        catch (e: CancellationException) { throw e }
+        catch (_: Exception) { _effects.trySend(QuranEffect.LibrarySaveFailed) }
+    }
+
+    private fun navigateToAyah(surahId: Int, ayahNo: Int) {
+        navigationRequest?.cancel()
+        navigationRequest = viewModelScope.launch {
+            try {
+                val target = withContext(com.menna.nabatan_7asena.platform.ioDispatcher) {
+                    repository.getSurahAyahs(surahId).firstOrNull { it.ayaNo == ayahNo }
+                } ?: return@launch
+                _position.value = QuranReadingPosition(target.page, target.jozz)
+                _effects.send(QuranEffect.ScrollToAyah(surahId - 1, ayahNo, target.page))
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _effects.send(QuranEffect.LoadFailed) }
+        }
+    }
+
+    fun onMushafPageChanged(page: Int) {
+        val first = pages.value[page]?.firstOrNull() ?: return
+        _position.value = QuranReadingPosition(page, first.jozz)
+        onSurahVisible(first.suraNo)
+    }
 
     override fun onSurahVisible(surahId: Int) {
         if (_ayahsBySurah.value.containsKey(surahId) || !loadingSurahs.add(surahId)) return
@@ -83,11 +151,39 @@ open class QuranViewModel constructor(
 
     fun onVisibleAyahChanged(surahId: Int, visibleIndex: Int) {
         val ayahs = _ayahsBySurah.value[surahId].orEmpty()
-        readingPosition(ayahs, surahId, visibleIndex)?.let { _position.value = it }
+        readingPosition(ayahs, surahId, visibleIndex)?.let {
+            if (_position.value != it) {
+                _position.value = it
+            }
+        }
     }
 
     init {
         loadBookmark()
+        if (library.loadFailed) _effects.trySend(QuranEffect.LoadFailed)
+        viewModelScope.launch {
+            _position.map { it.page }.drop(1).distinctUntilChanged().collect { page ->
+                try { saveUseCase(page) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { _effects.send(QuranEffect.LoadFailed) }
+            }
+        }
+        viewModelScope.launch {
+            playback.state.map { it.playlist?.let { queue -> queue.id to queue.tracks[queue.currentIndex].surahId } }
+                .distinctUntilChanged().collect { track -> track?.let { navigateToAyah(it.second, 1) } }
+        }
+        viewModelScope.launch {
+            try {
+                val saved = getUseCase.getLastPage().first().coerceIn(1, 604)
+                val content = withContext(com.menna.nabatan_7asena.platform.ioDispatcher) {
+                    (1..114).flatMap { repository.getSurahAyahs(it) }.groupBy { it.page }
+                }
+                pages.value = content
+                _position.value = QuranReadingPosition(saved, content[saved]?.firstOrNull()?.jozz ?: 1)
+                readerReady.value = true
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _effects.send(QuranEffect.LoadFailed) }
+        }
     }
 
     override fun onCleared() {
@@ -99,21 +195,11 @@ open class QuranViewModel constructor(
         playback.onSurahChanged(surahId)
         onSurahVisible(surahId)
         val surah = QuranConstants.surahs.getOrNull(surahId - 1) ?: return
-        viewModelScope.launch {
-            saveUseCase.invoke(surah.startPage)
-        }
+        if (pages.value[_position.value.page]?.none { it.suraNo == surahId } != false)
+            _position.value = QuranReadingPosition(surah.startPage, surah.juz)
     }
 
     private fun getSurahAyahs(suraNumber: Int): List<AyahModel> = repository.getSurahAyahs(suraNumber)
-
-    private fun getStartPageForJuz(juz: Int): Int {
-        val juzStartPages = listOf(
-            1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
-            202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-            402, 422, 442, 462, 482, 502, 522, 542, 562, 582
-        )
-        return juzStartPages.getOrNull(juz - 1) ?: 1
-    }
 
     override fun saveBookmark(surahId: Int, ayahNo: Int) {
         bookmarkStore.saveBookmark(surahId, ayahNo)
@@ -129,29 +215,23 @@ open class QuranViewModel constructor(
     }
 
     override fun goToJuz(juz: Int) {
-        val startPage = getStartPageForJuz(juz)
-        val surah = QuranConstants.getSurahByPage(startPage)
-        viewModelScope.launch {
-            val ayahs = withContext(com.menna.nabatan_7asena.platform.ioDispatcher) { repository.getSurahAyahs(surah.id) }
-            val targetAyah = ayahs.firstOrNull { it.jozz == juz }
-            ?: ayahs.firstOrNull { it.page >= startPage }
-            val ayaNo = targetAyah?.ayaNo ?: 1
-            _effects.send(QuranEffect.ScrollToAyah(surah.id - 1, ayaNo))
-        }
+        navigationRequest?.cancel()
+        val target = pages.value.values.asSequence().flatten().filter { it.jozz == juz }.minByOrNull { it.id } ?: return
+        _position.value = QuranReadingPosition(target.page, target.jozz)
+        _effects.trySend(QuranEffect.ScrollToAyah(target.suraNo - 1, target.ayaNo, target.page))
     }
 
     override fun goToBookmark() {
         val surah = _bookmarkedSurah.value
         val ayah  = _bookmarkedAyah.value
         if (surah > 0 && ayah > 0) {
-            viewModelScope.launch {
-                _effects.send(QuranEffect.ScrollToAyah(surah - 1, ayah))
-            }
+            navigateToAyah(surah, ayah)
         }
     }
 
     override fun onOpenRepeatBottomSheet(surahId: Int) {
-        playback.openRepeatSheet(surahId, _ayahsBySurah.value[surahId]?.size ?: 0)
+        playback.openRepeatSheet(surahId, _ayahsBySurah.value[surahId]?.size
+            ?: pages.value.values.sumOf { ayahs -> ayahs.count { it.suraNo == surahId } })
     }
     override fun onDismissRepeatBottomSheet() = playback.dismissRepeatSheet()
     override fun onPlaybackScopeChanged(scope: PlaybackScope) = playback.setScope(scope)

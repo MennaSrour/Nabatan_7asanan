@@ -32,6 +32,12 @@ data class FullQuranDownloadState(
 
 data class QuranUiState(
     val savedPage: Int = 1,
+    val viewMode: QuranViewMode = QuranViewMode.CARDS,
+    val mushafPages: Map<Int, List<AyahModel>> = emptyMap(),
+    val isReaderReady: Boolean = false,
+    val playlists: List<com.menna.nabatan_7asena.domain.entity.QuranPlaylist> = emptyList(),
+    val editingPlaylistId: String? = null,
+    val playlistPlayback: PlaylistPlaybackState? = null,
     val audioState: QuranAudioState = QuranAudioState.Idle,
     val downloadStates: Map<Int, SurahDownloadState> = emptyMap(),
     val fullDownloadState: FullQuranDownloadState = FullQuranDownloadState(),

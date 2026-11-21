@@ -13,60 +13,21 @@ import kotlinx.serialization.json.*
 class QuranRepositoryImpl(private val dao: AppDao, private val bookmarks: QuranBookmarkStore) : QuranRepository {
     override fun getLastQuranPage(): Flow<Int> = dao.getLastQuranPage()
     override suspend fun saveQuranPage(page: Int) = dao.updateQuranPage(page)
-    private var cachedData: JsonArray? = null
-    private fun loadData(): JsonArray? {
-        if (cachedData == null) cachedData = Json.parseToJsonElement(readResourceText("files/hafsData.json")).jsonArray
-        return cachedData
+    private val ayahsBySurah by lazy {
+        Json.parseToJsonElement(readResourceText("files/hafsData.json")).jsonArray.map { entry ->
+            val item = entry.jsonObject
+            AyahModel(item.int("id"), item.int("sura_no"), item.int("aya_no"),
+                item.text("aya_text"), item.text("aya_text_emlaey"), item.text("sura_name_ar"),
+                item.text("sura_name_en"), item.int("page"), item.int("jozz"))
+        }.groupBy { it.suraNo }
     }
-    override fun getPageText(pageNumber: Int): String {
-        val data = loadData() ?: return ""
-        val sb = StringBuilder()
-
-        for (i in 0 until data.size) {
-            val item = data[i].jsonObject
-            if (item.int("page") == pageNumber) {
-                val text = item.text("aya_text")
-                val suraNo = item.int("sura_no")
-                val ayaNo = item.int("aya_no")
-
-                if (ayaNo == 1 && suraNo != 1 && suraNo != 9) {
-                    sb.append("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ\n\n")
-                }
-
-                val cleanedText = text.replace(Regex("[^\u0600-\u06FF\u0020]"), "").trim()
-                sb.append(cleanedText)
-
-                sb.append("\u200D\u06DD\u200F")
-
-                sb.append(" ")
-            }
+    override fun getSurahAyahs(suraNumber: Int): List<AyahModel> = ayahsBySurah[suraNumber].orEmpty()
+    override fun getPageText(pageNumber: Int): String = ayahsBySurah.values.flatten()
+        .filter { it.page == pageNumber }.joinToString(" ") {
+            val basmala = if (it.ayaNo == 1 && it.suraNo !in listOf(1, 9)) "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n" else ""
+            basmala + com.menna.nabatan_7asena.domain.util.uthmaniText(it.text, it.ayaNo) +
+                " " + com.menna.nabatan_7asena.core.util.ayahMarker(it.ayaNo)
         }
-        return sb.toString()
-    }
-
-    override fun getSurahAyahs(suraNumber: Int): List<AyahModel> {
-        val data = loadData() ?: return emptyList()
-        val list = mutableListOf<AyahModel>()
-        for (i in 0 until data.size) {
-            val item = data[i].jsonObject
-            if (item.int("sura_no") == suraNumber) {
-                list.add(
-                    AyahModel(
-                        id = item.int("id"),
-                        suraNo = item.int("sura_no"),
-                        ayaNo = item.int("aya_no"),
-                        text = item.text("aya_text"),
-                        cleanText = item.text("aya_text_emlaey", ""),
-                        suraNameAr = item.text("sura_name_ar", ""),
-                        suraNameEn = item.text("sura_name_en", ""),
-                        page = item.int("page"),
-                        jozz = item.int("jozz")
-                    )
-                )
-            }
-        }
-        return list
-    }
 
 
     override fun getBookmarkStatusFlow() = bookmarks.bookmark.map { it != null }.distinctUntilChanged()

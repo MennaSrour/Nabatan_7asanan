@@ -55,7 +55,7 @@ class AndroidLeaderboardViewModel @Inject constructor(services: SharedServices) 
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = hiltViewModel<AndroidLeaderboardViewModel>()
 
 @HiltViewModel
-class AndroidQuranViewModel @Inject constructor(services: SharedServices) : QuranViewModel(services.saveQuranProgressUseCase, services.getQuranProgressUseCase, services.quranRepository, services.quranAudio, services.downloads, services.bookmarks)
+class AndroidQuranViewModel @Inject constructor(services: SharedServices) : QuranViewModel(services.saveQuranProgressUseCase, services.getQuranProgressUseCase, services.quranRepository, services.quranAudio, services.downloads, services.bookmarks, services.quranLibrary)
 
 @Composable
 actual fun platformQuranViewModel(): QuranViewModel = hiltViewModel<AndroidQuranViewModel>()

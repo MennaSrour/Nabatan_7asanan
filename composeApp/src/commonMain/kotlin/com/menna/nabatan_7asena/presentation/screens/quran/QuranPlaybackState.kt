@@ -10,5 +10,15 @@ data class QuranPlaybackState(
     val endAyah: Int = 1,
     val repeatCount: Int = 3,
     val isRepeatModeActive: Boolean = false,
+    val playlist: PlaylistPlaybackState? = null,
     val remainingRepeats: Int = 0
+)
+
+data class PlaylistTrack(val surahId: Int, val ayahCount: Int)
+data class PlaylistPlaybackState(
+    val id: String,
+    val name: String,
+    val tracks: List<PlaylistTrack>,
+    val currentIndex: Int = 0,
+    val repeat: Boolean = false
 )

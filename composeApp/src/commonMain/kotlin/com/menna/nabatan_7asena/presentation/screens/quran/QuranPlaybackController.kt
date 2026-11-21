@@ -67,6 +67,40 @@ class QuranPlaybackController(
         }
     }
 
+    fun startPlaylist(id: String, name: String, tracks: List<PlaylistTrack>) {
+        if (tracks.isEmpty() || tracks.any { it.surahId !in 1..114 || it.ayahCount < 1 }) return
+        stop()
+        _state.update { it.copy(playlist = PlaylistPlaybackState(id, name, tracks.toList())) }
+        playTrack(tracks.first().surahId, 1)
+    }
+
+    fun togglePlaylistPlayback() {
+        val current = currentAyah ?: return
+        if (_state.value.playlist != null) playAyah(current.first, current.second)
+    }
+
+    fun togglePlaylistRepeat() {
+        _state.update { it.copy(playlist = it.playlist?.let { queue -> queue.copy(repeat = !queue.repeat) }) }
+    }
+
+    fun nextPlaylistSurah() = selectPlaylistTrack(1)
+    fun previousPlaylistSurah() = selectPlaylistTrack(-1)
+
+    private fun selectPlaylistTrack(delta: Int) {
+        val queue = _state.value.playlist ?: return
+        val next = queue.currentIndex + delta
+        val index = when {
+            next in queue.tracks.indices -> next
+            queue.repeat -> if (next < 0) queue.tracks.lastIndex else 0
+            next < 0 -> 0
+            else -> { stop(); return }
+        }
+        generation++
+        player.stop()
+        _state.update { it.copy(playlist = queue.copy(currentIndex = index)) }
+        playTrack(queue.tracks[index].surahId, 1)
+    }
+
     fun onSurahChanged(surahId: Int) {
         if (session?.surahId?.let { it != surahId } == true) stop()
         if (_state.value.repeatSurahId != surahId) dismissRepeatSheet()
@@ -78,7 +112,7 @@ class QuranPlaybackController(
         currentAyah = null
         paused = false
         player.stop()
-        _state.update { it.copy(audioState = QuranAudioState.Idle, isRepeatModeActive = false, remainingRepeats = 0) }
+        _state.update { it.copy(audioState = QuranAudioState.Idle, isRepeatModeActive = false, remainingRepeats = 0, playlist = null) }
     }
 
     fun release() { stop(); player.release() }
@@ -113,6 +147,13 @@ class QuranPlaybackController(
 
     private fun onAyahEnded(ayah: Int) {
         generation++ // Ignore duplicate completion callbacks from the finished track.
+        val queue = _state.value.playlist
+        if (queue != null) {
+            val track = queue.tracks[queue.currentIndex]
+            if (ayah < track.ayahCount) playTrack(track.surahId, ayah + 1)
+            else nextPlaylistSurah()
+            return
+        }
         val active = session ?: run { stop(); return }
         if (ayah < active.endAyah) {
             playTrack(active.surahId, ayah + 1)

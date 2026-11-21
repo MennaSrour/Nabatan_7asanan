@@ -1,6 +1,20 @@
 package com.menna.nabatan_7asena.presentation.screens.quran
 
 interface QuranActions {
+    fun toggleViewMode()
+    fun selectSurah(surahId: Int)
+    fun createPlaylist(name: String)
+    fun renamePlaylist(id: String, name: String)
+    fun deletePlaylist(id: String)
+    fun editPlaylist(id: String?)
+    fun addPlaylistSurah(id: String, surah: Int)
+    fun removePlaylistSurah(id: String, surah: Int)
+    fun movePlaylistSurah(id: String, from: Int, to: Int)
+    fun startPlaylist(id: String)
+    fun togglePlaylistPlayback()
+    fun nextPlaylistSurah()
+    fun previousPlaylistSurah()
+    fun togglePlaylistRepeat()
     fun onOpenRepeatBottomSheet(surahId: Int)
     fun onDismissRepeatBottomSheet()
     fun onPlaybackScopeChanged(scope: PlaybackScope)

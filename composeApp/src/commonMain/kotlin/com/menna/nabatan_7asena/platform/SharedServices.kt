@@ -26,6 +26,7 @@ class SharedServices(
 ) {
     val firebase = FirebaseDataSource()
     val bookmarks = QuranBookmarkStore()
+    val quranLibrary = QuranLibraryStore()
     val firstLaunch: FirstLaunchRepository = FirstLaunchManager()
     val prayerRepository: PrayerTimesRepository = PrayerTimesRepositoryImpl(PrayerTimesApi())
     val getPrayerTimesUseCase = GetPrayerTimesUseCase(prayerRepository)

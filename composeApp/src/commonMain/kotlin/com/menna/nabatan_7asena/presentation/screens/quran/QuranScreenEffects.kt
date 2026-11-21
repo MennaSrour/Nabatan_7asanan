@@ -8,25 +8,52 @@ import com.menna.nabatan_7asena.presentation.common.components.CollectEffects
 import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import com.menna.nabatan_7asena.resources.stringResource
+import com.menna.nabatan_7asena.resources.AppResources as R
 
 @Composable
 fun QuranScreenEffects(state: QuranUiState, layout: QuranLayoutState, viewModel: QuranViewModel) {
     val savedMessage = genderedStringResource(GenderedStrings.quranBookmarkSaved)
     val errorMessage = genderedStringResource(GenderedStrings.unexpectedError)
     val playbackError = genderedStringResource(GenderedStrings.quranPlaybackError)
+    val libraryError = stringResource(R.string.quran_library_error)
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
+            QuranEffect.LibrarySaveFailed -> layout.snackbar.showSnackbar(libraryError)
             QuranEffect.PlaybackFailed -> layout.snackbar.showSnackbar(playbackError)
             QuranEffect.LoadFailed -> layout.snackbar.showSnackbar(errorMessage)
             QuranEffect.BookmarkSaved -> layout.snackbar.showSnackbar(savedMessage)
-            is QuranEffect.ScrollToAyah -> scrollToAyah(layout, effect)
+            is QuranEffect.ScrollToAyah -> {
+                layout.navigationJob?.cancel()
+                layout.navigationJob = layout.scope.launch {
+                    if (state.viewMode == QuranViewMode.MUSHAF) layout.mushafPagerState.scrollToPage((effect.page - 1).coerceIn(0, 603))
+                    else scrollToAyah(layout, effect)
+                }
+            }
         }
     }
-    LaunchedEffect(layout.pagerState.currentPage) { viewModel.onSurahChanged(layout.pagerState.currentPage + 1) }
-    LaunchedEffect(layout, state.ayahsBySurah) {
-        snapshotFlow { layout.pagerState.currentPage to layout.lazyListStates[layout.pagerState.currentPage]?.firstVisibleItemIndex }
-            .collect { (page, index) -> index?.let { viewModel.onVisibleAyahChanged(page + 1, it) } }
+    LaunchedEffect(state.viewMode, state.isReaderReady) {
+        layout.navigationJob?.cancel()
+        if (!state.isReaderReady) return@LaunchedEffect
+        if (state.viewMode == QuranViewMode.MUSHAF) {
+            layout.mushafPagerState.scrollToPage((state.currentPageNumber - 1).coerceIn(0, 603))
+            snapshotFlow { layout.mushafPagerState.settledPage }.distinctUntilChanged().collect {
+                viewModel.onMushafPageChanged(it + 1)
+            }
+        } else {
+            val first = state.mushafPages[state.currentPageNumber]?.firstOrNull()
+            if (first != null) scrollToAyah(layout, QuranEffect.ScrollToAyah(first.suraNo - 1, first.ayaNo, first.page))
+            snapshotFlow { layout.pagerState.settledPage }.distinctUntilChanged().collectLatest { index ->
+                viewModel.onSurahChanged(index + 1)
+                snapshotFlow { layout.lazyListStates[index]?.firstVisibleItemIndex }.filterNotNull()
+                    .distinctUntilChanged().collect { viewModel.onVisibleAyahChanged(index + 1, it) }
+            }
+        }
     }
+
 }
 
 private suspend fun scrollToAyah(layout: QuranLayoutState, target: QuranEffect.ScrollToAyah) {

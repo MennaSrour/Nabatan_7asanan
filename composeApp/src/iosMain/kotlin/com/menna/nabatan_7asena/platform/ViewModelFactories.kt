@@ -35,7 +35,7 @@ actual fun platformQuizViewModel(): QuizViewModel = viewModel { QuizViewModel(io
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = viewModel { LeaderboardViewModel(iosServices.getLeaderboardUseCase, iosServices.getCurrentUserUseCase) }
 
 @Composable
-actual fun platformQuranViewModel(): QuranViewModel = viewModel { QuranViewModel(iosServices.saveQuranProgressUseCase, iosServices.getQuranProgressUseCase, iosServices.quranRepository, iosServices.quranAudio, iosServices.downloads, iosServices.bookmarks) }
+actual fun platformQuranViewModel(): QuranViewModel = viewModel { QuranViewModel(iosServices.saveQuranProgressUseCase, iosServices.getQuranProgressUseCase, iosServices.quranRepository, iosServices.quranAudio, iosServices.downloads, iosServices.bookmarks, iosServices.quranLibrary) }
 
 @Composable
 actual fun platformDuaViewModel(): DuaViewModel = viewModel { DuaViewModel(iosServices.audio) }

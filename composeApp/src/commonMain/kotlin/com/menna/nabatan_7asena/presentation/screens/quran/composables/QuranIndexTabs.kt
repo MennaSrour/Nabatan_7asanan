@@ -47,5 +47,8 @@ fun QuranIndexTabs(indexTab: Int, onTabSelected: (Int) -> Unit) {
                 )
             }
         )
+        Tab(selected = indexTab == 2, onClick = { onTabSelected(2) }, text = {
+            Text(com.menna.nabatan_7asena.resources.stringResource(com.menna.nabatan_7asena.resources.AppResources.string.quran_playlists), fontSize = 12.sp)
+        })
     }
 }

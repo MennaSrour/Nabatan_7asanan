@@ -80,6 +80,7 @@ object AppResources {
         const val cairo_regular: Int = -888328148
         const val cairo_semibold: Int = -1870041683
         const val quran_font: Int = -839247395
+        const val scheherazade_new_regular: Int = -935562111
         const val uthmanichafs1_ver18: Int = -1302733001
     }
     object raw {
@@ -444,14 +445,20 @@ object AppResources {
         const val quiz_winner_score_male: Int = -1988468535
         const val quran_active_juz_female: Int = -1991866190
         const val quran_active_juz_male: Int = -2055735430
+        const val quran_add_surah: Int = -565978971
         const val quran_ayah_count_female: Int = -281118804
         const val quran_ayah_count_male: Int = -1479949523
         const val quran_ayah_download_progress_female: Int = -401279727
         const val quran_ayah_download_progress_male: Int = -2068386917
+        const val quran_back_playlists: Int = -166983552
+        const val quran_bookmark_page: Int = -286593800
         const val quran_bookmark_saved_female: Int = -452262897
         const val quran_bookmark_saved_male: Int = -1728977827
+        const val quran_cancel: Int = -1000811138
         const val quran_custom_range_female: Int = -49719438
         const val quran_custom_range_male: Int = -600440094
+        const val quran_delete: Int = -1470337911
+        const val quran_delete_confirm: Int = -378914442
         const val quran_download_all_female: Int = -1842782233
         const val quran_download_all_male: Int = -884009289
         const val quran_download_female: Int = -1994564480
@@ -460,6 +467,7 @@ object AppResources {
         const val quran_download_progress_male: Int = -1427948116
         const val quran_download_retry_female: Int = -921248229
         const val quran_download_retry_male: Int = -365514242
+        const val quran_download_surah: Int = -1501957946
         const val quran_download_surah_female: Int = -737711623
         const val quran_download_surah_male: Int = -236468647
         const val quran_end_ayah_female: Int = -1658617990
@@ -471,29 +479,49 @@ object AppResources {
         const val quran_infinite_repeat_female: Int = -1142559015
         const val quran_infinite_repeat_male: Int = -1093241420
         const val quran_juz_female: Int = -1724204730
+        const val quran_juz_label: Int = -1727335766
         const val quran_juz_male: Int = -1516480123
+        const val quran_library_error: Int = -167769002
         const val quran_meccan_female: Int = -1114218747
         const val quran_meccan_male: Int = -2144432628
         const val quran_medinan_female: Int = -742785174
         const val quran_medinan_male: Int = -174376640
+        const val quran_move_down: Int = -1121170187
+        const val quran_move_up: Int = -750291835
+        const val quran_mushaf_loading: Int = -426069251
+        const val quran_new_playlist: Int = -1245488538
+        const val quran_next_surah: Int = -1081514564
         const val quran_offline_ready_female: Int = -389351017
         const val quran_offline_ready_male: Int = -457409232
         const val quran_page_female: Int = -2001075340
+        const val quran_page_label: Int = -35892248
         const val quran_page_male: Int = -34464759
         const val quran_parts_female: Int = -1192613222
         const val quran_parts_male: Int = -28311866
         const val quran_paused_female: Int = -528850820
         const val quran_paused_male: Int = -1710052839
+        const val quran_play_pause: Int = -1279293047
+        const val quran_play_playlist: Int = -2064785714
         const val quran_playback_error_female: Int = -1816922955
         const val quran_playback_error_male: Int = -1032625082
         const val quran_playing_female: Int = -1860450833
         const val quran_playing_male: Int = -1928705370
+        const val quran_playlist_empty: Int = -1902941471
+        const val quran_playlist_name: Int = -431871120
+        const val quran_playlist_progress: Int = -67593231
+        const val quran_playlists: Int = -239210219
+        const val quran_playlists_empty: Int = -2079990340
+        const val quran_previous_surah: Int = -486832849
+        const val quran_remove_surah: Int = -724803108
+        const val quran_rename: Int = -875346878
         const val quran_repeat_count_female: Int = -1350571890
         const val quran_repeat_count_male: Int = -685995476
         const val quran_repeat_memorize_female: Int = -446615187
         const val quran_repeat_memorize_male: Int = -1649207730
+        const val quran_repeat_playlist: Int = -1957654076
         const val quran_repeat_times_female: Int = -2086440858
         const val quran_repeat_times_male: Int = -785897491
+        const val quran_save: Int = -1491649162
         const val quran_start_ayah_female: Int = -386960046
         const val quran_start_ayah_male: Int = -793014586
         const val quran_start_repeat_female: Int = -1718975400
@@ -506,6 +534,8 @@ object AppResources {
         const val quran_surah_offline_ready_male: Int = -1108795367
         const val quran_surahs_female: Int = -536919802
         const val quran_surahs_male: Int = -2008095240
+        const val quran_view_cards: Int = -216333512
+        const val quran_view_mushaf: Int = -98057086
         const val retry_alternative_female: Int = -1331655730
         const val retry_alternative_male: Int = -529065547
         const val retry_female: Int = -276841830
@@ -719,6 +749,7 @@ object ResourceCatalog {
         AppResources.font.cairo_regular to Res.font.cairo_regular,
         AppResources.font.cairo_semibold to Res.font.cairo_semibold,
         AppResources.font.quran_font to Res.font.quran_font,
+        AppResources.font.scheherazade_new_regular to Res.font.scheherazade_new_regular,
         AppResources.font.uthmanichafs1_ver18 to Res.font.uthmanichafs1_ver18,
     )
     val strings: Map<Int, StringResource> = mapOf(
@@ -1013,14 +1044,20 @@ object ResourceCatalog {
         AppResources.string.quiz_winner_score_male to Res.string.quiz_winner_score_male,
         AppResources.string.quran_active_juz_female to Res.string.quran_active_juz_female,
         AppResources.string.quran_active_juz_male to Res.string.quran_active_juz_male,
+        AppResources.string.quran_add_surah to Res.string.quran_add_surah,
         AppResources.string.quran_ayah_count_female to Res.string.quran_ayah_count_female,
         AppResources.string.quran_ayah_count_male to Res.string.quran_ayah_count_male,
         AppResources.string.quran_ayah_download_progress_female to Res.string.quran_ayah_download_progress_female,
         AppResources.string.quran_ayah_download_progress_male to Res.string.quran_ayah_download_progress_male,
+        AppResources.string.quran_back_playlists to Res.string.quran_back_playlists,
+        AppResources.string.quran_bookmark_page to Res.string.quran_bookmark_page,
         AppResources.string.quran_bookmark_saved_female to Res.string.quran_bookmark_saved_female,
         AppResources.string.quran_bookmark_saved_male to Res.string.quran_bookmark_saved_male,
+        AppResources.string.quran_cancel to Res.string.quran_cancel,
         AppResources.string.quran_custom_range_female to Res.string.quran_custom_range_female,
         AppResources.string.quran_custom_range_male to Res.string.quran_custom_range_male,
+        AppResources.string.quran_delete to Res.string.quran_delete,
+        AppResources.string.quran_delete_confirm to Res.string.quran_delete_confirm,
         AppResources.string.quran_download_all_female to Res.string.quran_download_all_female,
         AppResources.string.quran_download_all_male to Res.string.quran_download_all_male,
         AppResources.string.quran_download_female to Res.string.quran_download_female,
@@ -1029,6 +1066,7 @@ object ResourceCatalog {
         AppResources.string.quran_download_progress_male to Res.string.quran_download_progress_male,
         AppResources.string.quran_download_retry_female to Res.string.quran_download_retry_female,
         AppResources.string.quran_download_retry_male to Res.string.quran_download_retry_male,
+        AppResources.string.quran_download_surah to Res.string.quran_download_surah,
         AppResources.string.quran_download_surah_female to Res.string.quran_download_surah_female,
         AppResources.string.quran_download_surah_male to Res.string.quran_download_surah_male,
         AppResources.string.quran_end_ayah_female to Res.string.quran_end_ayah_female,
@@ -1040,29 +1078,49 @@ object ResourceCatalog {
         AppResources.string.quran_infinite_repeat_female to Res.string.quran_infinite_repeat_female,
         AppResources.string.quran_infinite_repeat_male to Res.string.quran_infinite_repeat_male,
         AppResources.string.quran_juz_female to Res.string.quran_juz_female,
+        AppResources.string.quran_juz_label to Res.string.quran_juz_label,
         AppResources.string.quran_juz_male to Res.string.quran_juz_male,
+        AppResources.string.quran_library_error to Res.string.quran_library_error,
         AppResources.string.quran_meccan_female to Res.string.quran_meccan_female,
         AppResources.string.quran_meccan_male to Res.string.quran_meccan_male,
         AppResources.string.quran_medinan_female to Res.string.quran_medinan_female,
         AppResources.string.quran_medinan_male to Res.string.quran_medinan_male,
+        AppResources.string.quran_move_down to Res.string.quran_move_down,
+        AppResources.string.quran_move_up to Res.string.quran_move_up,
+        AppResources.string.quran_mushaf_loading to Res.string.quran_mushaf_loading,
+        AppResources.string.quran_new_playlist to Res.string.quran_new_playlist,
+        AppResources.string.quran_next_surah to Res.string.quran_next_surah,
         AppResources.string.quran_offline_ready_female to Res.string.quran_offline_ready_female,
         AppResources.string.quran_offline_ready_male to Res.string.quran_offline_ready_male,
         AppResources.string.quran_page_female to Res.string.quran_page_female,
+        AppResources.string.quran_page_label to Res.string.quran_page_label,
         AppResources.string.quran_page_male to Res.string.quran_page_male,
         AppResources.string.quran_parts_female to Res.string.quran_parts_female,
         AppResources.string.quran_parts_male to Res.string.quran_parts_male,
         AppResources.string.quran_paused_female to Res.string.quran_paused_female,
         AppResources.string.quran_paused_male to Res.string.quran_paused_male,
+        AppResources.string.quran_play_pause to Res.string.quran_play_pause,
+        AppResources.string.quran_play_playlist to Res.string.quran_play_playlist,
         AppResources.string.quran_playback_error_female to Res.string.quran_playback_error_female,
         AppResources.string.quran_playback_error_male to Res.string.quran_playback_error_male,
         AppResources.string.quran_playing_female to Res.string.quran_playing_female,
         AppResources.string.quran_playing_male to Res.string.quran_playing_male,
+        AppResources.string.quran_playlist_empty to Res.string.quran_playlist_empty,
+        AppResources.string.quran_playlist_name to Res.string.quran_playlist_name,
+        AppResources.string.quran_playlist_progress to Res.string.quran_playlist_progress,
+        AppResources.string.quran_playlists to Res.string.quran_playlists,
+        AppResources.string.quran_playlists_empty to Res.string.quran_playlists_empty,
+        AppResources.string.quran_previous_surah to Res.string.quran_previous_surah,
+        AppResources.string.quran_remove_surah to Res.string.quran_remove_surah,
+        AppResources.string.quran_rename to Res.string.quran_rename,
         AppResources.string.quran_repeat_count_female to Res.string.quran_repeat_count_female,
         AppResources.string.quran_repeat_count_male to Res.string.quran_repeat_count_male,
         AppResources.string.quran_repeat_memorize_female to Res.string.quran_repeat_memorize_female,
         AppResources.string.quran_repeat_memorize_male to Res.string.quran_repeat_memorize_male,
+        AppResources.string.quran_repeat_playlist to Res.string.quran_repeat_playlist,
         AppResources.string.quran_repeat_times_female to Res.string.quran_repeat_times_female,
         AppResources.string.quran_repeat_times_male to Res.string.quran_repeat_times_male,
+        AppResources.string.quran_save to Res.string.quran_save,
         AppResources.string.quran_start_ayah_female to Res.string.quran_start_ayah_female,
         AppResources.string.quran_start_ayah_male to Res.string.quran_start_ayah_male,
         AppResources.string.quran_start_repeat_female to Res.string.quran_start_repeat_female,
@@ -1075,6 +1133,8 @@ object ResourceCatalog {
         AppResources.string.quran_surah_offline_ready_male to Res.string.quran_surah_offline_ready_male,
         AppResources.string.quran_surahs_female to Res.string.quran_surahs_female,
         AppResources.string.quran_surahs_male to Res.string.quran_surahs_male,
+        AppResources.string.quran_view_cards to Res.string.quran_view_cards,
+        AppResources.string.quran_view_mushaf to Res.string.quran_view_mushaf,
         AppResources.string.retry_alternative_female to Res.string.retry_alternative_female,
         AppResources.string.retry_alternative_male to Res.string.retry_alternative_male,
         AppResources.string.retry_female to Res.string.retry_female,
