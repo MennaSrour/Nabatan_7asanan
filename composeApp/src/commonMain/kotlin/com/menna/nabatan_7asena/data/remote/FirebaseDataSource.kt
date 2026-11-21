@@ -50,6 +50,10 @@ class FirebaseDataSource constructor(
         }
     }
 
+    suspend fun backupGarden(profileId: String, deviceId: String, progress: com.menna.nabatan_7asena.domain.entity.GardenProgress) {
+        firestore.collection("gardens").document(profileId).collection("devices").document(deviceId).set(progress)
+    }
+
     suspend fun getUserRank(totalStars: Int): Long {
         val higherScores = firestore.collection("leaderboard")
             .where { "totalStars" greaterThan totalStars }

@@ -4,6 +4,7 @@ import com.menna.nabatan_7asena.resources.AppResources as R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val gardenWater = GenderedString(R.string.garden_water_male, R.string.garden_water_female)
     val challengeCorrectAnswer = GenderedString(R.string.challenge_correct_answer_male, R.string.challenge_correct_answer_female)
     val challengeWrongAnswer = GenderedString(R.string.challenge_wrong_answer_male, R.string.challenge_wrong_answer_female)
     val quranRepeatMemorize = GenderedString(R.string.quran_repeat_memorize_male, R.string.quran_repeat_memorize_female)

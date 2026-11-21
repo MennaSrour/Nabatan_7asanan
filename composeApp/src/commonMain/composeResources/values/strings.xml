@@ -533,4 +533,25 @@
     <string name="countdown_missing_times">بانتظار مواقيت الصلاة القادمة</string>
     <string name="countdown_interval_missing">مسار التقدم بانتظار وقت الصلاة السابقة</string>
     <string name="countdown_progress">انقضى %1$d بالمئة من الوقت بين الصلاتين</string>
+    <string name="garden_title">حديقة حسناتي</string>
+    <string name="garden_seed">بذرة</string>
+    <string name="garden_sprout">برعم</string>
+    <string name="garden_sapling">شتلة</string>
+    <string name="garden_young">شجرة صغيرة</string>
+    <string name="garden_blooming">شجرة مزهرة</string>
+    <string name="garden_fruiting">حديقة مثمرة</string>
+    <string name="garden_scene_description">حديقة حسناتك في مرحلة %1$s</string>
+    <string name="garden_expand">افتح حديقتك</string>
+    <string name="garden_close">العودة إلى الصفحة الرئيسية</string>
+    <string name="garden_drops">%1$d قطرة</string>
+    <string name="garden_water_male">اسقِ نبتتك</string>
+    <string name="garden_water_female">اسقي نبتتك</string>
+    <string name="garden_earn_water">كل مهمة مكتملة تمنح نبتتك قطرة ماء</string>
+    <string name="garden_water_hint">قطرة صغيرة، وغرسة خير تكبر!</string>
+    <string name="garden_next_stage">باقي %1$d قطرة للمرحلة التالية</string>
+    <string name="garden_fully_grown">حديقتك أثمرت، وقطرات الخير مستمرة!</string>
+    <string name="garden_needs_water">نبتتك تحتاج للماء اليوم</string>
+    <string name="garden_save_failed">تعذّر حفظ السقاية، حاول مرة أخرى</string>
+    <string name="garden_unavailable">تعذّر قراءة حديقتك. لن نغيّر بياناتها المحفوظة.</string>
+    <string name="garden_saved_locally">حديقتك محفوظة على جهازك، وتنتظر المزامنة</string>
 </resources>

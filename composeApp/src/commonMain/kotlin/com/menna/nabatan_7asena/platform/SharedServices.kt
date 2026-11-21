@@ -25,6 +25,7 @@ class SharedServices(
     val newScreenAudio: () -> ScreenAudioPlayer
 ) {
     val firebase = FirebaseDataSource()
+    val gardenRepository: GardenRepository = GardenRepositoryImpl(backup = firebase::backupGarden)
     val bookmarks = QuranBookmarkStore()
     val quranLibrary = QuranLibraryStore()
     val firstLaunch: FirstLaunchRepository = FirstLaunchManager()
