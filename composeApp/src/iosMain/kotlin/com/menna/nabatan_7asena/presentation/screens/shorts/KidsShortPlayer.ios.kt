@@ -16,7 +16,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.coroutines.delay
 import platform.AVFoundation.*
-import platform.CoreMedia.kCMTimeZero
+import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
@@ -47,7 +47,7 @@ internal actual fun KidsShortPlayer(
             player.currentItem,
             NSOperationQueue.mainQueue
         ) {
-            player.seekToTime(kCMTimeZero)
+            player.seekToTime(CMTimeMake(0, 1))
             if (shouldPlay && lifecycle.currentState == Lifecycle.State.RESUMED) player.play()
         }
         val failed = notifications.addObserverForName(
