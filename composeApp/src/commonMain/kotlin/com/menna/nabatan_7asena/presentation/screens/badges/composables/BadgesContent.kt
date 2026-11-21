@@ -17,38 +17,35 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.menna.nabatan_7asena.presentation.common.GenderedStrings
-import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.presentation.screens.badges.BadgesUiState
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
-fun BadgesContent(stats: BadgesUiState) {
+fun BadgesContent(stats: BadgesUiState, onBack: () -> Unit) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
 
         val particleAlphas = SummerTheme.rememberParticleAlphas(count = 6)
         val colors = SummerTheme.colors
 
         val achievements = listOf(
-            Achievement(genderedStringResource(GenderedStrings.badgeHeroBeginning),     genderedStringResource(GenderedStrings.badgeThreeDays),        "🥉", stats.currentStreak >= 3,   MedalBronze),
-            Achievement(genderedStringResource(GenderedStrings.badgeGoldenWeek),genderedStringResource(GenderedStrings.badgeSevenDays),        "🥈", stats.currentStreak >= 7,   MedalSilver),
-            Achievement(genderedStringResource(GenderedStrings.badgeFirstTen),genderedStringResource(GenderedStrings.badgeTenDays),       "🥇", stats.currentStreak >= 10,  colors.goldWarm),
-            Achievement(genderedStringResource(GenderedStrings.badgeLegend),      genderedStringResource(GenderedStrings.badgeThirtyDays),        "👑", stats.currentStreak >= 30,  colors.goldWarm),
-            Achievement(genderedStringResource(GenderedStrings.badgeOpeningGood),   genderedStringResource(GenderedStrings.badgeFirstPart),         "📖", stats.quranPartsFinished >= 1,  colors.statGreenStart),
-            Achievement(genderedStringResource(GenderedStrings.badgeHalfWay),   genderedStringResource(GenderedStrings.badgeFifteenParts),           "🌱", stats.quranPartsFinished >= 15, colors.secondaryAccent),
-            Achievement(genderedStringResource(GenderedStrings.badgeQuranKeeper),   genderedStringResource(GenderedStrings.badgeFullQuran),    "🌳", stats.quranPartsFinished >= 30, colors.highlightAccent),
-            Achievement(genderedStringResource(GenderedStrings.badgeSmallPlant),    genderedStringResource(GenderedStrings.badgeFiftyStars),          "🌱", stats.totalStars >= 50,     colors.leafGreen),
-            Achievement(genderedStringResource(GenderedStrings.badgeFruitfulTree),    genderedStringResource(GenderedStrings.badgeHundredFiftyStars),         "🌳", stats.totalStars >= 150,    colors.statGreenEnd),
+            Achievement("وسام الفجر", "سجّل صلاة الفجر في ٣ أيام", "🌅", stats.fajrDays >= 3, colors.goldWarm),
+            Achievement("نور القرآن", "أكمل أول جزء من القرآن", "📖", stats.quranPartsFinished >= 1, colors.leafGreen),
+            Achievement("نجمة الأذكار", "سجّل ذكر الله في ٣ أيام", "📿", stats.azkarDays >= 3, colors.secondaryAccent),
+            Achievement("ساقي الحديقة", "اسقِ شجرتك لأول مرة", "💧", stats.wateredGarden, colors.statGreenStart),
+            Achievement("وسام الجمعة", "أكمل تحدّي الجمعة", "🏆", stats.finishedFriday, colors.goldWarm),
+            Achievement("أسبوع من الخير", "داوم على عمل طيب ٧ أيام متتالية", "🌙", stats.currentStreak >= 7, colors.secondaryAccent),
+            Achievement("حديقة النجوم", "اجمع ٥٠ نجمة", "⭐", stats.totalStars >= 50, colors.goldWarm),
+            Achievement("ختمة القرآن", "أكمل ٣٠ جزءًا من القرآن", "👑", stats.quranPartsFinished >= 30, colors.highlightAccent)
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -71,10 +68,10 @@ fun BadgesContent(stats: BadgesUiState) {
                             .statusBarsPadding()
                             .padding(vertical = 8.dp)
                     ) {
-                        Text("🌟", fontSize = 28.sp)
+                        TextButton(onClick = onBack) { Text("رجوع") }
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            genderedStringResource(GenderedStrings.badgesTitle),
+                            "تقدّمي",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = colors.textPrimary
@@ -102,7 +99,7 @@ fun BadgesContent(stats: BadgesUiState) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            genderedStringResource(GenderedStrings.badgesLibrary),
+                            "الأوسمة والإنجازات",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = colors.textPrimary.copy(alpha = 0.8f)

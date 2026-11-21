@@ -47,11 +47,11 @@ actual fun platformSettingsViewModel(): SettingsViewModel = viewModel { Settings
 actual fun platformStartViewModel(): StartViewModel = viewModel { StartViewModel(iosServices.dao, iosServices.newScreenAudio()) }
 
 @Composable
-actual fun platformBadgesViewModel(): BadgesViewModel = viewModel { BadgesViewModel(iosServices.getCurrentUserUseCase) }
+actual fun platformBadgesViewModel(): BadgesViewModel = viewModel { BadgesViewModel(iosServices.getCurrentUserUseCase, iosServices.gardenRepository, iosServices.achievementProgress) }
 
 @Composable
 actual fun platformLoginViewModel(): LoginViewModel = viewModel { LoginViewModel(iosServices.registerUserUseCase, iosServices.newScreenAudio()) }
 
 @Composable
-actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository) }
+actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository, iosServices.dailyRepository) }
 

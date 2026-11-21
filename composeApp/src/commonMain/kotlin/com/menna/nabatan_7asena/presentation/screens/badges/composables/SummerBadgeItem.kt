@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -33,14 +32,13 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 fun SummerBadgeItem(badge: Achievement) {
     val colors = SummerTheme.colors
     Card(
-        modifier = Modifier.height(160.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(if (badge.isUnlocked) 6.dp else 0.dp)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .background(
                 if (badge.isUnlocked)
                 Brush.verticalGradient(
@@ -61,7 +59,7 @@ fun SummerBadgeItem(badge: Achievement) {
             )
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -98,12 +96,17 @@ fun SummerBadgeItem(badge: Achievement) {
                     textAlign = TextAlign.Center
                 )
 
+                Text(
+                    if (badge.isUnlocked) "مكتسب" else "مغلق",
+                    fontSize = 12.sp,
+                    color = colors.textPrimary
+                )
                 Spacer(Modifier.height(4.dp))
 
                 Text(
                     badge.description,
-                    fontSize = 10.sp,
-                    color = if (badge.isUnlocked) colors.textBrown else colors.textBrown.copy(0.6f),
+                    fontSize = 12.sp,
+                    color = if (badge.isUnlocked) colors.textBrown else colors.textBrown,
                     textAlign = TextAlign.Center,
                     lineHeight = 14.sp
                 )

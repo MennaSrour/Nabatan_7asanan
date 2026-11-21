@@ -1,6 +1,12 @@
 package com.menna.nabatan_7asena.presentation.screens.home.composables
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,10 +22,21 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp) {
+fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp, onPrayerGuide: () -> Unit, onProgress: () -> Unit) {
     val tint = if (state.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
         item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme) }
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(onClick = onPrayerGuide, modifier = Modifier.weight(1f)) {
+                    Text("تعلّم الوضوء والصلاة", color = tint)
+                }
+                OutlinedButton(onClick = onProgress) { Text("تقدّمي", color = tint) }
+            }
+        }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
             homeSummaryItems(state, actions)
             if (state.hasLoadError && state.tasks.isEmpty()) {

@@ -8,6 +8,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.menna.nabatan_7asena.platform.platformHomeViewModel
+import com.menna.nabatan_7asena.presentation.screens.badges.BadgesScreen
+import com.menna.nabatan_7asena.presentation.screens.prayerguide.PrayerGuideScreen
 import com.menna.nabatan_7asena.presentation.screens.dua.AzkarAndDuaScreen
 import com.menna.nabatan_7asena.presentation.screens.home.HomeScreen
 import com.menna.nabatan_7asena.presentation.screens.leaderboard.LeaderboardScreen
@@ -27,6 +30,8 @@ fun NavigationGraph(
         composable("home") {
             HomeScreen(
                 onNavigateToSettings = openSettings,
+                onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
+                onNavigateToProgress = { navController.navigate("progress") { launchSingleTop = true } },
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
                 onNavigateToQuran = {
                     navController.navigate("quran") {
@@ -48,8 +53,21 @@ fun NavigationGraph(
             val home = remember(entry) { navController.getBackStackEntry("home") }
             CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
                 com.menna.nabatan_7asena.presentation.screens.home.GardenScreen(
-                    com.menna.nabatan_7asena.platform.platformHomeViewModel(), onBack = { navController.popBackStack() })
+                    platformHomeViewModel(), onBack = { navController.popBackStack() })
             }
+        }
+        composable("prayer-guide") { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                val homeViewModel = platformHomeViewModel()
+                PrayerGuideScreen(
+                    onBack = { navController.popBackStack() },
+                    awardBonus = homeViewModel::awardPrayerGuideBonus
+                )
+            }
+        }
+        composable("progress") {
+            BadgesScreen(onBack = { navController.popBackStack() })
         }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }

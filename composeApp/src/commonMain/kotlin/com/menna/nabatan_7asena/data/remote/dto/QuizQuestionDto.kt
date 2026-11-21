@@ -10,7 +10,7 @@ data class QuizQuestionDto(
     val correctIndex: Int = 0
 )
 
-/** مستند نتيجة طفل في مسابقة أسبوع معين — quiz_scores/{weekId}/entries/{userId} */
+/** Private attempt payload. Published podium entries omit the token. */
 @Serializable
 data class QuizScoreDto(
     val userId: String = "",

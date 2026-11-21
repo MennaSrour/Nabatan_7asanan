@@ -32,6 +32,7 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(compose.components.resources)
             implementation(libs.gitlive.firestore)
+            implementation(libs.gitlive.auth)
             implementation(libs.gitlive.config)
             implementation(libs.coroutines.core)
             implementation(libs.serialization.json)
@@ -103,7 +104,7 @@ if (providers.gradleProperty("firebaseNativeTests").orNull == "true") {
     (kotlin as ExtensionAware).extensions.configure<CocoapodsExtension> {
         version = "1.0"
         ios.deploymentTarget = "15.0"
-        listOf("FirebaseCore", "FirebaseFirestore", "FirebaseRemoteConfig").forEach { sdk ->
+        listOf("FirebaseCore", "FirebaseAuth", "FirebaseFirestore", "FirebaseRemoteConfig").forEach { sdk ->
             pod(sdk) {
                 version = libs.versions.firebaseIos.get()
                 linkOnly = true
