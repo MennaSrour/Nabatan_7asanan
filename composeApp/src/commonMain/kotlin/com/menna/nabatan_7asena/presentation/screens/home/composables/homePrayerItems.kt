@@ -6,7 +6,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import com.menna.nabatan_7asena.presentation.common.components.NoInternetState
@@ -17,7 +16,8 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun LazyListScope.homePrayerItems(state: HomeUiState, actions: HomeActions, tint: Color) {
-    item { HomeSectionHeader(R.drawable.time, genderedStringResource(GenderedStrings.homePrayers), tint) }
+    item { HomeSectionHeader(prayerBadgeStyle(""), genderedStringResource(GenderedStrings.homePrayers), tint) }
+    if (!state.hasPrayerLoadError) item { NextPrayerCountdownCard(state) }
     item {
         if (state.hasPrayerLoadError) NoInternetState(
             title = genderedStringResource(GenderedStrings.homePrayerError), onRetry = actions::retryLoadingData,

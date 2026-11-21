@@ -229,6 +229,12 @@ object AppResources {
         const val challenge_wrong_answer_male: Int = -2023051354
         const val completed_female: Int = -670045679
         const val completed_male: Int = -1254797709
+        const val countdown_fajr: Int = -1843345057
+        const val countdown_interval_missing: Int = -945536798
+        const val countdown_missing_times: Int = -654618504
+        const val countdown_progress: Int = -2054497178
+        const val countdown_until: Int = -2006398546
+        const val countdown_waiting: Int = -1950826643
         const val current_user_female: Int = -1489280015
         const val current_user_highlight_female: Int = -948461689
         const val current_user_highlight_male: Int = -206652406
@@ -838,6 +844,12 @@ object ResourceCatalog {
         AppResources.string.challenge_wrong_answer_male to Res.string.challenge_wrong_answer_male,
         AppResources.string.completed_female to Res.string.completed_female,
         AppResources.string.completed_male to Res.string.completed_male,
+        AppResources.string.countdown_fajr to Res.string.countdown_fajr,
+        AppResources.string.countdown_interval_missing to Res.string.countdown_interval_missing,
+        AppResources.string.countdown_missing_times to Res.string.countdown_missing_times,
+        AppResources.string.countdown_progress to Res.string.countdown_progress,
+        AppResources.string.countdown_until to Res.string.countdown_until,
+        AppResources.string.countdown_waiting to Res.string.countdown_waiting,
         AppResources.string.current_user_female to Res.string.current_user_female,
         AppResources.string.current_user_highlight_female to Res.string.current_user_highlight_female,
         AppResources.string.current_user_highlight_male to Res.string.current_user_highlight_male,
