@@ -1,6 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.prayerguide
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -32,14 +35,16 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
     var prayerTab by rememberSaveable { mutableStateOf(false) }
     var wuduIndex by rememberSaveable { mutableIntStateOf(0) }
     var prayerIndex by rememberSaveable { mutableIntStateOf(0) }
-    var wuduComplete by rememberSaveable { mutableStateOf(false) }
-    var prayerComplete by rememberSaveable { mutableStateOf(false) }
+    var wuduReviewed by rememberSaveable { mutableIntStateOf(0) }
+    var prayerReviewed by rememberSaveable { mutableIntStateOf(0) }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var saved by rememberSaveable { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val steps = if (prayerTab) prayerSteps else wuduSteps
     val index = if (prayerTab) prayerIndex else wuduIndex
+    val reviewed = if (prayerTab) prayerReviewed else wuduReviewed
+    val complete = wuduReviewed == wuduSteps.size && prayerReviewed == prayerSteps.size
     fun showStep(step: Int) {
         if (prayerTab) prayerIndex = step else wuduIndex = step
     }
@@ -77,13 +82,12 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
                 GuideTab("💧 الوضوء", !prayerTab, Modifier.weight(1f)) { prayerTab = false }
                 GuideTab("🕌 الصلاة", prayerTab, Modifier.weight(1f)) { prayerTab = true }
             }
+            StepChecklist(steps, index, reviewed, onSelect = ::showStep)
             Column(
                 Modifier.weight(1f).verticalScroll(scroll),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StepCard(steps[index], index, steps.size)
-                if (prayerTab) PrayerSummary()
-                if (wuduComplete && prayerComplete) {
+                if (complete) {
                     Column(
                         Modifier.fillMaxWidth().background(SoftGold, RoundedCornerShape(20.dp)).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -93,6 +97,8 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
                         if (!saved && !saving) TextButton(onClick = ::claimBonus) { Text("حفظ النجوم", color = Purple) }
                     }
                 }
+                StepCard(steps[index], index, steps.size)
+                if (prayerTab) PrayerSummary()
             }
             Row(
                 Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -104,17 +110,45 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Purple, contentColor = Color.White),
                     onClick = {
-                        if (index < steps.lastIndex) showStep(index + 1)
-                        else {
-                            if (prayerTab) prayerComplete = true else wuduComplete = true
-                            if (wuduComplete && prayerComplete) {
-                                claimBonus()
-                                scope.launch { scroll.animateScrollTo(scroll.maxValue) }
-                            } else prayerTab = !prayerTab
+                        val nextReviewed = maxOf(reviewed, index + 1)
+                        if (prayerTab) prayerReviewed = nextReviewed else wuduReviewed = nextReviewed
+                        if (index < steps.lastIndex) {
+                            showStep(index + 1)
+                        } else if (wuduReviewed == wuduSteps.size && prayerReviewed == prayerSteps.size) {
+                            claimBonus()
+                            scope.launch { scroll.animateScrollTo(0) }
+                        } else {
+                            prayerTab = !prayerTab
                         }
                     }
                 ) { Text(if (index < steps.lastIndex) "الخطوة التالية" else "أكملت الخطوات") }
             }
+        }
+    }
+}
+
+@Composable
+private fun StepChecklist(steps: List<GuideStep>, index: Int, reviewed: Int, onSelect: (Int) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        steps.forEachIndexed { stepIndex, step ->
+            val complete = stepIndex < reviewed
+            FilterChip(
+                selected = stepIndex == index,
+                enabled = stepIndex <= reviewed,
+                onClick = { onSelect(stepIndex) },
+                label = { Text(if (complete) "✓" else arabicIndic(stepIndex + 1)) },
+                modifier = Modifier.semantics {
+                    val status = if (complete) "، تمت المراجعة" else ""
+                    contentDescription = "الخطوة ${arabicIndic(stepIndex + 1)}، ${step.title}$status"
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = if (complete) SoftGold else Color.White,
+                    labelColor = Ink, selectedContainerColor = Purple, selectedLabelColor = Color.White
+                )
+            )
         }
     }
 }
