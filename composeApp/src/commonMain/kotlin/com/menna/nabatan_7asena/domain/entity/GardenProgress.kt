@@ -15,7 +15,8 @@ data class GardenProgress(
     val rewardedTaskIds: Set<Int> = emptySet(),
     val lastWateredDate: String? = null,
     val revision: Long = 0,
-    val syncedRevision: Long = 0
+    val syncedRevision: Long = 0,
+    val wheelRewardDays: Set<String> = emptySet()
 ) {
     val stage: Int get() = GardenStageThresholds.indexOfLast { xp >= it }
     val growthFraction: Float get() {
@@ -29,6 +30,7 @@ data class GardenProgress(
         require(rewardedTaskIds.isEmpty() || rewardDate != null)
         rewardDate?.let { LocalDate.parse(it) }
         lastWateredDate?.let { LocalDate.parse(it) }
+        wheelRewardDays.forEach { LocalDate.parse(it) }
     }
 }
 

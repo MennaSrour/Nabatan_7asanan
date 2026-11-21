@@ -3,9 +3,13 @@ package com.menna.nabatan_7asena.data.local.room
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LegacyDatabaseCompatibilityTest {
@@ -27,7 +31,7 @@ class LegacyDatabaseCompatibilityTest {
             database.version = 5
         }
         val database = Room.databaseBuilder(context, AppDatabase::class.java, filename)
-            .addMigrations(MIGRATION_4_5).build()
+            .addMigrations(MIGRATION_4_5, ANDROID_MIGRATION_5_6).build()
         try {
             val user = database.appDao().getUserStats().first()!!
             assertEquals("existing-user", user.userId)
@@ -39,9 +43,34 @@ class LegacyDatabaseCompatibilityTest {
             assertEquals(false, user.prayerNotifications)
             assertEquals(true, user.azkarNotifications)
             assertEquals(false, user.quranNotifications)
+            val dao = database.appDao()
+            val reward = DailyRewardEntity(user.userId, "2026-11-21", "wheel", "STARS_20", 20, false)
+            assertEquals(true, dao.claimReward(reward))
+            assertEquals(false, dao.claimReward(reward.copy(stars = 50)))
+            assertEquals(user.copy(totalStars = 143), dao.getUserStats().first())
+            assertEquals(listOf(reward), dao.pendingRewards(user.userId))
         } finally {
             database.close()
             context.deleteDatabase(filename)
+        }
+    }
+
+    @Test fun concurrentGamePayoutsCreditOncePerGameAndDay() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 100))
+            val memory = DailyRewardEntity("saved", "2026-11-21", "MEMORY", "", 10, false)
+            val attempts = List(8) { async { dao.claimReward(memory) } }.awaitAll()
+            assertEquals(1, attempts.count { it })
+            assertTrue(dao.claimReward(memory.copy(kind = "VERSE")))
+            assertTrue(dao.claimReward(memory.copy(day = "2026-11-22")))
+            assertFalse(dao.claimReward(memory.copy(day = "2026-11-20")))
+            assertEquals(130, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
         }
     }
 }

@@ -1,4 +1,5 @@
 package com.menna.nabatan_7asena.platform
+import com.menna.nabatan_7asena.presentation.screens.rewards.KidsRewardsViewModel
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,3 +56,7 @@ actual fun platformLoginViewModel(): LoginViewModel = viewModel { LoginViewModel
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository) }
 
+
+@Composable
+actual fun platformKidsRewardsViewModel(): KidsRewardsViewModel =
+    viewModel { KidsRewardsViewModel(iosServices.userRepository, iosServices.kidsRewardsRepository) }

@@ -33,6 +33,7 @@ class SharedServices(
     val prayerRepository: PrayerTimesRepository = PrayerTimesRepositoryImpl(PrayerTimesApi())
     val getPrayerTimesUseCase = GetPrayerTimesUseCase(prayerRepository)
     val userRepository: UserRepository = UserRepositoryImpl(dao, firebase, alarms, scheduling)
+    val kidsRewardsRepository: KidsRewardsRepository = KidsRewardsRepositoryImpl(dao, firebase, gardenRepository)
     val getCurrentUserUseCase = GetCurrentUserUseCase(userRepository)
     val dailyRepository: DailyActivityRepository = DailyActivityRepositoryImpl(dao, firebase, getPrayerTimesUseCase, bookmarks)
     val quranRepository: QuranRepository = QuranRepositoryImpl(dao, bookmarks)

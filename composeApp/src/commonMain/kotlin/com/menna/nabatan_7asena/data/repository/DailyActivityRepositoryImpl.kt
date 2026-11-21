@@ -194,20 +194,10 @@ class DailyActivityRepositoryImpl constructor(
     }
 
     private suspend fun updateUserStats(isCompleted: Boolean) {
-        val currentStats = appDao.getUserStats().firstOrNull() ?: UserStatsEntity()
+        val currentStats = appDao.getUserStats().firstOrNull() ?: UserStatsEntity().also { appDao.ensureStats(it) }
         val todayDate = getTodayDate()
 
         val starChange = if (isCompleted) 10 else -10
-        val newTotalStars = (currentStats.totalStars + starChange).coerceAtLeast(0)
-        val newTotalTasks =
-            if (isCompleted) currentStats.tasksCompletedTotal + 1 else currentStats.tasksCompletedTotal
-
-        val newTreeStage = when {
-            newTotalStars < 50 -> 1
-            newTotalStars < 200 -> 2
-            else -> 3
-        }
-
         var newStreak = currentStats.currentStreak
         var lastDate = currentStats.lastActiveDate
 
@@ -216,15 +206,8 @@ class DailyActivityRepositoryImpl constructor(
             lastDate = todayDate
         }
 
-        val updatedStats = currentStats.copy(
-            totalStars = newTotalStars,
-            tasksCompletedTotal = newTotalTasks,
-            treeStage = newTreeStage,
-            currentStreak = newStreak,
-            lastActiveDate = lastDate
-        )
-
-        appDao.insertUserStats(updatedStats)
+        if (appDao.applyTaskProgress(currentStats.userId, starChange, if (isCompleted) 1 else -1, newStreak, lastDate) == 0) return
+        val updatedStats = appDao.getUserStats().firstOrNull()?.takeIf { it.userId == currentStats.userId } ?: return
 
         try {
             if (updatedStats.userId.isNotEmpty()) {
@@ -232,7 +215,9 @@ class DailyActivityRepositoryImpl constructor(
                     userId = updatedStats.userId,
                     name = updatedStats.name,
                     gender = updatedStats.gender,
-                    totalStars = updatedStats.totalStars
+                    totalStars = updatedStats.totalStars,
+                    quranPartsFinished = updatedStats.quranPartsFinished,
+                    avatarIndex = updatedStats.avatarIndex
                 )
                 firebaseDataSource.uploadUserScore(userRankDto)
             }

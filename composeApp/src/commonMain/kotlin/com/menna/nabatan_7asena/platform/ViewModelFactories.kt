@@ -41,3 +41,6 @@ expect fun platformBadgesViewModel(): BadgesViewModel
 expect fun platformLoginViewModel(): LoginViewModel
 @Composable
 expect fun platformHomeViewModel(): HomeViewModel
+
+@androidx.compose.runtime.Composable
+expect fun platformKidsRewardsViewModel(): com.menna.nabatan_7asena.presentation.screens.rewards.KidsRewardsViewModel

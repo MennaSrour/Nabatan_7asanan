@@ -163,7 +163,7 @@ class UserRepositoryImpl constructor(
         val user = dao.getUserStats().firstOrNull()
         if (user != null) {
             val updatedUser = user.copy(name = newName)
-            dao.updateUserStats(updatedUser)
+            dao.updateProfileName(updatedUser.userId, newName)
 
             try {
                 val dto = UserRankDto(
@@ -215,15 +215,7 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun setNotificationsEnabled(enabled: Boolean) {
-        val stats = dao.getUserStats().firstOrNull()
-        stats?.let {
-            val updatedStats = it.copy(
-                prayerNotifications = enabled,
-                azkarNotifications = enabled,
-                quranNotifications = enabled
-            )
-            dao.updateUserStats(updatedStats)
-        }
+        dao.updateAllNotifications(enabled)
 
         if (enabled) scheduling.enableDailyAutoScheduling(replace = true) else {
             scheduling.cancelDailyAutoScheduling()
@@ -238,12 +230,8 @@ class UserRepositoryImpl constructor(
 
             if (userEntity != null) {
 
-                val updatedCount = userEntity.quranPartsFinished + 1
-                val updatedEntity = userEntity.copy(quranPartsFinished = updatedCount)
-
-
-                dao.updateUserStats(updatedEntity)
-
+                dao.adjustQuranParts(userEntity.userId, 1)
+                val updatedCount = dao.getUserStats().firstOrNull()?.quranPartsFinished ?: 0
 
                 try {
 
@@ -278,10 +266,8 @@ class UserRepositoryImpl constructor(
         return try {
             val userEntity = dao.getUserStats().firstOrNull()
             if (userEntity != null && userEntity.quranPartsFinished > 0) {
-                val updatedCount = userEntity.quranPartsFinished - 1
-                val updatedEntity = userEntity.copy(quranPartsFinished = updatedCount)
-
-                dao.updateUserStats(updatedEntity)
+                dao.adjustQuranParts(userEntity.userId, -1)
+                val updatedCount = dao.getUserStats().firstOrNull()?.quranPartsFinished ?: 0
 
                 try {
                     val dto = UserRankDto(

@@ -50,6 +50,19 @@ class GardenRepositoryImpl(
     override suspend fun creditTasks(profileId: String, date: LocalDate, completedIds: Set<Int>) =
         update(profileId) { awardGardenTasks(it, date, completedIds) }
 
+    override suspend fun creditWheelWater(profileId: String, date: LocalDate, drops: Int) =
+        update(profileId) { progress ->
+            val day = date.toString()
+            if (day in progress.wheelRewardDays) progress else {
+                check(drops > 0 && progress.waterDrops <= Int.MAX_VALUE - drops && progress.revision < Long.MAX_VALUE)
+                progress.copy(
+                    waterDrops = progress.waterDrops + drops,
+                    wheelRewardDays = progress.wheelRewardDays + day,
+                    revision = progress.revision + 1
+                )
+            }
+        }
+
     override suspend fun water(profileId: String, date: LocalDate): GardenWatering {
         var applied = false
         val progress = update(profileId) {

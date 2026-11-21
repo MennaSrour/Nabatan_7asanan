@@ -9,5 +9,6 @@ interface GardenRepository {
     fun observe(profileId: String): Flow<Resource<GardenProgress>>
     suspend fun creditTasks(profileId: String, date: LocalDate, completedIds: Set<Int>): GardenProgress
     suspend fun water(profileId: String, date: LocalDate): com.menna.nabatan_7asena.domain.entity.GardenWatering
+    suspend fun creditWheelWater(profileId: String, date: LocalDate, drops: Int): GardenProgress
     suspend fun sync(profileId: String): Boolean
 }
