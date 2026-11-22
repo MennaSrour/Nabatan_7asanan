@@ -1,4 +1,5 @@
 package com.menna.nabatan_7asena.platform
+import com.menna.nabatan_7asena.presentation.screens.rewards.KidsRewardsViewModel
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,7 +36,7 @@ actual fun platformQuizViewModel(): QuizViewModel = viewModel { QuizViewModel(io
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = viewModel { LeaderboardViewModel(iosServices.getLeaderboardUseCase, iosServices.getCurrentUserUseCase, iosServices.getCurrentUserRankUseCase) }
 
 @Composable
-actual fun platformQuranViewModel(): QuranViewModel = viewModel { QuranViewModel(iosServices.saveQuranProgressUseCase, iosServices.getQuranProgressUseCase, iosServices.quranRepository, iosServices.quranAudio, iosServices.downloads, iosServices.bookmarks, iosServices.quranLibrary) }
+actual fun platformQuranViewModel(): QuranViewModel = viewModel { QuranViewModel(iosServices.saveQuranProgressUseCase, iosServices.getQuranProgressUseCase, iosServices.quranRepository, iosServices.quranAudio, iosServices.downloads, iosServices.bookmarks, iosServices.quranLibrary, iosServices.quranJourney) }
 
 @Composable
 actual fun platformDuaViewModel(): DuaViewModel = viewModel { DuaViewModel(iosServices.audio) }
@@ -53,5 +54,9 @@ actual fun platformBadgesViewModel(): BadgesViewModel = viewModel { BadgesViewMo
 actual fun platformLoginViewModel(): LoginViewModel = viewModel { LoginViewModel(iosServices.registerUserUseCase, iosServices.newScreenAudio()) }
 
 @Composable
-actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository, iosServices.dailyRepository) }
+actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository, iosServices.quranJourney, iosServices.dailyRepository) }
 
+
+@Composable
+actual fun platformKidsRewardsViewModel(): KidsRewardsViewModel =
+    viewModel { KidsRewardsViewModel(iosServices.userRepository, iosServices.kidsRewardsRepository) }

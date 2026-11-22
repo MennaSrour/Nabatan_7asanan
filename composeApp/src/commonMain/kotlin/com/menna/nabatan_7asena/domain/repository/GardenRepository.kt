@@ -9,6 +9,7 @@ interface GardenRepository {
     fun observe(profileId: String): Flow<Resource<GardenProgress>>
     suspend fun creditTasks(profileId: String, date: LocalDate, completedIds: Set<Int>): GardenProgress
     suspend fun water(profileId: String, date: LocalDate, treeId: String? = null): com.menna.nabatan_7asena.domain.entity.GardenWatering
+    suspend fun creditWheelWater(profileId: String, date: LocalDate, drops: Int): GardenProgress
     suspend fun buy(profileId: String, item: com.menna.nabatan_7asena.domain.entity.GardenDecoration): com.menna.nabatan_7asena.domain.entity.GardenPurchase
     suspend fun equip(profileId: String, item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean): GardenProgress
     suspend fun buyProduct(profileId: String, product: com.menna.nabatan_7asena.domain.entity.GardenProduct): com.menna.nabatan_7asena.domain.entity.GardenPurchase

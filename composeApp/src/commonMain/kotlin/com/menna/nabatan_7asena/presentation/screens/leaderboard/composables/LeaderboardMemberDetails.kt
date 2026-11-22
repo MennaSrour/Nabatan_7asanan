@@ -28,7 +28,7 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 @Composable
 internal fun LeaderboardMemberDetails(
     name: String, gender: User.Gender, avatarIndex: Int, totalStars: Int,
-    quranPartsFinished: Int, isCurrentUser: Boolean, modifier: Modifier = Modifier
+    completedKhatmahs: Int, isCurrentUser: Boolean, modifier: Modifier = Modifier
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Surface(shape = CircleShape, color = SummerTheme.colors.backgroundLight,
@@ -38,7 +38,7 @@ internal fun LeaderboardMemberDetails(
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             LeaderboardMemberName(name, isCurrentUser)
-            LeaderboardMemberScore(totalStars, quranPartsFinished)
+            LeaderboardMemberScore(totalStars, completedKhatmahs)
         }
     }
 }
@@ -57,15 +57,24 @@ private fun LeaderboardMemberName(name: String, isCurrentUser: Boolean) {
 }
 
 @Composable
-private fun LeaderboardMemberScore(stars: Int, quranParts: Int) {
+private fun LeaderboardMemberScore(stars: Int, completedKhatmahs: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(stars.toString(), fontSize = 16.sp, fontWeight = FontWeight.Black, color = SummerTheme.colors.goldWarm)
         Icon(Icons.Rounded.Star, stringResource(R.string.leaderboard_stars), tint = SummerTheme.colors.goldWarm, modifier = Modifier.size(16.dp))
-        if (quranParts > 0) {
-            Spacer(Modifier.width(5.dp))
-            Text(quranParts.toString(), fontSize = 12.sp, color = SummerTheme.colors.primaryTeal)
-            Icon(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.leaderboard_quran_parts),
-                tint = SummerTheme.colors.primaryTeal, modifier = Modifier.size(15.dp))
+        if (completedKhatmahs > 0) {
+            Surface(
+                color = SummerTheme.quran.accent.copy(alpha = 0.14f),
+                shape = SummerTheme.Shapes.SmallRounded,
+                border = BorderStroke(1.dp, SummerTheme.colors.goldWarm.copy(alpha = 0.65f))
+            ) {
+                Row(Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, "الختمات المكتملة",
+                        tint = SummerTheme.colors.goldWarm, modifier = Modifier.size(15.dp))
+                    Text(completedKhatmahs.toString(), fontSize = 12.sp, color = SummerTheme.colors.textPrimary)
+                }
+            }
         }
     }
 }

@@ -3,9 +3,17 @@ package com.menna.nabatan_7asena.data.local.room
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.menna.nabatan_7asena.data.local.GardenStorage
+import com.menna.nabatan_7asena.data.repository.GardenRepositoryImpl
+import com.menna.nabatan_7asena.domain.entity.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LegacyDatabaseCompatibilityTest {
@@ -27,7 +35,7 @@ class LegacyDatabaseCompatibilityTest {
             database.version = 5
         }
         val database = Room.databaseBuilder(context, AppDatabase::class.java, filename)
-            .addMigrations(MIGRATION_4_5).build()
+            .addMigrations(ANDROID_MIGRATION_5_6, ANDROID_MIGRATION_6_7).build()
         try {
             val user = database.appDao().getUserStats().first()!!
             assertEquals("existing-user", user.userId)
@@ -39,8 +47,194 @@ class LegacyDatabaseCompatibilityTest {
             assertEquals(false, user.prayerNotifications)
             assertEquals(true, user.azkarNotifications)
             assertEquals(false, user.quranNotifications)
+
+            val dao = database.appDao()
+            val date = LocalDate(2026, 11, 22)
+            val profileId = user.userId
+            dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
+            List(2) {
+                async { dao.completeQuranWird(profileId, date, Wird(601, 604), "22-11-2026") }
+            }.awaitAll()
+            assertEquals(true, dao.getRecordStatus("22-11-2026", DAILY_QURAN_TASK_ID))
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.completedKhatmahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS, dao.readUserStats()?.totalStars)
+
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.NOT_STARTED, 0, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.memorizedSurahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS + MEMORIZATION_BONUS_STARS, dao.readUserStats()?.totalStars)
+            val reward = DailyRewardEntity(user.userId, "2026-11-21", "wheel", "STARS_20", 20, false)
+            assertEquals(true, dao.claimReward(reward))
+            assertEquals(false, dao.claimReward(reward.copy(stars = 50)))
+            assertEquals(143 + 10 + KHATMAH_BONUS_STARS + MEMORIZATION_BONUS_STARS, dao.readUserStats()?.totalStars)
+            assertEquals(listOf(reward), dao.pendingRewards(user.userId))
         } finally {
             database.close()
+            context.deleteDatabase(filename)
+        }
+    }
+
+    @Test fun concurrentGamePayoutsCreditOncePerGameAndDay() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 100))
+            val memory = DailyRewardEntity("saved", "2026-11-21", "MEMORY", "", 10, false)
+            val attempts = List(8) { async { dao.claimReward(memory) } }.awaitAll()
+            assertEquals(1, attempts.count { it })
+            assertTrue(dao.claimReward(memory.copy(kind = "VERSE")))
+            assertTrue(dao.claimReward(memory.copy(day = "2026-11-22")))
+            assertFalse(dao.claimReward(memory.copy(day = "2026-11-20")))
+            assertEquals(130, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test fun reservedWheelCreditsStarsOnlyWhenTheClaimSettles() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 100))
+            val reservation = DailyRewardEntity(
+                "saved", "2026-11-21", "wheel", "STARS_50", 0,
+                synced = false, settled = false, claimId = "original"
+            )
+            assertTrue(dao.claimReward(reservation))
+            assertFalse(dao.claimReward(reservation.copy(claimId = "second")))
+            assertEquals(100, dao.getUserStats().first()?.totalStars)
+            val settled = reservation.copy(stars = 50, settled = true)
+            assertTrue(dao.settleReward(settled))
+            assertFalse(dao.settleReward(settled))
+            assertEquals(150, dao.getUserStats().first()?.totalStars)
+            assertEquals(listOf(settled), dao.pendingRewards("saved"))
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test fun wheelStarsCanBeSpentInTheGardenShop() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            dao.insertUserStats(UserStatsEntity(userId = "saved", totalStars = 5))
+            val storage = object : GardenStorage {
+                private var snapshot: String? = null
+                override fun read() = snapshot
+                override fun write(value: String) { snapshot = value }
+            }
+            val garden = GardenRepositoryImpl(
+                storage = storage,
+                earnedStars = { id -> dao.getUserStats().first()?.takeIf { it.userId == id }?.totalStars },
+                backup = { _, _, _ -> }
+            )
+            val decoration = GardenDecoration.BUTTERFLIES
+            val priorResult = runCatching { garden.buy("saved", decoration) }
+            assertTrue(priorResult.exceptionOrNull() is InsufficientGardenStars)
+
+            assertTrue(dao.claimReward(DailyRewardEntity("saved", "2026-11-21", "wheel", "STARS_20", 20, false)))
+            val purchase = garden.buy("saved", decoration)
+            assertTrue(purchase.purchased)
+            assertTrue(decoration.id in purchase.progress.equippedItems)
+            assertEquals(decoration.price, purchase.progress.spentStars)
+            assertEquals(25, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test fun dailyGiftChecksStoredTasksAndOnlyCreditsTheWonGame() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            val taskDate = "21-11-2026"
+            val reservation = DailyRewardEntity(
+                "saved", "2026-11-21", "wheel", "MEMORY", 0,
+                synced = false, settled = false, claimId = "daily-gift"
+            )
+            val memory = reservation.copy(kind = "MEMORY", stars = 10, settled = true)
+            dao.insertUserStats(UserStatsEntity(userId = "saved"))
+            dao.insertExtraTask(ExtraTaskEntity(501, taskDate, "مهمة إضافية"))
+            for (id in listOf(100, 101, 102, 103, 104, 300, 400)) {
+                dao.updateOrInsertRecord(DailyRecordEntity(taskDate, id, true))
+            }
+            assertFalse(dao.reserveDailyGift(reservation, taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, true))
+            assertFalse(dao.reserveDailyGift(reservation.copy(profileId = "other"), taskDate))
+            assertTrue(dao.reserveDailyGift(reservation, taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            assertTrue(dao.settleReward(reservation.copy(settled = true)))
+            assertFalse(dao.claimDailyGiftGame(memory.copy(kind = "VERSE"), taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory.copy(day = "2026-11-22"), taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, false))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, true))
+            assertTrue(dao.claimDailyGiftGame(memory, taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            assertEquals(10, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
+        }
+    }
+    @Test
+    fun versionSixRewardDatabaseKeepsTheSpinAndAddsQuranJourney() = runBlocking {
+        verifyVersionSixUpgrade(hasRewardTable = true)
+    }
+
+    @Test
+    fun versionSixQuranDatabaseKeepsTheJourneyAndAddsDailyRewards() = runBlocking {
+        verifyVersionSixUpgrade(hasRewardTable = false)
+    }
+
+    private suspend fun verifyVersionSixUpgrade(hasRewardTable: Boolean) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val filename = "version-six-merge-$hasRewardTable.db"
+        val profileId = "saved"
+        val reward = DailyRewardEntity(profileId, "2026-11-21", "wheel", "STARS_20", 20, false)
+        context.deleteDatabase(filename)
+        try {
+            val original = Room.databaseBuilder(context, AppDatabase::class.java, filename).build()
+            try {
+                val dao = original.appDao()
+                dao.insertUserStats(UserStatsEntity(userId = profileId))
+                if (hasRewardTable) {
+                    assertTrue(dao.claimReward(reward))
+                } else {
+                    dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
+                }
+            } finally {
+                original.close()
+            }
+            SQLiteDatabase.openDatabase(context.getDatabasePath(filename).path, null, SQLiteDatabase.OPEN_READWRITE)
+                .use { database ->
+                    database.execSQL(if (hasRewardTable) "DROP TABLE quran_journey" else "DROP TABLE daily_rewards")
+                    database.version = 6
+                }
+            val upgraded = Room.databaseBuilder(context, AppDatabase::class.java, filename)
+                .addMigrations(ANDROID_MIGRATION_6_7).build()
+            try {
+                val dao = upgraded.appDao()
+                if (hasRewardTable) {
+                    assertEquals(reward, dao.wheelReward(profileId, reward.day))
+                    assertEquals(20, dao.readUserStats()?.totalStars)
+                    assertEquals(null, dao.readQuranJourney(profileId))
+                } else {
+                    assertEquals(Khatmah(WirdGoal.QUARTER, 600), dao.readQuranJourney(profileId)?.toJourney()?.activeKhatmah)
+                    assertTrue(dao.claimReward(reward))
+                }
+            } finally {
+                upgraded.close()
+            }
+        } finally {
             context.deleteDatabase(filename)
         }
     }

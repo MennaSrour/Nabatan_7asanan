@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlin.random.Random
 import com.menna.nabatan_7asena.platform.AppClock
+import com.menna.nabatan_7asena.domain.entity.DAILY_QURAN_TASK_ID
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 
@@ -90,8 +91,8 @@ class DailyActivityRepositoryImpl constructor(
 
             activities.add(
                 Activity.Task(
-                    id = 300,
-                    isCompleted = statusMap[300] ?: false,
+                    id = DAILY_QURAN_TASK_ID,
+                    isCompleted = statusMap[DAILY_QURAN_TASK_ID] ?: false,
                     title = buildQuranWerdTitle(),
                     category = TaskCategory.QURAN
                 )
@@ -166,7 +167,7 @@ class DailyActivityRepositoryImpl constructor(
 
     override suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean) {
         val today = AppClock.today()
-        appDao.saveActivity(date, activityId, isCompleted, today.toString(), today.minus(1, DateTimeUnit.DAY).toString())
+        appDao.saveActivity(date, activityId, isCompleted, today, today.minus(1, DateTimeUnit.DAY))
     }
 
     override suspend fun getSuggestedExtraTasks(): ExtraTasks {

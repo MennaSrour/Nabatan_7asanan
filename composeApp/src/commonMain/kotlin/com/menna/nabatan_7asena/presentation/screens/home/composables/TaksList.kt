@@ -51,7 +51,7 @@ fun TaskBubbleCard(
 
     val baseColor = remember(item.category) { categoryColor(item.category) }
     val displaySubtitle = when {
-        item.category == TaskCategory.QURAN && hasBookmark && !item.isCompleted ->
+        item.category == TaskCategory.QURAN && item.wird == null && hasBookmark && !item.isCompleted ->
         genderedStringResource(GenderedStrings.taskResumeBookmark)
         else -> item.subtitle
     }
@@ -163,7 +163,7 @@ fun TaskBubbleCard(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(20.dp))
                     .background(SummerTheme.colors.white.copy(alpha = 0.22f))
-                    .clickable { onCheckClick() },
+                    .clickable { if (item.wird != null) onClick() else onCheckClick() },
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Row(

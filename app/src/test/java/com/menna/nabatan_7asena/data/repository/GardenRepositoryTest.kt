@@ -128,4 +128,16 @@ class GardenRepositoryTest {
         gate.complete(Unit)
         assertTrue(repository.sync("child"))
     }
+    @Test fun replayedWheelWaterDoesNotRecreditAfterRestartOrAfterSpendingIt() = runTest {
+        val storage = MemoryStorage()
+        val first = GardenRepositoryImpl(storage) { _, _, _ -> }
+        first.creditWheelWater("child", day, 3)
+        first.water("child", day)
+
+        val restored = GardenRepositoryImpl(storage) { _, _, _ -> }
+        assertEquals(2, restored.creditWheelWater("child", day, 3).waterDrops)
+        assertEquals(7, restored.creditWheelWater("child", LocalDate(2026, 11, 22), 5).waterDrops)
+        assertEquals(7, restored.creditWheelWater("child", day, 3).waterDrops)
+        assertEquals(0, restored.progress("other").waterDrops)
+    }
 }

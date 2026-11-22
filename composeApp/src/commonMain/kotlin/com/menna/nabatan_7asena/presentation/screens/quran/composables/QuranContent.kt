@@ -12,13 +12,14 @@ import com.menna.nabatan_7asena.presentation.screens.quran.QuranUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuranContent(state: QuranUiState, actions: QuranActions, layout: QuranLayoutState) {
+fun QuranContent(state: QuranUiState, actions: QuranActions, layout: QuranLayoutState,
+                 onKhatmah: () -> Unit, onMemorization: () -> Unit) {
     val drawerState = layout.drawerState
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
-                QuranIndexDrawer(state, actions, layout)
+                QuranIndexDrawer(state, actions, layout, onKhatmah, onMemorization)
             }
         ) {
             QuranReaderScaffold(state, actions, layout)

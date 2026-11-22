@@ -28,9 +28,9 @@ fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Uni
             } else {
                 homePrayerItems(state, actions, tint)
                 homeDailyTaskItems(state, actions, tint)
-                item { HomeTreasureSummary(state, actions::openDailyChallenge) }
             }
             item { HomeAddTaskButton(onAddTask) }
+            item { HomeTreasureSummary(state, actions::openDailyGift) }
         }
     }
 }

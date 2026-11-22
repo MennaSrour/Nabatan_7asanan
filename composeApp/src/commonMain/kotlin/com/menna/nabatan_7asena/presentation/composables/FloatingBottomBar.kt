@@ -40,7 +40,7 @@ fun FloatingBottomBar(
     modifier: Modifier = Modifier
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStackEntry?.destination?.route?.substringBefore('/')
 
     val isDark = isSystemInDarkTheme()
     val navAccent = SummerTheme.colors.goldWarm

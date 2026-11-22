@@ -15,13 +15,14 @@ import com.menna.nabatan_7asena.resources.stringResource
 import com.menna.nabatan_7asena.resources.AppResources as R
 
 @Composable
-fun QuranScreenEffects(state: QuranUiState, layout: QuranLayoutState, viewModel: QuranViewModel) {
+fun QuranScreenEffects(state: QuranUiState, layout: QuranLayoutState, viewModel: QuranViewModel, wirdPage: Int?) {
     val savedMessage = genderedStringResource(GenderedStrings.quranBookmarkSaved)
     val errorMessage = genderedStringResource(GenderedStrings.unexpectedError)
     val playbackError = genderedStringResource(GenderedStrings.quranPlaybackError)
     val libraryError = stringResource(R.string.quran_library_error)
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
+            QuranEffect.JourneySaveFailed -> layout.snackbar.showSnackbar("تعذّر حفظ رحلتك مع القرآن. حاوِل مرة أخرى.")
             QuranEffect.LibrarySaveFailed -> layout.snackbar.showSnackbar(libraryError)
             QuranEffect.PlaybackFailed -> layout.snackbar.showSnackbar(playbackError)
             QuranEffect.LoadFailed -> layout.snackbar.showSnackbar(errorMessage)
@@ -35,11 +36,13 @@ fun QuranScreenEffects(state: QuranUiState, layout: QuranLayoutState, viewModel:
             }
         }
     }
-    LaunchedEffect(state.viewMode, state.isReaderReady) {
+    LaunchedEffect(state.viewMode, state.isReaderReady, wirdPage) {
         layout.navigationJob?.cancel()
         if (!state.isReaderReady) return@LaunchedEffect
         if (state.viewMode == QuranViewMode.MUSHAF) {
-            layout.mushafPagerState.scrollToPage((state.currentPageNumber - 1).coerceIn(0, 603))
+            val page = wirdPage ?: viewModel.readerPage()
+            layout.mushafPagerState.scrollToPage((page - 1).coerceIn(0, 603))
+            if (wirdPage != null) viewModel.onWirdPageOpened(wirdPage)
             snapshotFlow { layout.mushafPagerState.settledPage }.distinctUntilChanged().collect {
                 viewModel.onMushafPageChanged(it + 1)
             }

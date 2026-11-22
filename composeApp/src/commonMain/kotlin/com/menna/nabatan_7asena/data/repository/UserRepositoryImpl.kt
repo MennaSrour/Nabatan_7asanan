@@ -12,6 +12,13 @@ import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.domain.entity.User
 import com.menna.nabatan_7asena.domain.repository.UserRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -25,20 +32,19 @@ class UserRepositoryImpl constructor(
 ) : UserRepository {
 
 
-    override fun getCurrentUser(): Flow<User> {
-        return dao.getUserStats().map { entity ->
+    private val scoreSync = Mutex()
 
-            entity?.toDomain() ?: User(
-                id = "local",
-                name = "بطل",
-                gender = User.Gender.BOY,
-                totalStars = 0,
-                currentStreak = 0,
-                treeStage = 1
-            )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getCurrentUser(): Flow<User> = dao.getUserStats().flatMapLatest { entity ->
+        val user = entity?.toDomain() ?: User(
+            id = "local", name = "بطل", gender = User.Gender.BOY,
+            totalStars = 0, currentStreak = 0, treeStage = 1
+        )
+        if (entity == null || entity.userId.isBlank()) flowOf(user)
+        else dao.observeQuranJourney(entity.userId).map {
+            user.copy(completedKhatmahs = it?.toJourney()?.completedKhatmahs ?: 0)
         }
-    }
-
+    }.distinctUntilChanged()
 
     override suspend fun registerUser(user: User) {
 
@@ -57,7 +63,6 @@ class UserRepositoryImpl constructor(
 
     }
 
-
     override fun getLeaderboardResource(): Flow<Resource<List<LeaderboardEntry>>> =
         flow {
             emit(Resource.Loading)
@@ -73,7 +78,7 @@ class UserRepositoryImpl constructor(
                         ) User.Gender.BOY else User.Gender.GIRL,
                         totalStars = dto.totalStars,
                         rank = index + 1,
-                        quranPartsFinished = dto.quranPartsFinished,
+                        completedKhatmahs = dto.completedKhatmahs,
                         avatarIndex = dto.avatarIndex
                     )
                 }
@@ -117,6 +122,14 @@ class UserRepositoryImpl constructor(
         }
     }
 
+    suspend fun syncQuranSummary(profileId: String) = scoreSync.withLock {
+        val (profile, stored) = dao.readQuranProfile(profileId)
+        if (profile == null || stored == null || stored.syncVersion == stored.syncedVersion) return@withLock
+        val journey = stored.toJourney()
+        firebaseDataSource.backupQuranSummary(profileId, journey.completedKhatmahs, journey.memorizedSurahs)
+        dao.markQuranJourneySynced(profileId, stored.syncVersion)
+    }
+
     override suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int) {
         check(dao.updateProfileImage(userId, gender.name, avatarIndex) == 1) {
             "The saved profile changed or no longer exists"
@@ -129,14 +142,20 @@ class UserRepositoryImpl constructor(
 
     override suspend fun resetAllProgress() {
         try {
-            dao.clearProfile()
-
-
+            scoreSync.withLock {
+                val profileId = dao.clearProfileProgress()
+                if (!profileId.isNullOrBlank()) {
+                    try {
+                        withTimeoutOrNull(7_000) { firebaseDataSource.deleteQuranSummary(profileId) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e("UserRepositoryImpl", "failed to delete Quran summary from Firebase", e)
+                    }
+                }
+            }
             scheduling.cancelDailyAutoScheduling()
-
-
             globalAlarmManager.cancelAllAlarms()
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.presentation.screens.home
 
 import com.menna.nabatan_7asena.core.util.PrayerPhase
 import com.menna.nabatan_7asena.domain.entity.DailyContent
+import com.menna.nabatan_7asena.domain.entity.Wird
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 
 data class HomeUiState(
@@ -33,8 +34,10 @@ data class HomeUiState(
     val showCelebration: Boolean = false,
     val isNightTheme: Boolean = false,
     val hasBookmark: Boolean = false,
-    val showChallengeDialog: Boolean = false,
-    val currentRiddle: DailyContent.Riddle? = null,
+    val dailyGiftRemaining: Int = com.menna.nabatan_7asena.domain.entity.dailyGiftRequiredTaskIds.size,
+    val dailyGiftTotal: Int = com.menna.nabatan_7asena.domain.entity.dailyGiftRequiredTaskIds.size,
+    val dailyRiddle: DailyContent.Riddle? = null,
+    val showKhatmahCelebration: Boolean = false,
     // فشل تحميل مهام/صلوات اليوم (الأغلب الأعم: مفيش إنترنت) — منفصل عمداً عن
     // isLoading: isLoading يعني "لسه بنجيب"، وده يعني "جبنا حاولنا وفشلنا".
     // من غيره كانت الشاشة بتفضل فاضية بصمت من غير أي تفسير للمستخدمة.
@@ -47,6 +50,8 @@ data class HomeUiState(
     // ما نخبي باقي المهام اللي فعلاً نجحت تتحمّل.
     val hasPrayerLoadError: Boolean = false
 ) {
+    val isDailyGiftUnlocked: Boolean get() = !isLoading && !hasLoadError && dailyGiftRemaining == 0
+
     data class UiUser(
         val name: String,
         val avatarEmoji: String,
@@ -62,6 +67,7 @@ data class HomeUiState(
         val emoji: String,
         val category: TaskCategory,
         val isPlaying: Boolean = false,
+        val wird: Wird? = null,
         /** null لأي مهمة مش صلاة. */
         val prayerPhase: PrayerPhase? = null,
         /** الصلاة اللي عليها الدور: الحالية، أو الجاية لو لسه قبل الفجر. */

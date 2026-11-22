@@ -12,11 +12,8 @@ import com.menna.nabatan_7asena.data.update.*
 import com.menna.nabatan_7asena.core.audio.*
 import com.menna.nabatan_7asena.core.alarm.GlobalAlarmManager
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 class SharedServices(
     val dao: AppDao,
@@ -53,7 +50,33 @@ class SharedServices(
     val firstLaunch: FirstLaunchRepository = FirstLaunchManager()
     val prayerRepository: PrayerTimesRepository = PrayerTimesRepositoryImpl(PrayerTimesApi())
     val getPrayerTimesUseCase = GetPrayerTimesUseCase(prayerRepository)
-    val userRepository: UserRepository = UserRepositoryImpl(dao, firebase, alarms, scheduling)
+    val userRepository = UserRepositoryImpl(dao, firebase, alarms, scheduling)
+    val quranJourney = QuranJourneyRepository(dao)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val pendingJourneySync = quranJourney.profileId.flatMapLatest { id ->
+        if (id == null || id == "local") flowOf(null)
+        else dao.observeQuranJourney(id).map { it?.takeIf { row -> row.syncVersion != row.syncedVersion } }
+    }.map { it?.let { row -> row.profileId to row.syncVersion } }.distinctUntilChanged()
+
+    init {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            pendingJourneySync.collectLatest { pending ->
+                if (pending == null) return@collectLatest
+                while (isActive && com.menna.nabatan_7asena.data.remote.FirebaseAvailability.isConfigured) {
+                    try {
+                        if (withTimeoutOrNull(7_000) { userRepository.syncQuranSummary(pending.first); true } == true) break
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        Log.e("QuranJourneySync", "Failed to sync Quran progress", error)
+                    }
+                    delay(60_000)
+                }
+            }
+        }
+    }
+    val kidsRewardsRepository: KidsRewardsRepository = KidsRewardsRepositoryImpl(dao, firebase, gardenRepository)
     val getCurrentUserUseCase = GetCurrentUserUseCase(userRepository)
     val dailyRepository: DailyActivityRepository = DailyActivityRepositoryImpl(dao, firebase, getPrayerTimesUseCase, bookmarks)
     val quranRepository: QuranRepository = QuranRepositoryImpl(dao, bookmarks)

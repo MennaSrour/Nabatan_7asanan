@@ -8,6 +8,10 @@ import kotlinx.coroutines.sync.withLock
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.Direction
+import dev.gitlive.firebase.firestore.Source
+import com.menna.nabatan_7asena.data.remote.dto.SpeedQuestionDto
+import com.menna.nabatan_7asena.data.remote.dto.VerseBuilderDto
+import com.menna.nabatan_7asena.data.remote.dto.WheelClaimDto
 import com.menna.nabatan_7asena.data.remote.dto.DailyPlanDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizQuestionDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizScoreDto
@@ -61,6 +65,34 @@ class FirebaseDataSource constructor(
         }
     }
 
+    suspend fun getVerseBuilderItems(): List<VerseBuilderDto> =
+        firestore.collection("verse_builder_items").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<VerseBuilderDto>() }.getOrNull() }
+
+    suspend fun getSpeedChallengeQuestions(): List<SpeedQuestionDto> =
+        firestore.collection("speed_challenge_questions").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<SpeedQuestionDto>() }.getOrNull() }
+
+    private suspend fun wheelClaim(profileId: String, day: String) =
+        firestore.collection("users").document(ownerUid()).collection("daily_reward_profiles")
+            .document(profileId).collection("spins").document(day)
+
+    suspend fun getWheelClaim(profileId: String, day: String): WheelClaimDto? {
+        val snapshot = wheelClaim(profileId, day).get(Source.SERVER)
+        return if (snapshot.exists) snapshot.data<WheelClaimDto>() else null
+    }
+
+    suspend fun claimWheel(profileId: String, day: String, claim: WheelClaimDto): WheelClaimDto {
+        val document = wheelClaim(profileId, day)
+        return firestore.runTransaction {
+            val existing = get(document)
+            if (existing.exists) existing.data<WheelClaimDto>() else {
+                set(document, claim)
+                claim
+            }
+        }
+    }
+
     suspend fun backupGarden(profileId: String, deviceId: String, progress: com.menna.nabatan_7asena.domain.entity.GardenProgress) {
         firestore.collection("gardens").document(ownerUid()).collection("devices").document("${profileId}_$deviceId").set(progress)
     }
@@ -71,6 +103,20 @@ class FirebaseDataSource constructor(
             .serverCount()
         check(higherScores >= 0 && higherScores < Long.MAX_VALUE) { "Invalid leaderboard count" }
         return higherScores + 1
+    }
+
+    private suspend fun quranSummaryDocument(profileId: String) =
+        firestore.collection("users").document(ownerUid()).collection("quran_journeys").document(profileId)
+
+    suspend fun backupQuranSummary(profileId: String, completedKhatmahs: Int, memorizedSurahs: Int) {
+        quranSummaryDocument(profileId).set(mapOf(
+            "completedKhatmahs" to completedKhatmahs,
+            "memorizedSurahs" to memorizedSurahs
+        ))
+    }
+
+    suspend fun deleteQuranSummary(profileId: String) {
+        quranSummaryDocument(profileId).delete()
     }
 
     suspend fun getFuturePlans(startDayId: Int, limit: Int = 7): List<DailyPlanDto> {
