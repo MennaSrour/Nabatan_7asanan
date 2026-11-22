@@ -5,11 +5,16 @@ import android.icu.util.IslamicCalendar
 
 actual object DateUtils {
     actual fun getCurrentHijriDate(offsetDays: Long): String {
-        require(offsetDays in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong())
+        require(offsetDays in -2L..2L)
+        val date = currentHijriParts(offsetDays.toInt())
+        return formatHijriDate(date.day, date.month, date.year)
+    }
+    actual fun currentHijriParts(offsetDays: Int): HijriDate {
+        require(offsetDays in -2..2)
         val calendar = IslamicCalendar().apply {
             calculationType = IslamicCalendar.CalculationType.ISLAMIC_UMALQURA
-            add(Calendar.DAY_OF_MONTH, offsetDays.toInt())
+            add(Calendar.DAY_OF_MONTH, offsetDays)
         }
-        return formatHijriDate(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR))
+        return HijriDate(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR))
     }
 }

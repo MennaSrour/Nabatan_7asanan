@@ -11,6 +11,7 @@ import com.menna.nabatan_7asena.core.alarm.UnifiedAlarmReceiver
 import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.domain.entity.PrayerTimes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ensureActive
 import java.util.Calendar
 import javax.inject.Inject
 import kotlinx.coroutines.flow.firstOrNull
@@ -21,19 +22,20 @@ class PrayersScheduler @Inject constructor(
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    suspend fun scheduleDailyPrayers(prayerTimes: PrayerTimes) {
+    suspend fun scheduleDailyPrayers(prayerTimes: PrayerTimes, timeZoneId: String) {
         val stats = appDao.getUserStats().firstOrNull()
         if (stats?.prayerNotifications == false) return // المستخدم قافل التنبيه، منجدولش حاجة
 
-        scheduleOne("الفجر", prayerTimes.fajr, R.raw.fajr, AlarmConstants.ID_FAJR)
-        scheduleOne("الظهر", prayerTimes.dhuhr, R.raw.zuhr, AlarmConstants.ID_DHUHR)
-        scheduleOne("العصر", prayerTimes.asr, R.raw.asr, AlarmConstants.ID_ASR)
-        scheduleOne("المغرب", prayerTimes.maghrib, R.raw.sound_normal, AlarmConstants.ID_MAGHRIB)
-        scheduleOne("العشاء", prayerTimes.isha, R.raw.ishaa, AlarmConstants.ID_ISHA)
+        scheduleOne("الفجر", prayerTimes.fajr, R.raw.fajr, AlarmConstants.ID_FAJR, timeZoneId)
+        scheduleOne("الظهر", prayerTimes.dhuhr, R.raw.zuhr, AlarmConstants.ID_DHUHR, timeZoneId)
+        scheduleOne("العصر", prayerTimes.asr, R.raw.asr, AlarmConstants.ID_ASR, timeZoneId)
+        scheduleOne("المغرب", prayerTimes.maghrib, R.raw.sound_normal, AlarmConstants.ID_MAGHRIB, timeZoneId)
+        scheduleOne("العشاء", prayerTimes.isha, R.raw.ishaa, AlarmConstants.ID_ISHA, timeZoneId)
     }
 
-    private fun scheduleOne(name: String, timeStr: String, soundRes: Int, id: Int) {
-        val time = parseTime(timeStr)
+    private suspend fun scheduleOne(name: String, timeStr: String, soundRes: Int, id: Int, timeZoneId: String) {
+        kotlin.coroutines.coroutineContext.ensureActive()
+        val time = parseTime(timeStr, timeZoneId)
         if (time > System.currentTimeMillis()) {
             val intent = Intent(context, UnifiedAlarmReceiver::class.java).apply {
                 putExtra("TITLE", "الصلاة")
@@ -50,11 +52,7 @@ class PrayersScheduler @Inject constructor(
             )
 
             try {
-                alarmManager?.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    time,
-                    pendingIntent
-                )
+                alarmManager?.scheduleReminder(time, pendingIntent)
                 Log.d("PrayersScheduler", "تم جدولة صلاة $name")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -62,13 +60,14 @@ class PrayersScheduler @Inject constructor(
         }
     }
 
-    private fun parseTime(timeString: String): Long {
+    private fun parseTime(timeString: String, timeZoneId: String): Long {
         val cleanTime = timeString.trim().split(" ")[0]
         val parts = cleanTime.split(":")
-        val calendar = Calendar.getInstance().apply {
+        val calendar = prayerCalendar(timeZoneId).apply {
             set(Calendar.HOUR_OF_DAY, parts[0].toInt())
             set(Calendar.MINUTE, parts[1].toInt())
             set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
         return calendar.timeInMillis
     }

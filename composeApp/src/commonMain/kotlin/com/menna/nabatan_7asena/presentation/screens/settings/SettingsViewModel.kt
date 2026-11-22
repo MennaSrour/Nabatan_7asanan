@@ -1,5 +1,6 @@
 package com.menna.nabatan_7asena.presentation.screens.settings
 
+import com.menna.nabatan_7asena.platform.status
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.domain.Resource
@@ -27,7 +28,29 @@ open class SettingsViewModel constructor(
     private val _uiEvent = Channel<SettingsEffect>(Channel.BUFFERED)
     val effects = _uiEvent.receiveAsFlow()
 
+    override fun selectPrayerCity(city: com.menna.nabatan_7asena.domain.entity.PrayerPlace?) {
+        com.menna.nabatan_7asena.data.local.PrayerSettingsStore.selectCity(city)
+    }
+    override fun selectPrayerMethod(method: com.menna.nabatan_7asena.domain.entity.PrayerCalculationMethod?) {
+        com.menna.nabatan_7asena.data.local.PrayerSettingsStore.setMethod(method)
+    }
+    override fun setHijriDateOffset(offset: Int) {
+        com.menna.nabatan_7asena.data.local.PrayerSettingsStore.setHijriOffset(offset)
+    }
+    override fun onPermissionClicked(permission: com.menna.nabatan_7asena.platform.AppPermission) {
+        viewModelScope.launch { _uiEvent.send(SettingsEffect.RequestPermission(permission)) }
+    }
+    fun refreshPermissions() { viewModelScope.launch {
+        val platform = com.menna.nabatan_7asena.platform.appPermissions()
+        platform.refresh()
+        _uiState.update { it.copy(permissions = platform.status(), supportsAndroidPermissions = platform.supportsAndroidPermissions) }
+    } }
     init {
+        viewModelScope.launch {
+            com.menna.nabatan_7asena.data.local.PrayerSettingsStore.state.collect { settings ->
+                _uiState.update { it.copy(prayerSettings = settings) }
+            }
+        }
         viewModelScope.launch {
             userRepository.getCurrentUser().collect { user ->
                 _uiState.update {

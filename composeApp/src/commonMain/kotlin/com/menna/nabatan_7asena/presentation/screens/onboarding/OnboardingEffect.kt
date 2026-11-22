@@ -1,8 +1,8 @@
 package com.menna.nabatan_7asena.presentation.screens.onboarding
 
+import com.menna.nabatan_7asena.platform.AppPermission
+
 sealed interface OnboardingEffect {
-    data object RequestLocationPermission : OnboardingEffect
-    data object RequestNotificationPermission : OnboardingEffect
-    data object RequestBatteryExemption : OnboardingEffect
+    data class RequestPermission(val permission: AppPermission) : OnboardingEffect
     data object NavigateToLogin : OnboardingEffect
 }

@@ -4,8 +4,6 @@ package com.menna.nabatan_7asena.platform
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.menna.nabatan_7asena.data.local.room.AppDatabase
-import com.menna.nabatan_7asena.domain.LocationTracker
-import com.menna.nabatan_7asena.domain.entity.UserLocation
 import com.menna.nabatan_7asena.core.audio.*
 import com.menna.nabatan_7asena.core.alarm.GlobalAlarmManager
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
@@ -19,20 +17,11 @@ val iosServices: SharedServices by lazy {
         ?: error("Documents directory is unavailable")
     val database = Room.databaseBuilder<AppDatabase>(name = directory.path + "/nabata_db")
         .setDriver(BundledSQLiteDriver()).setQueryCoroutineContext(Dispatchers.Default).build()
-    SharedServices(database.appDao(), IosLocation(), IosAudio(), IosQuranAudio(), IosDownloads(),
-        IosAlarms(), IosPermissions(), IosScheduling(), { IosScreenAudio() })
+    SharedServices(database.appDao(), IosLocationAccess, IosAudio(), IosQuranAudio(), IosDownloads(),
+        IosAlarms(), IosPermissions, IosScheduling(), { IosScreenAudio() })
 }
 
-// Explicit unsupported-capability adapters: no fake downloads, playback completion, or permission grants.
-private class IosLocation : LocationTracker {
-    override suspend fun getCurrentLocation(): UserLocation? = null
-}
-private class IosPermissions : PermissionPlatform {
-    override val supportsAndroidPermissions = false
-    override fun locationGranted() = false
-    override fun notificationsGranted() = false
-    override fun batteryExempt() = false
-}
+// Audio, downloads and local alarm adapters remain unsupported on iOS.
 private class IosScheduling : SchedulingPlatform {
     override fun enableDailyAutoScheduling(replace: Boolean) = Unit
     override fun scheduleImmediately() = Unit

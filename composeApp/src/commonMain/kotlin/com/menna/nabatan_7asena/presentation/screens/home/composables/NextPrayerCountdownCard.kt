@@ -41,7 +41,7 @@ internal fun NextPrayerCountdownCard(state: HomeUiState) {
     } }
     val fajr = stringResource(R.string.countdown_fajr)
     val now = rememberPrayerClock()
-    val countdown = nextPrayerCountdown(prayers, date, state.previousIshaMinutes, state.tomorrowFajrMinutes, fajr, now, TimeZone.currentSystemDefault())
+    val countdown = nextPrayerCountdown(prayers, date, state.previousIshaMinutes, state.tomorrowFajrMinutes, fajr, now, TimeZone.of(state.prayerTimeZone))
     val sky = prayerSky(countdown?.name.orEmpty())
     // Three fixed stops keep the animation identities stable across two/three-stop skies.
     val top by animateColorAsState(sky.gradient.first(), tween(600), label = "prayerSkyTop")

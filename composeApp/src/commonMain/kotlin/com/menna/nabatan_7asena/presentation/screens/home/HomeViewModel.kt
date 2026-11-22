@@ -1,3 +1,4 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
 package com.menna.nabatan_7asena.presentation.screens.home
 
 import androidx.lifecycle.ViewModel
@@ -6,6 +7,10 @@ import com.menna.nabatan_7asena.core.audio.AudioPlayerManager
 import com.menna.nabatan_7asena.core.util.DateUtils
 import com.menna.nabatan_7asena.core.util.PrayerSlot
 import com.menna.nabatan_7asena.core.util.PrayerTimeline
+import com.menna.nabatan_7asena.data.local.PrayerSettingsStore
+import com.menna.nabatan_7asena.domain.entity.toPrayerPlace
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import com.menna.nabatan_7asena.domain.LocationTracker
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.Activity
@@ -85,6 +90,21 @@ open class HomeViewModel constructor(
         }
     }
 
+    private var locationRefreshJob: Job? = null
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun refreshPrayerLocation() {
+        if (locationRefreshJob?.isActive == true) return
+        locationRefreshJob = viewModelScope.launch {
+            PrayerSettingsStore.state.map { it.selectedCity }.distinctUntilChanged().flatMapLatest { selected ->
+                if (selected == null) currentLocation.foregroundLocations() else emptyFlow()
+            }.collect { location ->
+                location.toPrayerPlace()?.let(PrayerSettingsStore::saveGps)
+            }
+        }
+        retrySignal.update { it + 1 }
+    }
+    fun stopPrayerLocationUpdates() { locationRefreshJob?.cancel(); locationRefreshJob = null }
+
     override fun retryLoadingData() {
         retrySignal.update { it + 1 }
     }
@@ -101,25 +121,22 @@ open class HomeViewModel constructor(
             delay(60_000L - AppClock.nowMillis() % 60_000L)
         }
     }
-    private val dateFlow: Flow<LocalDate> = minuteTicker
-        .map { AppClock.today() }
-        .distinctUntilChanged()
+    private val dateFlow: Flow<LocalDate> = combine(minuteTicker,
+        PrayerSettingsStore.state.map { it.place?.timeZoneId }.distinctUntilChanged()) { _, zoneId ->
+        kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis())
+            .toLocalDateTime(TimeZone.of(zoneId ?: TimeZone.currentSystemDefault().id)).date
+    }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val combinedUiState = combine(dateFlow, retrySignal) { today, _ -> today }.flatMapLatest { date ->
+    private val combinedUiState = combine(dateFlow, retrySignal, PrayerSettingsStore.state) { _, _, settings ->
+        val zone = TimeZone.of(settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id)
+        kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis()).toLocalDateTime(zone).date to settings
+    }.flatMapLatest { (date, settings) ->
         val today = AppClock.dateString(date)
         combine(
             getCurrentUserUseCase(),
 
-            flow {
-                emit(Pair("Cairo", "Egypt"))
-                val location = kotlinx.coroutines.withTimeoutOrNull(3000) {
-                    currentLocation.getCurrentLocation()
-                }
-                if (location != null) {
-                    emit(Pair(location.city ?: "Cairo", location.country ?: "Egypt"))
-                }
-            },
+            flow { emit(settings) },
 
             flow {
                 emit(null as DailyContent?)
@@ -133,11 +150,10 @@ open class HomeViewModel constructor(
 
             playingTaskId
         ) { domainUser, cityCountryPair, dailyContent, currentPlayingId ->
-            val (city, country) = cityCountryPair
-            val activities = getDailyActivitiesUseCase(today, city, country)
+            val activities = getDailyActivitiesUseCase(today, cityCountryPair.request)
                 .onEach { _hasLoadError.value = false }
                 .catch { _hasLoadError.value = true; emit(emptyList()) }
-            val activitiesFlow = combine(activities, prayerBoundaries(date, city, country)) { tasks, bounds -> tasks to bounds }
+            val activitiesFlow = combine(activities, prayerBoundaries(date, settings.request)) { tasks, bounds -> tasks to bounds }
             Triple(domainUser, dailyContent, Pair(activitiesFlow, currentPlayingId))
         }
             .flatMapLatest { (user, dailyContent, flowPair) ->
@@ -148,7 +164,9 @@ open class HomeViewModel constructor(
                 val gardenResult = creditGarden(user.id, date, domainActivities, observedGarden)
                 val garden = (gardenResult as? Resource.Success)?.data
                 val currentPartToRead = user.quranPartsFinished + 1
-                val nowMinutes = PrayerTimeline.nowMinutes()
+                val localNow = kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis()).toLocalDateTime(
+                    TimeZone.of(settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id))
+                val nowMinutes = localNow.hour * 60 + localNow.minute
 
                 val baseTasks = domainActivities.map { activity ->
                     val uiModel = activity.toUiModel(currentPartToRead)
@@ -188,7 +206,11 @@ open class HomeViewModel constructor(
                     prayerDate = date,
                     previousIshaMinutes = bounds.first,
                     tomorrowFajrMinutes = bounds.second,
-                    hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
+                    hijriDate = DateUtils.getCurrentHijriDate(offsetDays = settings.hijriDateOffset.toLong()),
+                    seasonalCalendar = com.menna.nabatan_7asena.core.util.SeasonalThemeManager.forDate(DateUtils.currentHijriParts(settings.hijriDateOffset)),
+                    prayerTimeZone = settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id,
+                    prayerLocationLabel = settings.place?.city.orEmpty(),
+                    needsPrayerLocation = settings.request == null,
                     isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
                     hasLoadError = _hasLoadError.value,
                     hasPrayerLoadError = hasPrayerLoadError
@@ -204,14 +226,14 @@ open class HomeViewModel constructor(
         observeQuranBookmark()
     }
 
-    private fun prayerBoundaries(date: LocalDate, city: String, country: String) = flow {
+    private fun prayerBoundaries(date: LocalDate, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?) = flow {
         emit(Pair<Int?, Int?>(null, null))
         val bounds = coroutineScope {
             val previous = async {
-                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.minus(1, DateTimeUnit.DAY))) }
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.at(request, AppClock.dateString(date.minus(1, DateTimeUnit.DAY))) }
             }
             val next = async {
-                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.plus(1, DateTimeUnit.DAY))) }
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.at(request, AppClock.dateString(date.plus(1, DateTimeUnit.DAY))) }
             }
             PrayerTimeline.parseMinutes(previous.await()?.isha) to PrayerTimeline.parseMinutes(next.await()?.fajr)
         }
@@ -257,6 +279,10 @@ open class HomeViewModel constructor(
                         previousIshaMinutes = state.previousIshaMinutes,
                         tomorrowFajrMinutes = state.tomorrowFajrMinutes,
                         hijriDate = state.hijriDate,
+                        seasonalCalendar = state.seasonalCalendar,
+                        prayerTimeZone = state.prayerTimeZone,
+                        prayerLocationLabel = state.prayerLocationLabel,
+                        needsPrayerLocation = state.needsPrayerLocation,
                         isNightTheme = state.isNightTheme,
                         hasLoadError = state.hasLoadError,
                         hasPrayerLoadError = state.hasPrayerLoadError
