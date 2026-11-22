@@ -39,7 +39,7 @@ fun GardenCard(state: HomeUiState, onEnter: () -> Unit) {
 }
 
 @Composable
-internal fun GardenContent(state: HomeUiState, onWater: () -> Unit, expanded: Boolean, onToggleSize: () -> Unit) {
+internal fun GardenContent(state: HomeUiState, onWater: () -> Unit, expanded: Boolean, onToggleSize: () -> Unit, onOpenShop: (() -> Unit)? = null) {
     Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.garden_title), modifier = Modifier.weight(1f),
@@ -49,12 +49,15 @@ internal fun GardenContent(state: HomeUiState, onWater: () -> Unit, expanded: Bo
                     stringResource(if (expanded) R.string.garden_close else R.string.garden_expand), tint = SummerTheme.colors.highlightAccent)
             }
         }
+        if (onOpenShop != null) FilledTonalButton(onClick = onOpenShop, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.shop_title))
+        }
         val garden = state.garden
         if (garden == null) Text(stringResource(R.string.garden_unavailable), color = SummerTheme.colors.textBrown)
         else {
             GardenScene(garden.stage, state.gardenProfileId, state.gardenWateringSequence,
                 stringResource(R.string.garden_scene_description, gardenStageName(garden.stage)),
-                Modifier.fillMaxWidth().height(380.dp).clip(RoundedCornerShape(22.dp)), night = state.isNightTheme)
+                Modifier.fillMaxWidth().height(380.dp).clip(RoundedCornerShape(22.dp)), night = state.isNightTheme, equippedItems = garden.equippedItems)
             GardenControls(state, garden, onWater)
         }
     }

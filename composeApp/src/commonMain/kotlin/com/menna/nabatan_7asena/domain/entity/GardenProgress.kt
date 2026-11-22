@@ -15,7 +15,10 @@ data class GardenProgress(
     val rewardedTaskIds: Set<Int> = emptySet(),
     val lastWateredDate: String? = null,
     val revision: Long = 0,
-    val syncedRevision: Long = 0
+    val syncedRevision: Long = 0,
+    val spentStars: Int = 0,
+    val ownedItems: Set<String> = emptySet(),
+    val equippedItems: Set<String> = emptySet()
 ) {
     val stage: Int get() = GardenStageThresholds.indexOfLast { xp >= it }
     val growthFraction: Float get() {
@@ -25,6 +28,7 @@ data class GardenProgress(
     val syncPending: Boolean get() = revision > syncedRevision
 
     fun validate() {
+        require(spentStars >= 0 && ownedItems.containsAll(equippedItems) && ownedItems.all { it.isNotBlank() })
         require(xp >= 0 && waterDrops >= 0 && revision >= 0 && syncedRevision in 0..revision)
         require(rewardedTaskIds.isEmpty() || rewardDate != null)
         rewardDate?.let { LocalDate.parse(it) }

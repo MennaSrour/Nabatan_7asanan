@@ -653,6 +653,26 @@ object AppResources {
         const val settings_reset_hint_male: Int = -2030312701
         const val settings_title_female: Int = -454294692
         const val settings_title_male: Int = -314149767
+        const val shop_balance: Int = -295898967
+        const val shop_balance_hint: Int = -148318375
+        const val shop_birds: Int = -485933950
+        const val shop_butterflies: Int = -431744274
+        const val shop_buy_female: Int = -2029826655
+        const val shop_buy_male: Int = -70054105
+        const val shop_celebrate: Int = -1894470131
+        const val shop_equipped: Int = -978820436
+        const val shop_flowers: Int = -1090007977
+        const val shop_insufficient_female: Int = -10040541
+        const val shop_insufficient_male: Int = -1090729181
+        const val shop_lantern: Int = -348493246
+        const val shop_more_stars: Int = -540107179
+        const val shop_price: Int = -707311621
+        const val shop_rainbow: Int = -820562847
+        const val shop_save_failed_female: Int = -148871806
+        const val shop_save_failed_male: Int = -835041343
+        const val shop_sparkles: Int = -947144479
+        const val shop_title: Int = -1272373943
+        const val shop_unequipped: Int = -2121122345
         const val star_female: Int = -1921272192
         const val star_male: Int = -1444797585
         const val start_female: Int = -1054821759
@@ -1308,6 +1328,26 @@ object ResourceCatalog {
         AppResources.string.settings_reset_hint_male to Res.string.settings_reset_hint_male,
         AppResources.string.settings_title_female to Res.string.settings_title_female,
         AppResources.string.settings_title_male to Res.string.settings_title_male,
+        AppResources.string.shop_balance to Res.string.shop_balance,
+        AppResources.string.shop_balance_hint to Res.string.shop_balance_hint,
+        AppResources.string.shop_birds to Res.string.shop_birds,
+        AppResources.string.shop_butterflies to Res.string.shop_butterflies,
+        AppResources.string.shop_buy_female to Res.string.shop_buy_female,
+        AppResources.string.shop_buy_male to Res.string.shop_buy_male,
+        AppResources.string.shop_celebrate to Res.string.shop_celebrate,
+        AppResources.string.shop_equipped to Res.string.shop_equipped,
+        AppResources.string.shop_flowers to Res.string.shop_flowers,
+        AppResources.string.shop_insufficient_female to Res.string.shop_insufficient_female,
+        AppResources.string.shop_insufficient_male to Res.string.shop_insufficient_male,
+        AppResources.string.shop_lantern to Res.string.shop_lantern,
+        AppResources.string.shop_more_stars to Res.string.shop_more_stars,
+        AppResources.string.shop_price to Res.string.shop_price,
+        AppResources.string.shop_rainbow to Res.string.shop_rainbow,
+        AppResources.string.shop_save_failed_female to Res.string.shop_save_failed_female,
+        AppResources.string.shop_save_failed_male to Res.string.shop_save_failed_male,
+        AppResources.string.shop_sparkles to Res.string.shop_sparkles,
+        AppResources.string.shop_title to Res.string.shop_title,
+        AppResources.string.shop_unequipped to Res.string.shop_unequipped,
         AppResources.string.star_female to Res.string.star_female,
         AppResources.string.star_male to Res.string.star_male,
         AppResources.string.start_female to Res.string.start_female,

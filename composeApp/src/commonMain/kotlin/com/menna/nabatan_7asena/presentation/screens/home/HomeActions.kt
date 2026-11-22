@@ -1,6 +1,8 @@
 package com.menna.nabatan_7asena.presentation.screens.home
 
 interface HomeActions {
+    fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration)
+    fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean)
     fun openGarden()
     fun waterGarden()
     fun onTaskClicked(item: HomeUiState.UiTaskItem)

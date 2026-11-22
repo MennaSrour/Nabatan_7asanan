@@ -30,15 +30,7 @@ private fun DrawScope.drawGardenMeadow(frame: GardenFrame) {
         drawGardenLeaf(Offset(x, y), Offset(x + 13f, y - 18f), 5f, Color(0xFF83C475).copy(alpha))
         if (index % 2 == 0) drawGardenFlower(Offset(x, y - 24f), 7f, Color(0xFFEFC0D4).copy(alpha))
     }
-    repeat(3) { index ->
-        val t = frame.phase * 2f * PI.toFloat() + index * 2f
-        val center = Offset(500f + cos(t) * (210f + index * 35f), 330f + sin(t * 2f) * 70f)
-        val wing = 5f + abs(sin(t * 16f)) * 12f
-        val color = (if (index % 2 == 0) Color(0xFFD7BAEF) else Color(0xFFFFD495)).copy(alpha)
-        drawOval(color, center + Offset(-wing, -12f), Size(wing, 22f))
-        drawOval(color, center + Offset(0f, -12f), Size(wing, 22f))
-        drawLine(Color(0xFF76596C).copy(alpha), center + Offset(0f, -8f), center + Offset(0f, 11f), 3f, StrokeCap.Round)
-    }
+
 }
 
 private fun DrawScope.drawWatering(progress: Float) {

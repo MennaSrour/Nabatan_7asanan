@@ -48,6 +48,8 @@ kotlin {
             implementation(libs.ktor.json)
         }
         androidMain.dependencies {
+            implementation(project.dependencies.platform("com.google.firebase:firebase-bom:33.16.0"))
+            implementation("com.google.firebase:firebase-messaging")
             implementation(libs.androidx.core.ktx)
             implementation(libs.sqlite.framework)
             implementation(libs.hilt.android)
