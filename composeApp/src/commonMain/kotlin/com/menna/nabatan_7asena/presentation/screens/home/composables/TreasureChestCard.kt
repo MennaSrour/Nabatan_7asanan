@@ -43,7 +43,7 @@ fun TreasureChestCard(isUnlocked: Boolean, completedCount: Int = 0, totalCount: 
         Column(Modifier.fillMaxWidth().clip(shape)
             .background(Brush.verticalGradient(listOf(colors.dialogBackground, colors.goldWarm.copy(alpha = 0.55f))))
             .border(2.dp, colors.goldDeep.copy(alpha = 0.65f), shape)
-            .clickable(enabled = isUnlocked, role = Role.Button, onClickLabel = openLabel, onClick = onClick)
+            .clickable(role = Role.Button, onClickLabel = if (isUnlocked) openLabel else null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.treasure_daily_reward), style = SummerTheme.typography.chestSubtitle, color = colors.textBrown)
             TreasureChestIllustration(isUnlocked)

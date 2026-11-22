@@ -61,6 +61,7 @@ class SharedServices(
             }
         }
     }
+    val kidsRewardsRepository: KidsRewardsRepository = KidsRewardsRepositoryImpl(dao, firebase, gardenRepository)
     val getCurrentUserUseCase = GetCurrentUserUseCase(userRepository)
     val dailyRepository: DailyActivityRepository = DailyActivityRepositoryImpl(dao, firebase, getPrayerTimesUseCase, bookmarks)
     val quranRepository: QuranRepository = QuranRepositoryImpl(dao, bookmarks)

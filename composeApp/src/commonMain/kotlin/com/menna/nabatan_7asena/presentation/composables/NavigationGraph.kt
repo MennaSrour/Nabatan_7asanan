@@ -1,6 +1,8 @@
 package com.menna.nabatan_7asena.presentation.composables
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.menna.nabatan_7asena.platform.platformKidsRewardsViewModel
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -20,12 +22,17 @@ import com.menna.nabatan_7asena.presentation.screens.leaderboard.LeaderboardScre
 import com.menna.nabatan_7asena.presentation.screens.quiz.QuizScreen
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
 import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
+import com.menna.nabatan_7asena.presentation.screens.rewards.DailyWheelScreen
+
+internal const val WheelRoute = "daily-wheel"
 
 @Composable
 fun NavigationGraph(
     navController: NavHostController,
     openSettings: () -> Unit
 ) {
+    val rewards = platformKidsRewardsViewModel()
+    LaunchedEffect(rewards) { rewards.syncWhileOpen() }
     NavHost(
         navController = navController,
         startDestination = "home"
@@ -33,6 +40,7 @@ fun NavigationGraph(
         composable("home") {
             HomeScreen(
                 onNavigateToSettings = openSettings,
+                onNavigateToWheel = { navController.navigate(WheelRoute) { launchSingleTop = true } },
                 onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
                 onNavigateToBadges = { navController.navigate("progress") { launchSingleTop = true } },
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
@@ -74,6 +82,16 @@ fun NavigationGraph(
             val home = remember(entry) { navController.getBackStackEntry("home") }
             CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
                 BadgesScreen(onBack = { navController.popBackStack() })
+            }
+        }
+        composable(WheelRoute) { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                DailyWheelScreen(
+                    onBack = { navController.popBackStack() },
+                    viewModel = rewards,
+                    home = com.menna.nabatan_7asena.platform.platformHomeViewModel()
+                )
             }
         }
         composable("sebha") { SebhaScreen() }

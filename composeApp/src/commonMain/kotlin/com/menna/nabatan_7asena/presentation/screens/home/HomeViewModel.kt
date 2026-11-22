@@ -1,5 +1,6 @@
 package com.menna.nabatan_7asena.presentation.screens.home
 
+import com.menna.nabatan_7asena.domain.entity.missingDailyGiftTasks
 import com.menna.nabatan_7asena.data.repository.QuranJourneyRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -186,11 +187,19 @@ open class HomeViewModel constructor(
                 val currentCompletedCount = uiTasks.count { it.isCompleted }
                 val hasPrayerLoadError = !_hasLoadError.value && uiTasks.none { it.category == TaskCategory.PRAYER }
 
+                val extraGiftTasks = domainActivities.filterIsInstance<Activity.Task>()
+                    .filter { it.category == TaskCategory.EXTRA }.map { it.id }
+                val completedGiftTasks = domainActivities.filter { it.isCompleted && tempStatusMap[it.id] != false }
+                    .map { it.id }.toSet()
+
                 HomeUiState(
                     isLoading = false,
                     user = user.toUiUser(),
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
+                    dailyGiftTotal = missingDailyGiftTasks(extraGiftTasks, emptySet()),
+                    dailyGiftRemaining = missingDailyGiftTasks(extraGiftTasks, completedGiftTasks),
+                    dailyRiddle = dailyContent?.riddle,
                     showKhatmahCelebration = journey.celebrationPending,
                     gardenProfileId = user.id,
                     gardenEarnedStars = user.totalStars,
@@ -253,6 +262,9 @@ open class HomeViewModel constructor(
                         user = state.user,
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
+                        dailyGiftTotal = state.dailyGiftTotal,
+                        dailyGiftRemaining = state.dailyGiftRemaining,
+                        dailyRiddle = state.dailyRiddle,
                         showKhatmahCelebration = state.showKhatmahCelebration,
                         gardenProfileId = state.gardenProfileId,
                         gardenEarnedStars = state.gardenEarnedStars,
@@ -494,22 +506,22 @@ open class HomeViewModel constructor(
         _uiState.update { it.copy(showCelebration = false) }
     }
 
-    override fun openDailyChallenge() {
-        viewModelScope.launch {
-            val todayRiddle = getDailyActivitiesUseCase.getTodayRiddle()
-            if (todayRiddle != null && todayRiddle.riddle != null) {
-                _uiState.update {
-                    it.copy(currentRiddle = todayRiddle.riddle, showChallengeDialog = true)
-                }
-            }
-        }
+    internal fun canOpenDailyGift(profileId: String, date: LocalDate): Boolean {
+        val state = _uiState.value
+        return state.isDailyGiftUnlocked && date == AppClock.today() && state.prayerDate == date &&
+            state.gardenProfileId.ifBlank { "local" } == profileId && !addingTask &&
+            tempCompletedTaskIds.value.values.none { !it }
     }
 
-    override fun closeChallenge() {
-        _uiState.update { it.copy(showChallengeDialog = false) }
+    override fun openDailyGift(lockedReminder: String) {
+        val profile = _uiState.value.gardenProfileId.ifBlank { "local" }
+        _uiMessage.trySend(
+            if (canOpenDailyGift(profile, AppClock.today())) HomeEffect.NavigateToDailyGift
+            else HomeEffect.ShowMessage(lockedReminder)
+        )
     }
 
-    override fun onCorrectAnswer() {
+    internal fun onCorrectAnswer() {
         audioPlayerManager.playCorrectAnswerSound()
     }
 
