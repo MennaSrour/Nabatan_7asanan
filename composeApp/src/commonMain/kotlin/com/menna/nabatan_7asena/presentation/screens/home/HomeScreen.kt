@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import com.menna.nabatan_7asena.platform.*
+import com.menna.nabatan_7asena.platform.platformHomeViewModel
+import com.menna.nabatan_7asena.platform.platformBadgesViewModel
+import com.menna.nabatan_7asena.presentation.screens.badges.badgeCountLabel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.presentation.common.components.CollectEffects
 import com.menna.nabatan_7asena.presentation.screens.home.composables.HomeContent
@@ -17,11 +19,12 @@ fun HomeScreen(
     onNavigateToSebha: () -> Unit,
     onNavigateToGarden: () -> Unit,
     onNavigateToPrayerGuide: () -> Unit,
-    onNavigateToProgress: () -> Unit,
+    onNavigateToBadges: () -> Unit,
     completedExternalTaskId: Int? = null,
     viewModel: HomeViewModel = platformHomeViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val badges by platformBadgesViewModel().uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(completedExternalTaskId) { completedExternalTaskId?.let(viewModel::markTaskCompletedExternally) }
     CollectEffects(viewModel.effects) { effect ->
@@ -32,5 +35,5 @@ fun HomeScreen(
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
-    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToProgress)
+    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel())
 }

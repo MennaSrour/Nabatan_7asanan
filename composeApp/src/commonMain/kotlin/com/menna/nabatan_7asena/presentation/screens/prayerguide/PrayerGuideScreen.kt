@@ -1,10 +1,10 @@
 package com.menna.nabatan_7asena.presentation.screens.prayerguide
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
@@ -174,12 +175,17 @@ private fun StepCard(step: GuideStep, index: Int, total: Int) {
         Modifier.fillMaxWidth().background(Lavender, RoundedCornerShape(24.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(52.dp).background(SoftGold, CircleShape), contentAlignment = Alignment.Center) {
-                Text(step.symbol, style = MaterialTheme.typography.headlineSmall)
-            }
-            Text("الخطوة ${arabicIndic(index + 1)} من ${arabicIndic(total)}", color = Purple)
-        }
+        val frame = RoundedCornerShape(20.dp)
+        val back = if (step.scene.isWudu) listOf(Color(0xFFE4F8FF), Color(0xFFCBF0E6))
+            else listOf(Color(0xFFF7EFFF), Color(0xFFFFEBC6))
+        GuideArtwork(
+            step.scene,
+            Modifier.fillMaxWidth().height(160.dp)
+                .background(Brush.verticalGradient(back), frame)
+                .border(2.dp, Color.White, frame)
+                .padding(8.dp)
+        )
+        Text("الخطوة ${arabicIndic(index + 1)} من ${arabicIndic(total)}", color = Purple)
         Text(step.title, color = Ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(step.instruction, color = Ink, style = MaterialTheme.typography.bodyLarge)
         step.recitation?.let {

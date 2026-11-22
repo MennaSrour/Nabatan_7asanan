@@ -31,7 +31,7 @@ fun NavigationGraph(
             HomeScreen(
                 onNavigateToSettings = openSettings,
                 onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
-                onNavigateToProgress = { navController.navigate("progress") { launchSingleTop = true } },
+                onNavigateToBadges = { navController.navigate("progress") { launchSingleTop = true } },
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
                 onNavigateToQuran = {
                     navController.navigate("quran") {
@@ -66,8 +66,11 @@ fun NavigationGraph(
                 )
             }
         }
-        composable("progress") {
-            BadgesScreen(onBack = { navController.popBackStack() })
+        composable("progress") { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                BadgesScreen(onBack = { navController.popBackStack() })
+            }
         }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }
