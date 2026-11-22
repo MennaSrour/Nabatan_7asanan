@@ -13,10 +13,10 @@ import androidx.navigation.NavHostController
 import com.menna.nabatan_7asena.presentation.screens.update.UpdateDialog
 
 @Composable
-fun MainContent(navController: NavHostController, openSettings: () -> Unit) {
+fun MainContent(navController: NavHostController, openSettings: () -> Unit, openFriends: () -> Unit = {}) {
     val entry by navController.currentBackStackEntryAsState()
     Box(Modifier.fillMaxSize()) {
-        NavigationGraph(navController, openSettings)
+        NavigationGraph(navController, openSettings, openFriends)
         if (entry?.destination?.route != "garden") FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         UpdateDialog()
     }

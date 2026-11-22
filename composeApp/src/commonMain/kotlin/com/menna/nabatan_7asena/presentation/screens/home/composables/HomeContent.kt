@@ -10,9 +10,9 @@ import com.menna.nabatan_7asena.presentation.screens.home.HomeActions
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 
 @Composable
-fun HomeContent(uiState: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit) {
+fun HomeContent(uiState: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onFriends: () -> Unit = {}) {
     var showAddSheet by remember { mutableStateOf(false) }
-    HomeLayout(uiState, actions, snackbar, onSettings,
+    HomeLayout(uiState, actions, snackbar, onSettings, onFriends = onFriends,
         onAddTask = { showAddSheet = true; actions.loadSuggestions() })
     HomeOverlays(uiState, actions, showAddSheet) { showAddSheet = false }
 }

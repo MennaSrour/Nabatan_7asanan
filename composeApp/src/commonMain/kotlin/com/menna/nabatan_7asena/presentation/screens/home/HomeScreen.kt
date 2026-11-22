@@ -17,7 +17,8 @@ fun HomeScreen(
     onNavigateToSebha: () -> Unit,
     onNavigateToGarden: () -> Unit,
     completedExternalTaskId: Int? = null,
-    viewModel: HomeViewModel = platformHomeViewModel()
+    viewModel: HomeViewModel = platformHomeViewModel(),
+    onNavigateToFriends: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -30,5 +31,5 @@ fun HomeScreen(
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
-    HomeContent(state, viewModel, snackbar, onNavigateToSettings)
+    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToFriends)
 }

@@ -41,3 +41,6 @@ expect fun platformBadgesViewModel(): BadgesViewModel
 expect fun platformLoginViewModel(): LoginViewModel
 @Composable
 expect fun platformHomeViewModel(): HomeViewModel
+
+@Composable
+internal expect fun platformFriendsViewModel(): com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel

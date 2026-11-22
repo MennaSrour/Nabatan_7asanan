@@ -96,3 +96,11 @@ class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeV
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = hiltViewModel<AndroidHomeViewModel>()
 
+
+@HiltViewModel
+class AndroidFriendsViewModel @Inject constructor(services: SharedServices) :
+    com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel(services)
+
+@Composable
+internal actual fun platformFriendsViewModel(): com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel =
+    hiltViewModel<AndroidFriendsViewModel>()

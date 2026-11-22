@@ -18,7 +18,8 @@ import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
 @Composable
 fun NavigationGraph(
     navController: NavHostController,
-    openSettings: () -> Unit
+    openSettings: () -> Unit,
+    openFriends: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -27,6 +28,7 @@ fun NavigationGraph(
         composable("home") {
             HomeScreen(
                 onNavigateToSettings = openSettings,
+                onNavigateToFriends = openFriends,
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
                 onNavigateToQuran = {
                     navController.navigate("quran") {
@@ -52,7 +54,7 @@ fun NavigationGraph(
             }
         }
         composable("sebha") { SebhaScreen() }
-        composable("leaderboard") { LeaderboardScreen() }
+        composable("leaderboard") { LeaderboardScreen(onFriends = openFriends) }
         composable("quiz") { QuizScreen() }
         composable("dua") { AzkarAndDuaScreen() }
         composable("quran") { QuranScreen() }

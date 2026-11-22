@@ -55,3 +55,7 @@ actual fun platformLoginViewModel(): LoginViewModel = viewModel { LoginViewModel
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(iosServices.getDailyActivitiesUseCase, iosServices.getCurrentUserUseCase, iosServices.toggleActivityStatusUseCase, iosServices.addExtraTaskUseCase, iosServices.getSuggestedTasksUseCase, iosServices.incrementQuranPartUseCase, iosServices.decrementQuranPartUseCase, iosServices.location, iosServices.audio, iosServices.quranRepository, iosServices.getPrayerTimesUseCase, iosServices.gardenRepository) }
 
+
+@Composable
+internal actual fun platformFriendsViewModel(): com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel =
+    viewModel { com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel(iosServices) }
