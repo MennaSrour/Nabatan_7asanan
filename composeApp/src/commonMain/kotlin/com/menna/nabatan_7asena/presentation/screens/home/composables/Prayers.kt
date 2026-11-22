@@ -74,7 +74,7 @@ private fun defaultSky(name: String) = PRAYER_SKIES[name] ?: PrayerSky(
     labelAccent = Color(0xFF475569)
 )
 
-private fun prayerIconRes(name: String) = when (name) {
+internal fun prayerIconRes(name: String) = when (name) {
     "الفجر" -> "fajr"
     "الظهر" -> "zuhr_sun"
     "العصر" -> "asr_sun"

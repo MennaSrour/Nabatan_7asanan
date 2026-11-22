@@ -54,11 +54,12 @@ class GardenShopRepositoryTest {
         assertTrue(repository.progress().spentStars <= 20)
         assertEquals(1, repository.progress().ownedItems.size)
     }
-    @Test fun doubleTapsBuyAnItemOnlyOnceEvenWithConcurrentRequests() = runTest {
+    @Test fun repeatedPurchaseRequestsBuyOnlyAsManyCopiesAsTheBudgetAllows() = runTest {
         val repository = GardenRepositoryImpl(Memory(), earnedStars = { 100 }) { _, _, _ -> }
-        val results = (1..10).map { async { repository.buy("child", GardenDecoration.BIRDS) } }.awaitAll()
-        assertEquals(1, results.count { it.purchased })
-        assertEquals(25, repository.progress().spentStars)
+        val results = (1..10).map { async { try { repository.buy("child", GardenDecoration.BIRDS).purchased } catch (_: InsufficientGardenStars) { false } } }.awaitAll()
+        assertEquals(4, results.count { it })
+        assertEquals(100, repository.progress().spentStars)
+        assertEquals(4, repository.progress().quantities["birds"])
     }
     @Test fun usesCurrentProfileBudgetAndRejectsAChangedProfile() = runTest {
         var earned: Int? = 10
@@ -79,6 +80,7 @@ class GardenShopRepositoryTest {
     @Test fun offlineBackupKeepsPurchasedItemsAndPendingRevision() = runTest {
         val repository = GardenRepositoryImpl(Memory(), earnedStars = { 100 }) { _, _, _ -> error("offline") }
         repository.buy("child", GardenDecoration.SPARKLES)
+        repository.placeDecoration("child", GardenDecoration.SPARKLES, 1)
         assertFalse(repository.sync("child"))
         assertEquals(setOf("sparkles"), repository.progress().equippedItems)
         assertTrue(repository.progress().syncPending)

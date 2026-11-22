@@ -20,6 +20,7 @@ data class HomeUiState(
     val isGardenUnavailable: Boolean = false,
     val isWateringGarden: Boolean = false,
     val gardenSaveFailed: Boolean = false,
+    val gardenWateredTreeId: String? = null,
     val gardenWateringSequence: Long = 0,
     val gardenNeedsWater: Boolean = false,
     val prayerDate: kotlinx.datetime.LocalDate? = null,
