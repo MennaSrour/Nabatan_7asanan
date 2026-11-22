@@ -28,6 +28,7 @@ playServicesLocation = "21.3.0"
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
+gitlive-auth = { module = "dev.gitlive:firebase-auth", version.ref = "gitlive" }
 gitlive-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitlive" }
 gitlive-config = { module = "dev.gitlive:firebase-config", version.ref = "gitlive" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomKmp" }

@@ -50,8 +50,15 @@ open class HomeViewModel constructor(
     private val audioPlayerManager: AudioPlayerManager,
     private val quranRepository: QuranRepository,
     private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
-    private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository
+    private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository,
+    private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
 ) : ViewModel(), HomeActions {
+
+    suspend fun awardPrayerGuideBonus(): Boolean {
+        val user = getCurrentUserUseCase().first()
+        check(user.id.isNotBlank() && user.id != "local")
+        return dailyActivityRepository.awardPrayerGuideBonus(user.id)
+    }
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()

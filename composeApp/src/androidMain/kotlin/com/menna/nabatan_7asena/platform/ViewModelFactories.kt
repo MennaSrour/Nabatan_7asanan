@@ -79,7 +79,7 @@ class AndroidStartViewModel @Inject constructor(services: SharedServices) : Star
 actual fun platformStartViewModel(): StartViewModel = hiltViewModel<AndroidStartViewModel>()
 
 @HiltViewModel
-class AndroidBadgesViewModel @Inject constructor(services: SharedServices) : BadgesViewModel(services.getCurrentUserUseCase)
+class AndroidBadgesViewModel @Inject constructor(services: SharedServices) : BadgesViewModel(services.getCurrentUserUseCase, services.gardenRepository, services.achievementProgress)
 
 @Composable
 actual fun platformBadgesViewModel(): BadgesViewModel = hiltViewModel<AndroidBadgesViewModel>()
@@ -91,7 +91,7 @@ class AndroidLoginViewModel @Inject constructor(services: SharedServices) : Logi
 actual fun platformLoginViewModel(): LoginViewModel = hiltViewModel<AndroidLoginViewModel>()
 
 @HiltViewModel
-class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeViewModel(services.getDailyActivitiesUseCase, services.getCurrentUserUseCase, services.toggleActivityStatusUseCase, services.addExtraTaskUseCase, services.getSuggestedTasksUseCase, services.incrementQuranPartUseCase, services.decrementQuranPartUseCase, services.location, services.audio, services.quranRepository, services.getPrayerTimesUseCase, services.gardenRepository)
+class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeViewModel(services.getDailyActivitiesUseCase, services.getCurrentUserUseCase, services.toggleActivityStatusUseCase, services.addExtraTaskUseCase, services.getSuggestedTasksUseCase, services.incrementQuranPartUseCase, services.decrementQuranPartUseCase, services.location, services.audio, services.quranRepository, services.getPrayerTimesUseCase, services.gardenRepository, services.dailyRepository)
 
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = hiltViewModel<AndroidHomeViewModel>()

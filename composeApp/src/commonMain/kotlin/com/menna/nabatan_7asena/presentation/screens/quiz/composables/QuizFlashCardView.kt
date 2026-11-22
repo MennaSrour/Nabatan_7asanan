@@ -1,5 +1,6 @@
 package com.menna.nabatan_7asena.presentation.screens.quiz.composables
 
+import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing

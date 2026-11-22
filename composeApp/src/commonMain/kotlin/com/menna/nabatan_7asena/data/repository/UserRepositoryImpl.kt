@@ -6,7 +6,6 @@ import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.data.local.room.UserStatsEntity
 import com.menna.nabatan_7asena.data.mappers.toDomain
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
-import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import com.menna.nabatan_7asena.platform.SchedulingPlatform
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
@@ -54,25 +53,8 @@ class UserRepositoryImpl constructor(
             quranPartsFinished = user.quranPartsFinished,
             avatarIndex = user.avatarIndex
         )
-        dao.clearUserStats()
-        dao.clearAllRecords()
-        dao.insertUserStats(entity)
+        dao.replaceProfile(entity)
 
-
-        try {
-            val dto = UserRankDto(
-                userId = user.id,
-                name = user.name,
-                gender = user.gender.name.lowercase(),
-                totalStars = user.totalStars,
-                avatarIndex = user.avatarIndex
-            )
-            firebaseDataSource.uploadUserScore(dto)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("UserRepositoryImpl", "failed to upload user score on register", e)
-        }
     }
 
 
@@ -135,24 +117,6 @@ class UserRepositoryImpl constructor(
         }
     }
 
-    override suspend fun syncUserScore(user: User) {
-        try {
-            val dto = UserRankDto(
-                userId = user.id,
-                name = user.name,
-                gender = user.gender.name.lowercase(),
-                totalStars = user.totalStars,
-                quranPartsFinished = user.quranPartsFinished,
-                avatarIndex = user.avatarIndex
-            )
-            firebaseDataSource.uploadUserScore(dto)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("UserRepositoryImpl", "failed to sync user score", e)
-        }
-    }
-
     override suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int) {
         check(dao.updateProfileImage(userId, gender.name, avatarIndex) == 1) {
             "The saved profile changed or no longer exists"
@@ -160,46 +124,12 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun updateUserName(newName: String) {
-        val user = dao.getUserStats().firstOrNull()
-        if (user != null) {
-            val updatedUser = user.copy(name = newName)
-            dao.updateUserStats(updatedUser)
-
-            try {
-                val dto = UserRankDto(
-                    userId = user.userId,
-                    name = newName,
-                    gender = user.gender.lowercase(),
-                    totalStars = user.totalStars,
-                    avatarIndex = user.avatarIndex
-                )
-                firebaseDataSource.uploadUserScore(dto)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("UserRepositoryImpl", "failed to upload updated user name", e)
-            }
-        }
+        dao.updateName(newName)
     }
 
     override suspend fun resetAllProgress() {
         try {
-            val user = dao.getUserStats().firstOrNull()
-
-
-            if (user != null && user.userId.isNotEmpty()) {
-                try {
-                    firebaseDataSource.deleteUserScore(user.userId)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e("UserRepositoryImpl", "failed to delete user score from firebase", e)
-                }
-            }
-
-
-            dao.clearAllRecords()
-            dao.clearUserStats()
+            dao.clearProfile()
 
 
             scheduling.cancelDailyAutoScheduling()
@@ -215,15 +145,7 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun setNotificationsEnabled(enabled: Boolean) {
-        val stats = dao.getUserStats().firstOrNull()
-        stats?.let {
-            val updatedStats = it.copy(
-                prayerNotifications = enabled,
-                azkarNotifications = enabled,
-                quranNotifications = enabled
-            )
-            dao.updateUserStats(updatedStats)
-        }
+        dao.updateAllNotifications(enabled)
 
         if (enabled) scheduling.enableDailyAutoScheduling(replace = true) else {
             scheduling.cancelDailyAutoScheduling()
@@ -231,86 +153,17 @@ class UserRepositoryImpl constructor(
         }
     }
 
-    override suspend fun incrementQuranPart(): Resource<Unit> {
-        return try {
+    override suspend fun incrementQuranPart(): Resource<Unit> = changeQuranParts(1)
 
-            val userEntity = dao.getUserStats().firstOrNull()
+    override suspend fun decrementQuranPart(): Resource<Unit> = changeQuranParts(-1)
 
-            if (userEntity != null) {
-
-                val updatedCount = userEntity.quranPartsFinished + 1
-                val updatedEntity = userEntity.copy(quranPartsFinished = updatedCount)
-
-
-                dao.updateUserStats(updatedEntity)
-
-
-                try {
-
-                    val dto = UserRankDto(
-                        userId = userEntity.userId,
-                        name = userEntity.name,
-                        gender = userEntity.gender.lowercase(),
-                        totalStars = userEntity.totalStars,
-                        quranPartsFinished = updatedCount,
-                        avatarIndex = userEntity.avatarIndex
-                    )
-                    firebaseDataSource.uploadUserScore(dto)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e("UserRepositoryImpl", "failed to upload user score after increment", e)
-                }
-
-                Resource.Success(Unit)
-            } else {
-                Resource.Error(Exception("User not found"), "User not found")
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("UserRepositoryImpl", "error incrementing quran part", e)
-            Resource.Error(e, e.message ?: "Error incrementing quran part")
-        }
-    }
-
-    override suspend fun decrementQuranPart(): Resource<Unit> {
-        return try {
-            val userEntity = dao.getUserStats().firstOrNull()
-            if (userEntity != null && userEntity.quranPartsFinished > 0) {
-                val updatedCount = userEntity.quranPartsFinished - 1
-                val updatedEntity = userEntity.copy(quranPartsFinished = updatedCount)
-
-                dao.updateUserStats(updatedEntity)
-
-                try {
-                    val dto = UserRankDto(
-                        userId = userEntity.userId,
-                        name = userEntity.name,
-                        gender = userEntity.gender.lowercase(),
-                        totalStars = userEntity.totalStars,
-                        quranPartsFinished = updatedCount,
-                        avatarIndex = userEntity.avatarIndex
-                    )
-                    firebaseDataSource.uploadUserScore(dto)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e("UserRepositoryImpl", "failed to upload user score after decrement", e)
-                }
-
-                Resource.Success(Unit)
-            } else {
-                Resource.Error(
-                    Exception("User not found or part already zero"),
-                    "User not found or part already zero"
-                )
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("UserRepositoryImpl", "error decrementing quran part", e)
-            Resource.Error(e, e.message ?: "Error decrementing quran part")
-        }
+    private suspend fun changeQuranParts(change: Int): Resource<Unit> = try {
+        if (dao.changeQuranParts(change) == 1) Resource.Success(Unit)
+        else Resource.Error(IllegalStateException("No saved Quran progress to update"))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e("UserRepositoryImpl", "Failed to update Quran progress", e)
+        Resource.Error(e)
     }
 }
