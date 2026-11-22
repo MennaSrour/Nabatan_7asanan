@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.menna.nabatan_7asena.platform.BroadcastNotificationManager
 import com.menna.nabatan_7asena.presentation.common.components.CollectEffects
 
 @Composable
@@ -21,7 +22,10 @@ actual fun OnboardingScreenEffects(viewModel: OnboardingViewModel, onNavigateToL
         when (effect) {
             OnboardingEffect.NavigateToLogin -> onNavigateToLogin()
             OnboardingEffect.RequestLocationPermission -> location.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            OnboardingEffect.RequestNotificationPermission -> if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            OnboardingEffect.RequestNotificationPermission -> if (Build.VERSION.SDK_INT >= 33) {
+                BroadcastNotificationManager.recordPermissionRequest()
+                notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
             OnboardingEffect.RequestBatteryExemption -> battery.launch(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}")))
         }
     }
