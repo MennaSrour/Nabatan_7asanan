@@ -68,7 +68,7 @@ class QuranAudioPlayerImpl @Inject constructor(
             player?.stop()
             player?.release()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("QuranAudioPlayer", "Could not play Quran audio: ${e.javaClass.simpleName}")
         } finally {
             player = null
         }

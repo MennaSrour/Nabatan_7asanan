@@ -26,7 +26,7 @@ class LocationTrackerImpl @Inject constructor(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
         val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
@@ -57,7 +57,6 @@ class LocationTrackerImpl @Inject constructor(
                     
                     val country = address.countryName ?: ""
 
-                    Log.d("LocationTracker", "تم تحديد الموقع: $city, $country")
 
                     
                     UserLocation(
@@ -75,7 +74,7 @@ class LocationTrackerImpl @Inject constructor(
             }
         } catch (e: kotlinx.coroutines.CancellationException) { throw e
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w("LocationTracker", "Location lookup failed: ${e.javaClass.simpleName}")
             null
         }
     }

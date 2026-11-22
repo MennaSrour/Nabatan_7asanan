@@ -96,6 +96,21 @@ The iOS platform adapters are deliberate compiling fallbacks, not a claim of
 notification/audio/location feature parity. Implement native capabilities behind
 the existing ports without changing shared screen or domain contracts.
 
+## Android release signing
+
+For a Play upload, set `ANDROID_UPLOAD_STORE_FILE` to the upload keystore path
+(absolute or relative to the repository root). Supply
+`ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`, and
+`ANDROID_UPLOAD_KEY_PASSWORD` through the local environment or CI secrets. Run:
+
+```sh
+./gradlew :app:bundleRelease :app:lintVitalRelease
+```
+
+The bundle is written to `app/build/outputs/bundle/release/`. With none of the
+signing variables set, the same command produces an unsigned bundle for build
+verification. Providing only some signing variables fails configuration.
+
 ## Verification
 
 Use JDK 21 and Android SDK 36:

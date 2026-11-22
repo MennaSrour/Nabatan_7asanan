@@ -662,4 +662,5 @@
     <string name="onboarding_exact_title_female">التنبيهات الدقيقة</string>
     <string name="onboarding_exact_description_male">نحتاج السماح بالتنبيهات الدقيقة لتصل تذكيرات الصلاة في وقتها. يمكنك تخطي هذه الخطوة وتفعيلها من الإعدادات لاحقاً.</string>
     <string name="onboarding_exact_description_female">نحتاج السماح بالتنبيهات الدقيقة لتصل تذكيرات الصلاة في وقتها. يمكنك تخطي هذه الخطوة وتفعيلها من الإعدادات لاحقاً.</string>
+    <string name="update_store_unavailable">تعذر فتح متجر التطبيقات. يمكنك المحاولة مرة أخرى.</string>
 </resources>

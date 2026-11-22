@@ -66,7 +66,7 @@ class AzkarScheduler @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AzkarScheduler", "Could not schedule morning reminder: ${e.javaClass.simpleName}")
         }
     }
 
@@ -84,7 +84,7 @@ class AzkarScheduler @Inject constructor(
         try {
             alarmManager?.scheduleReminder(time, pendingIntent)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AzkarScheduler", "Could not schedule evening reminder: ${e.javaClass.simpleName}")
         }
     }
 }

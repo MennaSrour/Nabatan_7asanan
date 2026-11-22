@@ -88,7 +88,7 @@ class AndroidAudioPlayerManager @Inject constructor(
                 mediaPlayer?.start()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioPlayerManager", "Could not play audio sequence: ${e.javaClass.simpleName}")
             onCompletion()
         }
     }
@@ -105,7 +105,7 @@ class AndroidAudioPlayerManager @Inject constructor(
                 start()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioPlayerManager", "Could not play bundled audio: ${e.javaClass.simpleName}")
             onCompletion()
         }
     }
@@ -120,7 +120,7 @@ class AndroidAudioPlayerManager @Inject constructor(
             mediaPlayer?.release()
             mediaPlayer = null
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioPlayerManager", "Could not stop audio playback: ${e.javaClass.simpleName}")
         }
     }
 
