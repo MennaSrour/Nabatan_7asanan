@@ -14,6 +14,81 @@ import kotlinx.serialization.encodeToString
 
 @Dao
 interface AppDao {
+    @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND day >= :day ORDER BY day DESC")
+    fun observeRewards(profileId: String, day: String): Flow<List<DailyRewardEntity>>
+
+    @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND synced = 0 ORDER BY day")
+    suspend fun pendingRewards(profileId: String): List<DailyRewardEntity>
+
+    @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND day = :day AND kind = 'wheel'")
+    suspend fun wheelReward(profileId: String, day: String): DailyRewardEntity?
+
+    @Query("SELECT itemId FROM daily_records WHERE date = :date AND isCompleted = 1")
+    suspend fun completedGiftTaskIds(date: String): List<Int>
+
+    @Query("SELECT id FROM extra_tasks WHERE date = :date")
+    suspend fun extraGiftTaskIds(date: String): List<Int>
+
+    @Query("SELECT userId FROM user_stats WHERE id = 1")
+    suspend fun activeRewardProfileId(): String?
+
+    private suspend fun giftTasksCompleted(profileId: String, date: String): Boolean {
+        if (activeRewardProfileId().orEmpty().ifBlank { "local" } != profileId) return false
+        return missingDailyGiftTasks(extraGiftTaskIds(date), completedGiftTaskIds(date).toSet()) == 0
+    }
+
+    @Transaction
+    suspend fun reserveDailyGift(reward: DailyRewardEntity, taskDate: String): Boolean =
+        giftTasksCompleted(reward.profileId, taskDate) && claimReward(reward)
+
+    @Transaction
+    suspend fun claimDailyGiftGame(reward: DailyRewardEntity, taskDate: String): Boolean {
+        if (!giftTasksCompleted(reward.profileId, taskDate)) return false
+        val wheel = wheelReward(reward.profileId, reward.day)?.takeIf { it.settled } ?: return false
+        if (WheelPrize.fromStoredCode(wheel.prize)?.game?.name != reward.kind) return false
+        return claimReward(reward)
+    }
+
+    @Query("SELECT MAX(day) FROM daily_rewards WHERE profileId = :profileId AND kind = :kind")
+    suspend fun latestRewardDate(profileId: String, kind: String): String?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertReward(reward: DailyRewardEntity): Long
+
+    @Query("""
+        UPDATE daily_rewards SET prize = :prize, stars = :stars, settled = 1, earnedHere = :earnedHere, synced = :synced
+        WHERE profileId = :profileId AND day = :day AND kind = :kind AND claimId = :claimId AND settled = 0
+    """)
+    suspend fun setRewardSettlement(
+        profileId: String, day: String, kind: String, claimId: String,
+        prize: String, stars: Int, earnedHere: Boolean, synced: Boolean
+    ): Int
+
+    @Query("UPDATE daily_rewards SET synced = 1 WHERE profileId = :profileId AND day = :day AND kind = :kind")
+    suspend fun markRewardSynced(profileId: String, day: String, kind: String)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun ensureStats(stats: UserStatsEntity): Long
+
+    @Query("""
+        UPDATE user_stats SET totalStars = MIN(2147483647, totalStars + :stars),
+        treeStage = CASE WHEN :stars = 0 THEN treeStage
+            WHEN totalStars + :stars < 50 THEN 1 WHEN totalStars + :stars < 200 THEN 2 ELSE 3 END
+        WHERE id = 1 AND userId = :profileId
+    """)
+    suspend fun creditRewardStars(profileId: String, stars: Int): Int
+
+    @Transaction
+    suspend fun settleReward(reward: DailyRewardEntity): Boolean {
+        val updated = setRewardSettlement(
+            reward.profileId, reward.day, reward.kind, reward.claimId,
+            reward.prize, reward.stars, reward.earnedHere, reward.synced
+        )
+        if (updated == 0) return false
+        creditRewardBalance(reward)
+        return true
+    }
+
     @Query("SELECT COUNT(*) FROM daily_records WHERE itemId = :itemId AND isCompleted = 1")
     fun observeCompletedDays(itemId: Int): Flow<Int>
 
@@ -45,6 +120,21 @@ interface AppDao {
         if (getRecordStatus(seasonKey, rewardId) == true) return
         if (awardStars) updateUserStats(stats.withBonus(RAMADAN_CHALLENGE_STARS))
         updateOrInsertRecord(DailyRecordEntity(seasonKey, rewardId, true))
+    }
+
+    @Transaction
+    suspend fun claimReward(reward: DailyRewardEntity): Boolean {
+        val latest = latestRewardDate(reward.profileId, reward.kind)
+        if (latest != null && latest >= reward.day) return false
+        if (insertReward(reward) == -1L) return false
+        if (reward.settled) creditRewardBalance(reward)
+        return true
+    }
+
+    private suspend fun creditRewardBalance(reward: DailyRewardEntity) {
+        val storedId = if (reward.profileId == "local") "" else reward.profileId
+        if (storedId.isEmpty()) ensureStats(UserStatsEntity(name = "بطل"))
+        check(creditRewardStars(storedId, reward.stars) == 1) { "Profile changed" }
     }
 
     @Transaction

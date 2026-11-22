@@ -3,11 +3,17 @@ package com.menna.nabatan_7asena.core.util
 
 import platform.Foundation.*
 
-internal actual fun calculateHijriDate(offsetDays: Long): HijriDate? {
-    val calendar = NSCalendar.calendarWithIdentifier(NSCalendarIdentifierIslamicUmmAlQura)
-        ?: return null
-    val date = calendar.dateByAddingUnit(NSCalendarUnitDay, offsetDays, NSDate(), 0u)
-        ?: return null
-    val parts = calendar.components(NSCalendarUnitDay or NSCalendarUnitMonth or NSCalendarUnitYear, date)
-    return HijriDate(parts.day.toInt(), parts.month.toInt(), parts.year.toInt())
+actual object DateUtils {
+    actual fun getCurrentHijriDate(offsetDays: Long): String {
+        require(offsetDays in -2L..2L)
+        val date = currentHijriParts(offsetDays.toInt())
+        return formatHijriDate(date.day, date.month, date.year)
+    }
+    actual fun currentHijriParts(offsetDays: Int): HijriDate {
+        require(offsetDays in -2..2)
+        val calendar = requireNotNull(NSCalendar.calendarWithIdentifier(NSCalendarIdentifierIslamicUmmAlQura))
+        val date = requireNotNull(calendar.dateByAddingUnit(NSCalendarUnitDay, offsetDays.toLong(), NSDate(), 0u))
+        val parts = calendar.components(NSCalendarUnitDay or NSCalendarUnitMonth or NSCalendarUnitYear, date)
+        return HijriDate(parts.day.toInt(), parts.month.toInt(), parts.year.toInt())
+    }
 }

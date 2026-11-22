@@ -116,13 +116,15 @@ fun OnboardingPageContent(
                         icon = when (pageIndex) {
                             3 -> Icons.Default.LocationOn
                             4 -> Icons.Default.Notifications
-                            5 -> Icons.Default.BatteryChargingFull
+                            5 -> Icons.Default.Notifications
+                            6 -> Icons.Default.BatteryChargingFull
                             else -> Icons.Default.LocationOn
                         },
                         text = when (pageIndex) {
                             3 -> genderedStringResource(GenderedStrings.onboardingLocationHint)
                             4 -> genderedStringResource(GenderedStrings.onboardingNotificationHint)
-                            5 -> genderedStringResource(GenderedStrings.onboardingBatteryHint)
+                            5 -> genderedStringResource(GenderedStrings.onboardingExactDescription)
+                            6 -> genderedStringResource(GenderedStrings.onboardingBatteryHint)
                             else -> ""
                         }
                     )

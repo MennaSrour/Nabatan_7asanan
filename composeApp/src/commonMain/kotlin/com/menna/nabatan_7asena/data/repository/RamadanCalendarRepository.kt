@@ -1,6 +1,6 @@
 package com.menna.nabatan_7asena.data.repository
 
-import com.menna.nabatan_7asena.core.util.DateUtils
+import com.menna.nabatan_7asena.core.util.HijriCalendar
 import com.menna.nabatan_7asena.core.util.RamadanSeason
 import com.menna.nabatan_7asena.core.util.SeasonalThemeManager
 import com.menna.nabatan_7asena.data.local.room.AppDao
@@ -11,7 +11,7 @@ class RamadanCalendarRepository(private val dao: AppDao, private val firebase: F
     fun observe(profileId: String, season: RamadanSeason) = dao.observeRamadanDays(profileId, season.storageKey).map { it.toSet() }
 
     suspend fun complete(profileId: String, season: RamadanSeason, day: Int) {
-        val current = SeasonalThemeManager.ramadan(DateUtils.currentHijriDate())
+        val current = SeasonalThemeManager.ramadan(HijriCalendar.today())
         check(current != null && current.year == season.year && current.isPreview == season.isPreview &&
             day in 1..current.unlockedThrough)
         dao.completeRamadanDay(season.storageKey, profileId, day, awardStars = !season.isPreview)

@@ -1,4 +1,5 @@
 package com.menna.nabatan_7asena.platform
+import com.menna.nabatan_7asena.presentation.screens.rewards.KidsRewardsViewModel
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -96,3 +97,10 @@ class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeV
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = hiltViewModel<AndroidHomeViewModel>()
 
+
+@HiltViewModel
+class AndroidKidsRewardsViewModel @Inject constructor(services: SharedServices) :
+    KidsRewardsViewModel(services.userRepository, services.kidsRewardsRepository)
+
+@Composable
+actual fun platformKidsRewardsViewModel(): KidsRewardsViewModel = hiltViewModel<AndroidKidsRewardsViewModel>()

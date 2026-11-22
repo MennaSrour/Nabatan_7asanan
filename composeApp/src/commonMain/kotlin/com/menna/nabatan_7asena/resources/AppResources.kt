@@ -290,6 +290,8 @@ object AppResources {
         const val gender_boy_male: Int = -965162277
         const val gender_girl_female: Int = -850149861
         const val gender_girl_male: Int = -1616590941
+        const val hijri_offset_hint: Int = -373710231
+        const val hijri_offset_title: Int = -933101212
         const val home_add_task_female: Int = -1205851725
         const val home_add_task_male: Int = -945392587
         const val home_daily_tasks_female: Int = -398044252
@@ -370,6 +372,10 @@ object AppResources {
         const val onboarding_battery_title_male: Int = -477518811
         const val onboarding_continue_female: Int = -1712343898
         const val onboarding_continue_male: Int = -1624248577
+        const val onboarding_exact_description_female: Int = -789901095
+        const val onboarding_exact_description_male: Int = -152457036
+        const val onboarding_exact_title_female: Int = -389369950
+        const val onboarding_exact_title_male: Int = -1299481296
         const val onboarding_location_description_female: Int = -2004548795
         const val onboarding_location_description_male: Int = -926694993
         const val onboarding_location_hint_female: Int = -1491413512
@@ -394,14 +400,37 @@ object AppResources {
         const val onboarding_welcome_description_male: Int = -1363656928
         const val onboarding_welcome_title_female: Int = -264575138
         const val onboarding_welcome_title_male: Int = -656570726
+        const val permission_battery: Int = -1572410506
+        const val permission_battery_hint: Int = -869754238
+        const val permission_disabled: Int = -955260370
+        const val permission_enabled: Int = -1567513504
+        const val permission_exact: Int = -1827750427
+        const val permission_exact_hint: Int = -151249002
+        const val permission_location: Int = -1653668602
+        const val permission_location_hint: Int = -677674146
+        const val permission_notifications: Int = -2091285090
+        const val permission_notifications_hint: Int = -1802475774
+        const val permissions_title: Int = -1402592661
         const val playlist_loop_infinite: Int = -687418361
         const val playlist_loop_progress: Int = -1527523903
         const val playlist_repeat_less: Int = -833897909
         const val playlist_repeat_more: Int = -1766859542
+        const val prayer_choose_location: Int = -480541854
         const val prayer_current_female: Int = -858646222
         const val prayer_current_male: Int = -1689989627
+        const val prayer_location_settings: Int = -1848997639
+        const val prayer_location_used: Int = -1485416277
+        const val prayer_method_auto: Int = -1319818881
+        const val prayer_method_egypt: Int = -1435101137
+        const val prayer_method_isna: Int = -1476809984
+        const val prayer_method_mwl: Int = -159360539
+        const val prayer_method_saudi: Int = -1542494407
+        const val prayer_method_title: Int = -1825161260
         const val prayer_next_female: Int = -660932317
         const val prayer_next_male: Int = -832593949
+        const val prayer_no_location: Int = -1801060903
+        const val prayer_saved_location: Int = -1324300335
+        const val prayer_use_gps: Int = -323866038
         const val quiz_almost_female: Int = -365289883
         const val quiz_almost_male: Int = -1792982285
         const val quiz_challenge_female: Int = -1860799762
@@ -1005,6 +1034,8 @@ object ResourceCatalog {
         AppResources.string.gender_boy_male to Res.string.gender_boy_male,
         AppResources.string.gender_girl_female to Res.string.gender_girl_female,
         AppResources.string.gender_girl_male to Res.string.gender_girl_male,
+        AppResources.string.hijri_offset_hint to Res.string.hijri_offset_hint,
+        AppResources.string.hijri_offset_title to Res.string.hijri_offset_title,
         AppResources.string.home_add_task_female to Res.string.home_add_task_female,
         AppResources.string.home_add_task_male to Res.string.home_add_task_male,
         AppResources.string.home_daily_tasks_female to Res.string.home_daily_tasks_female,
@@ -1085,6 +1116,10 @@ object ResourceCatalog {
         AppResources.string.onboarding_battery_title_male to Res.string.onboarding_battery_title_male,
         AppResources.string.onboarding_continue_female to Res.string.onboarding_continue_female,
         AppResources.string.onboarding_continue_male to Res.string.onboarding_continue_male,
+        AppResources.string.onboarding_exact_description_female to Res.string.onboarding_exact_description_female,
+        AppResources.string.onboarding_exact_description_male to Res.string.onboarding_exact_description_male,
+        AppResources.string.onboarding_exact_title_female to Res.string.onboarding_exact_title_female,
+        AppResources.string.onboarding_exact_title_male to Res.string.onboarding_exact_title_male,
         AppResources.string.onboarding_location_description_female to Res.string.onboarding_location_description_female,
         AppResources.string.onboarding_location_description_male to Res.string.onboarding_location_description_male,
         AppResources.string.onboarding_location_hint_female to Res.string.onboarding_location_hint_female,
@@ -1109,14 +1144,37 @@ object ResourceCatalog {
         AppResources.string.onboarding_welcome_description_male to Res.string.onboarding_welcome_description_male,
         AppResources.string.onboarding_welcome_title_female to Res.string.onboarding_welcome_title_female,
         AppResources.string.onboarding_welcome_title_male to Res.string.onboarding_welcome_title_male,
+        AppResources.string.permission_battery to Res.string.permission_battery,
+        AppResources.string.permission_battery_hint to Res.string.permission_battery_hint,
+        AppResources.string.permission_disabled to Res.string.permission_disabled,
+        AppResources.string.permission_enabled to Res.string.permission_enabled,
+        AppResources.string.permission_exact to Res.string.permission_exact,
+        AppResources.string.permission_exact_hint to Res.string.permission_exact_hint,
+        AppResources.string.permission_location to Res.string.permission_location,
+        AppResources.string.permission_location_hint to Res.string.permission_location_hint,
+        AppResources.string.permission_notifications to Res.string.permission_notifications,
+        AppResources.string.permission_notifications_hint to Res.string.permission_notifications_hint,
+        AppResources.string.permissions_title to Res.string.permissions_title,
         AppResources.string.playlist_loop_infinite to Res.string.playlist_loop_infinite,
         AppResources.string.playlist_loop_progress to Res.string.playlist_loop_progress,
         AppResources.string.playlist_repeat_less to Res.string.playlist_repeat_less,
         AppResources.string.playlist_repeat_more to Res.string.playlist_repeat_more,
+        AppResources.string.prayer_choose_location to Res.string.prayer_choose_location,
         AppResources.string.prayer_current_female to Res.string.prayer_current_female,
         AppResources.string.prayer_current_male to Res.string.prayer_current_male,
+        AppResources.string.prayer_location_settings to Res.string.prayer_location_settings,
+        AppResources.string.prayer_location_used to Res.string.prayer_location_used,
+        AppResources.string.prayer_method_auto to Res.string.prayer_method_auto,
+        AppResources.string.prayer_method_egypt to Res.string.prayer_method_egypt,
+        AppResources.string.prayer_method_isna to Res.string.prayer_method_isna,
+        AppResources.string.prayer_method_mwl to Res.string.prayer_method_mwl,
+        AppResources.string.prayer_method_saudi to Res.string.prayer_method_saudi,
+        AppResources.string.prayer_method_title to Res.string.prayer_method_title,
         AppResources.string.prayer_next_female to Res.string.prayer_next_female,
         AppResources.string.prayer_next_male to Res.string.prayer_next_male,
+        AppResources.string.prayer_no_location to Res.string.prayer_no_location,
+        AppResources.string.prayer_saved_location to Res.string.prayer_saved_location,
+        AppResources.string.prayer_use_gps to Res.string.prayer_use_gps,
         AppResources.string.quiz_almost_female to Res.string.quiz_almost_female,
         AppResources.string.quiz_almost_male to Res.string.quiz_almost_male,
         AppResources.string.quiz_challenge_female to Res.string.quiz_challenge_female,

@@ -12,6 +12,8 @@ data class OnboardingPage(
 data class OnboardingUiState(
     val currentPage: Int = 0,
     val pages: List<OnboardingPage> = onboardingPages,
+    val permissions: com.menna.nabatan_7asena.platform.PermissionStatus = com.menna.nabatan_7asena.platform.PermissionStatus(),
+    val returnedPrompts: Set<com.menna.nabatan_7asena.platform.AppPermission> = emptySet(),
     val showBatteryExplanation: Boolean = false
 )
 
@@ -39,6 +41,11 @@ val onboardingPages = listOf(
     OnboardingPage(
         title = GenderedStrings.onboardingNotificationsTitle,
         description = GenderedStrings.onboardingNotificationsDescription,
+        imageRes = R.drawable.onboarding_badges
+    ),
+    OnboardingPage(
+        title = GenderedStrings.onboardingExactTitle,
+        description = GenderedStrings.onboardingExactDescription,
         imageRes = R.drawable.onboarding_badges
     ),
     OnboardingPage(

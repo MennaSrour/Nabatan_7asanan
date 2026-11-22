@@ -10,6 +10,10 @@ data class HomeUiState(
     val suggestions: com.menna.nabatan_7asena.domain.entity.ExtraTasks = com.menna.nabatan_7asena.domain.entity.ExtraTasks(emptyList(), emptyList()),
     val user: UiUser? = null,
     val dailyWisdom: String = "جاري تحميل نور اليوم...",
+    val prayerTimeZone: String = kotlinx.datetime.TimeZone.currentSystemDefault().id,
+    val prayerLocationLabel: String = "",
+    val needsPrayerLocation: Boolean = false,
+    val seasonalCalendar: com.menna.nabatan_7asena.core.util.SeasonalCalendar = com.menna.nabatan_7asena.core.util.SeasonalCalendar(com.menna.nabatan_7asena.core.util.IslamicSeason.ORDINARY, null),
     val hijriDate: String = "",
     val tasks: List<UiTaskItem> = emptyList(),
     val gardenEarnedStars: Int = 0,
@@ -30,9 +34,10 @@ data class HomeUiState(
     val showCelebration: Boolean = false,
     val isNightTheme: Boolean = false,
     val hasBookmark: Boolean = false,
+    val dailyGiftRemaining: Int = com.menna.nabatan_7asena.domain.entity.dailyGiftRequiredTaskIds.size,
+    val dailyGiftTotal: Int = com.menna.nabatan_7asena.domain.entity.dailyGiftRequiredTaskIds.size,
+    val dailyRiddle: DailyContent.Riddle? = null,
     val showKhatmahCelebration: Boolean = false,
-    val showChallengeDialog: Boolean = false,
-    val currentRiddle: DailyContent.Riddle? = null,
     // فشل تحميل مهام/صلوات اليوم (الأغلب الأعم: مفيش إنترنت) — منفصل عمداً عن
     // isLoading: isLoading يعني "لسه بنجيب"، وده يعني "جبنا حاولنا وفشلنا".
     // من غيره كانت الشاشة بتفضل فاضية بصمت من غير أي تفسير للمستخدمة.
@@ -45,6 +50,8 @@ data class HomeUiState(
     // ما نخبي باقي المهام اللي فعلاً نجحت تتحمّل.
     val hasPrayerLoadError: Boolean = false
 ) {
+    val isDailyGiftUnlocked: Boolean get() = !isLoading && !hasLoadError && dailyGiftRemaining == 0
+
     data class UiUser(
         val name: String,
         val avatarEmoji: String,

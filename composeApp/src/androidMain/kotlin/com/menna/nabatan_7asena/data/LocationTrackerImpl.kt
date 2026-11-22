@@ -36,25 +36,26 @@ class LocationTrackerImpl @Inject constructor(
         }
 
         return try {
-            var location = client.lastLocation.await()
-            if (location == null) {
-                location = client.getCurrentLocation(
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY, null
-                ).await()
+            val location = kotlinx.coroutines.withTimeoutOrNull(10_000) {
+                val cancellation = com.google.android.gms.tasks.CancellationTokenSource()
+                try { client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cancellation.token).await() }
+                finally { cancellation.cancel() }
+            } ?: client.lastLocation.await()?.takeIf {
+                android.os.SystemClock.elapsedRealtimeNanos() - it.elapsedRealtimeNanos < 15L * 60 * 1_000_000_000
             }
 
             if (location != null) {
                 val geocoder = Geocoder(context, Locale("en")) 
-                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                val addresses = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { geocoder.getFromLocation(location.latitude, location.longitude, 1) }
 
                 if (!addresses.isNullOrEmpty()) {
                     val address = addresses[0]
 
                     
-                    val city = address.subAdminArea ?: address.locality ?: address.adminArea ?: "Cairo"
+                    val city = address.subAdminArea ?: address.locality ?: address.adminArea ?: address.countryName.orEmpty()
 
                     
-                    val country = address.countryName ?: "Egypt"
+                    val country = address.countryName ?: ""
 
                     Log.d("LocationTracker", "تم تحديد الموقع: $city, $country")
 
@@ -63,7 +64,8 @@ class LocationTrackerImpl @Inject constructor(
                         city = city,
                         country = country,
                         latitude = location.latitude,
-                        longitude = location.longitude
+                        longitude = location.longitude,
+                        countryCode = address.countryCode.orEmpty()
                     )
                 } else {
                     null
@@ -71,6 +73,7 @@ class LocationTrackerImpl @Inject constructor(
             } else {
                 null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e
         } catch (e: Exception) {
             e.printStackTrace()
             null

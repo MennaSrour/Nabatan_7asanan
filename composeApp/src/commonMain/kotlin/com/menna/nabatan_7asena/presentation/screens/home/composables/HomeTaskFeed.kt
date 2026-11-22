@@ -26,15 +26,16 @@ fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Uni
             item(key = "seasonal-home-banner") { SeasonalHomeBanner(seasonalMode, onRamadanCalendar) }
         }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
+            item { PrayerLocationNotice(state, onSettings) }
             homeSummaryItems(state, actions, badgeCount, onPrayerGuide, onBadges)
             if (state.hasLoadError && state.tasks.isEmpty()) {
                 item { NoInternetState(title = genderedStringResource(GenderedStrings.homeLoadError), onRetry = actions::retryLoadingData) }
             } else {
                 homePrayerItems(state, actions, tint)
                 homeDailyTaskItems(state, actions, tint)
-                item { HomeTreasureSummary(state, actions::openDailyChallenge) }
             }
             item { HomeAddTaskButton(onAddTask) }
+            item { HomeTreasureSummary(state, actions::openDailyGift) }
         }
     }
 }

@@ -43,7 +43,7 @@ fun BottomSection(
         ) {
             TextButton(onClick = onSkipClicked) {
                 Text(
-                    text = if (currentPage >= 3) genderedStringResource(GenderedStrings.onboardingSkipAll) else genderedStringResource(GenderedStrings.onboardingSkip),
+                    text = genderedStringResource(GenderedStrings.onboardingSkip),
                     color = SummerTheme.colors.textBrown,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
@@ -64,7 +64,7 @@ fun BottomSection(
                         totalPages - 1 -> genderedStringResource(GenderedStrings.startJourney)
                         3 -> genderedStringResource(GenderedStrings.onboardingAllowLocation)
                         4 -> genderedStringResource(GenderedStrings.onboardingAllowNotifications)
-                        5 -> genderedStringResource(GenderedStrings.onboardingBatteryTitle)
+                        5 -> genderedStringResource(GenderedStrings.onboardingExactTitle)
                         else -> genderedStringResource(GenderedStrings.next)
                     },
                     fontSize = 15.sp,

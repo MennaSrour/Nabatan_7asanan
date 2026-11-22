@@ -20,6 +20,9 @@ interface PermissionPlatform {
     val supportsAndroidPermissions: Boolean
     fun locationGranted(): Boolean
     fun notificationsGranted(): Boolean
+    fun exactAlarmsGranted(): Boolean = true
+    suspend fun refresh() = Unit
+    fun permissionSkipped(permission: AppPermission) = Unit
     fun batteryExempt(): Boolean
 }
 interface SchedulingPlatform {

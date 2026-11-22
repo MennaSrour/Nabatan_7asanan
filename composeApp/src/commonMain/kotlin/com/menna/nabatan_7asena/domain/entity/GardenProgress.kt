@@ -16,6 +16,7 @@ data class GardenProgress(
     val lastWateredDate: String? = null,
     val revision: Long = 0,
     val syncedRevision: Long = 0,
+    val wheelRewardDays: Set<String> = emptySet(),
     val spentStars: Int = 0,
     val ownedItems: Set<String> = emptySet(),
     val equippedItems: Set<String> = emptySet(),
@@ -38,6 +39,7 @@ data class GardenProgress(
         require(rewardedTaskIds.isEmpty() || rewardDate != null)
         rewardDate?.let { LocalDate.parse(it) }
         lastWateredDate?.let { LocalDate.parse(it) }
+        wheelRewardDays.forEach { LocalDate.parse(it) }
         require(worldFormat in 0..1)
         if (worldFormat == 1) {
             require(expansions in 0..GARDEN_MAX_EXPANSIONS && trees.isNotEmpty())

@@ -16,9 +16,7 @@ interface HomeActions {
     fun onTaskChecked(item: HomeUiState.UiTaskItem)
     fun playTaskSound(item: HomeUiState.UiTaskItem)
     fun loadSuggestions()
-    fun openDailyChallenge()
+    fun openDailyGift(lockedReminder: String)
     fun dismissCelebration()
     fun onAddExtraTask(title: String)
-    fun closeChallenge()
-    fun onCorrectAnswer()
 }

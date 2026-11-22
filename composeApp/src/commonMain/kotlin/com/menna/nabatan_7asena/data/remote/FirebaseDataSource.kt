@@ -8,6 +8,10 @@ import kotlinx.coroutines.sync.withLock
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.Direction
+import dev.gitlive.firebase.firestore.Source
+import com.menna.nabatan_7asena.data.remote.dto.SpeedQuestionDto
+import com.menna.nabatan_7asena.data.remote.dto.VerseBuilderDto
+import com.menna.nabatan_7asena.data.remote.dto.WheelClaimDto
 import com.menna.nabatan_7asena.data.remote.dto.DailyPlanDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizQuestionDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizScoreDto
@@ -58,6 +62,34 @@ class FirebaseDataSource constructor(
         } catch (e: Exception) {
             Log.e("FirebaseDataSource", "حدث خطأ في جلب لوحة المتصدرين", e)
             throw e
+        }
+    }
+
+    suspend fun getVerseBuilderItems(): List<VerseBuilderDto> =
+        firestore.collection("verse_builder_items").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<VerseBuilderDto>() }.getOrNull() }
+
+    suspend fun getSpeedChallengeQuestions(): List<SpeedQuestionDto> =
+        firestore.collection("speed_challenge_questions").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<SpeedQuestionDto>() }.getOrNull() }
+
+    private suspend fun wheelClaim(profileId: String, day: String) =
+        firestore.collection("users").document(ownerUid()).collection("daily_reward_profiles")
+            .document(profileId).collection("spins").document(day)
+
+    suspend fun getWheelClaim(profileId: String, day: String): WheelClaimDto? {
+        val snapshot = wheelClaim(profileId, day).get(Source.SERVER)
+        return if (snapshot.exists) snapshot.data<WheelClaimDto>() else null
+    }
+
+    suspend fun claimWheel(profileId: String, day: String, claim: WheelClaimDto): WheelClaimDto {
+        val document = wheelClaim(profileId, day)
+        return firestore.runTransaction {
+            val existing = get(document)
+            if (existing.exists) existing.data<WheelClaimDto>() else {
+                set(document, claim)
+                claim
+            }
         }
     }
 

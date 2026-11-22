@@ -20,6 +20,7 @@ fun HomeScreen(
     onNavigateToKhatmah: () -> Unit,
     onNavigateToSebha: () -> Unit,
     onNavigateToGarden: () -> Unit,
+    onNavigateToWheel: () -> Unit,
     onNavigateToPrayerGuide: () -> Unit,
     onNavigateToBadges: () -> Unit,
     seasonalMode: SeasonalMode = SeasonalMode.DEFAULT,
@@ -27,6 +28,10 @@ fun HomeScreen(
     completedExternalTaskId: Int? = null,
     viewModel: HomeViewModel = platformHomeViewModel()
 ) {
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        viewModel.refreshPrayerLocation()
+        onPauseOrDispose { viewModel.stopPrayerLocationUpdates() }
+    }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val badges by platformBadgesViewModel().uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -34,6 +39,7 @@ fun HomeScreen(
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             is HomeEffect.ShowMessage -> snackbar.showSnackbar(effect.message)
+            HomeEffect.NavigateToDailyGift -> onNavigateToWheel()
             HomeEffect.NavigateToGarden -> onNavigateToGarden()
             is HomeEffect.NavigateToQuran -> onNavigateToQuran(effect.page)
             HomeEffect.NavigateToKhatmah -> onNavigateToKhatmah()

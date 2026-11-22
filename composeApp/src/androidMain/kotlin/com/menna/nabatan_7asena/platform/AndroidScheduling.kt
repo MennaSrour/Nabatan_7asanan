@@ -16,7 +16,7 @@ class AndroidScheduling : SchedulingPlatform {
         val request = OneTimeWorkRequestBuilder<DailyManagerWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .addTag("immediate_setup_work").build()
-        work.enqueueUniqueWork("immediate_setup_work", ExistingWorkPolicy.KEEP, request)
+        work.enqueueUniqueWork("immediate_setup_work", ExistingWorkPolicy.REPLACE, request)
     }
     override fun cancelDailyAutoScheduling() { work.cancelUniqueWork("daily_manager_work") }
 }

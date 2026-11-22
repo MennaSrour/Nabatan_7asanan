@@ -18,7 +18,7 @@ fun MainContent(navController: NavHostController, openSettings: () -> Unit) {
     val entry by navController.currentBackStackEntryAsState()
     Box(Modifier.fillMaxSize()) {
         NavigationGraph(navController, openSettings)
-        if (entry?.destination?.route !in setOf("garden", "prayer-guide", "progress", RAMADAN_CALENDAR_ROUTE)) {
+        if (entry?.destination?.route !in setOf("garden", "prayer-guide", "progress", RAMADAN_CALENDAR_ROUTE, WheelRoute)) {
             FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         }
         UpdateDialog()

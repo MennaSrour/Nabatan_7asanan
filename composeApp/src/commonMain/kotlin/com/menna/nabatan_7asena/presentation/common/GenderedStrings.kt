@@ -4,6 +4,8 @@ import com.menna.nabatan_7asena.resources.AppResources as R
 
 /** Resource pairs for text rendered by Presentation. */
 object GenderedStrings {
+    val onboardingExactTitle = GenderedString(R.string.onboarding_exact_title_male, R.string.onboarding_exact_title_female)
+    val onboardingExactDescription = GenderedString(R.string.onboarding_exact_description_male, R.string.onboarding_exact_description_female)
     val gardenLandLimit = GenderedString(R.string.world_land_limit_male, R.string.world_land_limit_female)
     val gardenPlacementUnavailable = GenderedString(R.string.world_place_error_male, R.string.world_place_error_female)
     val shopBuy = GenderedString(R.string.shop_buy_male, R.string.shop_buy_female)
