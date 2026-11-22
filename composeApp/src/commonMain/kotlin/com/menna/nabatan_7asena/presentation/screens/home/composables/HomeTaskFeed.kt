@@ -16,11 +16,10 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onWheel: () -> Unit, onGames: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp) {
+fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp) {
     val tint = if (state.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
         item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme) }
-        item { HomeRewardsEntries(onWheel, onGames) }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
             homeSummaryItems(state, actions)
             if (state.hasLoadError && state.tasks.isEmpty()) {
@@ -28,9 +27,9 @@ fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Uni
             } else {
                 homePrayerItems(state, actions, tint)
                 homeDailyTaskItems(state, actions, tint)
-                item { HomeTreasureSummary(state, actions::openDailyChallenge) }
             }
             item { HomeAddTaskButton(onAddTask) }
+            item { HomeTreasureSummary(state, actions::openDailyGift) }
         }
     }
 }

@@ -11,7 +11,4 @@ fun HomeOverlays(state: HomeUiState, actions: HomeActions, showAddSheet: Boolean
     if (state.showCelebration) CelebrationOverlay(actions::dismissCelebration)
     if (showAddSheet) AddTaskBottomSheet(onDismiss = onCloseSheet, suggestions = state.suggestions, existingTitles = state.tasks.map { it.title },
         onTaskSelected = { actions.onAddExtraTask(it); onCloseSheet() })
-    state.currentRiddle?.takeIf { state.showChallengeDialog }?.let { riddle ->
-        DailyChallengeDialog(riddle, actions::closeChallenge) { if (it) actions.onCorrectAnswer() }
-    }
 }

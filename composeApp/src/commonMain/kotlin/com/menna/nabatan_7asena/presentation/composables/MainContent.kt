@@ -18,7 +18,7 @@ fun MainContent(navController: NavHostController, openSettings: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         NavigationGraph(navController, openSettings)
         val route = entry?.destination?.route
-        if (route != "garden" && route != WheelRoute && route?.startsWith(GamesRoute) != true) {
+        if (route != "garden" && route != WheelRoute) {
             FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         }
         UpdateDialog()

@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import com.menna.nabatan_7asena.domain.entity.missingDailyGiftTasks
+import com.menna.nabatan_7asena.domain.entity.WheelPrize
 
 @Dao
 interface AppDao {
@@ -14,6 +16,35 @@ interface AppDao {
 
     @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND synced = 0 ORDER BY day")
     suspend fun pendingRewards(profileId: String): List<DailyRewardEntity>
+
+    @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND day = :day AND kind = 'wheel'")
+    suspend fun wheelReward(profileId: String, day: String): DailyRewardEntity?
+
+    @Query("SELECT itemId FROM daily_records WHERE date = :date AND isCompleted = 1")
+    suspend fun completedGiftTaskIds(date: String): List<Int>
+
+    @Query("SELECT id FROM extra_tasks WHERE date = :date")
+    suspend fun extraGiftTaskIds(date: String): List<Int>
+
+    @Query("SELECT userId FROM user_stats WHERE id = 1")
+    suspend fun activeRewardProfileId(): String?
+
+    private suspend fun giftTasksCompleted(profileId: String, date: String): Boolean {
+        if (activeRewardProfileId().orEmpty().ifBlank { "local" } != profileId) return false
+        return missingDailyGiftTasks(extraGiftTaskIds(date), completedGiftTaskIds(date).toSet()) == 0
+    }
+
+    @Transaction
+    suspend fun reserveDailyGift(reward: DailyRewardEntity, taskDate: String): Boolean =
+        giftTasksCompleted(reward.profileId, taskDate) && claimReward(reward)
+
+    @Transaction
+    suspend fun claimDailyGiftGame(reward: DailyRewardEntity, taskDate: String): Boolean {
+        if (!giftTasksCompleted(reward.profileId, taskDate)) return false
+        val wheel = wheelReward(reward.profileId, reward.day)?.takeIf { it.settled } ?: return false
+        if (WheelPrize.fromStoredCode(wheel.prize)?.game?.name != reward.kind) return false
+        return claimReward(reward)
+    }
 
     @Query("SELECT MAX(day) FROM daily_rewards WHERE profileId = :profileId AND kind = :kind")
     suspend fun latestRewardDate(profileId: String, kind: String): String?

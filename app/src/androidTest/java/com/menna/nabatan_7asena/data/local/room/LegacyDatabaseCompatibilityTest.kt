@@ -133,4 +133,40 @@ class LegacyDatabaseCompatibilityTest {
             database.close()
         }
     }
+
+    @Test fun dailyGiftChecksStoredTasksAndOnlyCreditsTheWonGame() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java
+        ).build()
+        try {
+            val dao = database.appDao()
+            val taskDate = "21-11-2026"
+            val reservation = DailyRewardEntity(
+                "saved", "2026-11-21", "wheel", "MEMORY", 0,
+                synced = false, settled = false, claimId = "daily-gift"
+            )
+            val memory = reservation.copy(kind = "MEMORY", stars = 10, settled = true)
+            dao.insertUserStats(UserStatsEntity(userId = "saved"))
+            dao.insertExtraTask(ExtraTaskEntity(501, taskDate, "مهمة إضافية"))
+            for (id in listOf(100, 101, 102, 103, 104, 300, 400)) {
+                dao.updateOrInsertRecord(DailyRecordEntity(taskDate, id, true))
+            }
+            assertFalse(dao.reserveDailyGift(reservation, taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, true))
+            assertFalse(dao.reserveDailyGift(reservation.copy(profileId = "other"), taskDate))
+            assertTrue(dao.reserveDailyGift(reservation, taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            assertTrue(dao.settleReward(reservation.copy(settled = true)))
+            assertFalse(dao.claimDailyGiftGame(memory.copy(kind = "VERSE"), taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory.copy(day = "2026-11-22"), taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, false))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, true))
+            assertTrue(dao.claimDailyGiftGame(memory, taskDate))
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            assertEquals(10, dao.getUserStats().first()?.totalStars)
+        } finally {
+            database.close()
+        }
+    }
 }

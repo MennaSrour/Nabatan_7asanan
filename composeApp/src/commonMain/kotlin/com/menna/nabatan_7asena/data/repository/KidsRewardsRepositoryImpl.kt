@@ -18,6 +18,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDate
+import com.menna.nabatan_7asena.platform.AppClock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -32,23 +33,26 @@ class KidsRewardsRepositoryImpl(
 
     override fun observe(profileId: String, day: LocalDate) =
         combine(dao.observeRewards(profileId, day.toString()), garden.observe(profileId)) { records, progress ->
-            val wheel = records.firstOrNull { it.kind == WHEEL }
+            val today = records.filter { it.day == day.toString() }
+            val wheel = today.firstOrNull { it.kind == WHEEL }
             DailyRewardStatus(
                 prize = wheel?.takeIf { it.settled }?.let { decodePrize(it.prize) },
-                rewardedGames = KidsGame.entries.filter { game -> records.any { it.kind == game.name } }.toSet(),
+                rewardedGames = KidsGame.entries.filter { game -> today.any { it.kind == game.name } }.toSet(),
                 earnedHere = wheel?.earnedHere == true,
                 waterDelivered = (progress as? Resource.Success)?.data?.wheelRewardDays?.contains(wheel?.day) == true,
-                spinPending = wheel?.settled == false
+                spinPending = wheel?.settled == false,
+                clockRolledBack = records.any { it.kind == WHEEL && it.day > day.toString() }
             )
         }
 
     override suspend fun spin(profileId: String, day: LocalDate): WheelPrize? = wheelLock.withLock {
-        val prize = WheelPrize.entries.random()
+        if (day != AppClock.today()) return@withLock null
+        val prize = WheelPrize.segments.random()
         val reservation = DailyRewardEntity(
             profileId, day.toString(), WHEEL, prize.name, 0, synced = false,
             settled = false, claimId = Uuid.random().toString()
         )
-        if (!dao.claimReward(reservation)) return@withLock null
+        if (!dao.reserveDailyGift(reservation, AppClock.dateString(day))) return@withLock null
         val settled = finalizeWheel(reservation)
         if (settled.earnedHere) decodePrize(settled.prize) else null
     }
@@ -77,9 +81,9 @@ class KidsRewardsRepositoryImpl(
     override suspend fun rewardGame(profileId: String, day: LocalDate, game: KidsGame, stars: Int): Int {
         val payout = stars.coerceIn(0, MAX_GAME_STARS)
         if (payout == 0) return 0
-        if (game == KidsGame.BONUS && observe(profileId, day).first().prize != WheelPrize.BONUS_ROUND) return 0
+        if (day != AppClock.today()) return 0
         val record = DailyRewardEntity(profileId, day.toString(), game.name, "", payout, profileId == LOCAL)
-        return if (dao.claimReward(record)) payout else 0
+        return if (dao.claimDailyGiftGame(record, AppClock.dateString(day))) payout else 0
     }
 
     override suspend fun sync(profileId: String, day: LocalDate) = syncLock.withLock {
@@ -166,7 +170,7 @@ class KidsRewardsRepositoryImpl(
         }
     }
 
-    private fun decodePrize(code: String) = WheelPrize.entries.firstOrNull { it.name == code }
+    private fun decodePrize(code: String) = WheelPrize.fromStoredCode(code)
 
     private companion object {
         const val LOCAL = "local"

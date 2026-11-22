@@ -22,8 +22,8 @@ private val memoryPairs = listOf(
 )
 
 @Composable
-internal fun MemoryMatch(bonus: Boolean, onFinish: (Int) -> Unit) {
-    val pairCount = if (bonus) 8 else 6
+internal fun MemoryMatch(onFinish: (Int) -> Unit) {
+    val pairCount = 6
     val deck = remember { (0 until pairCount).flatMap { listOf(it, it) }.shuffled() }
     var faceUp by remember { mutableStateOf(emptyList<Int>()) }
     var matched by remember { mutableStateOf(emptySet<Int>()) }

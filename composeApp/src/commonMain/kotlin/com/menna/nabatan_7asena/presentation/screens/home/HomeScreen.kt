@@ -17,7 +17,6 @@ fun HomeScreen(
     onNavigateToSebha: () -> Unit,
     onNavigateToGarden: () -> Unit,
     onNavigateToWheel: () -> Unit,
-    onNavigateToGames: () -> Unit,
     completedExternalTaskId: Int? = null,
     viewModel: HomeViewModel = platformHomeViewModel()
 ) {
@@ -27,10 +26,11 @@ fun HomeScreen(
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             is HomeEffect.ShowMessage -> snackbar.showSnackbar(effect.message)
+            HomeEffect.NavigateToDailyGift -> onNavigateToWheel()
             HomeEffect.NavigateToGarden -> onNavigateToGarden()
             HomeEffect.NavigateToQuran -> onNavigateToQuran()
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
-    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToWheel, onNavigateToGames)
+    HomeContent(state, viewModel, snackbar, onNavigateToSettings)
 }

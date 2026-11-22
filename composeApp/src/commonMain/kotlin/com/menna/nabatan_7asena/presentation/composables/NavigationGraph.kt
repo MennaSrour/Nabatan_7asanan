@@ -16,14 +16,9 @@ import com.menna.nabatan_7asena.presentation.screens.leaderboard.LeaderboardScre
 import com.menna.nabatan_7asena.presentation.screens.quiz.QuizScreen
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranScreen
 import com.menna.nabatan_7asena.presentation.screens.sebha.SebhaScreen
-import com.menna.nabatan_7asena.domain.entity.KidsGame
 import com.menna.nabatan_7asena.presentation.screens.rewards.DailyWheelScreen
-import com.menna.nabatan_7asena.presentation.screens.rewards.KidsGamesScreen
-import com.menna.nabatan_7asena.presentation.screens.rewards.KidsGameScreen
 
 internal const val WheelRoute = "daily-wheel"
-internal const val GamesRoute = "kids-games"
-private fun gameRoute(game: KidsGame) = "$GamesRoute/${game.name.lowercase()}"
 
 @Composable
 fun NavigationGraph(
@@ -40,7 +35,6 @@ fun NavigationGraph(
             HomeScreen(
                 onNavigateToSettings = openSettings,
                 onNavigateToWheel = { navController.navigate(WheelRoute) { launchSingleTop = true } },
-                onNavigateToGames = { navController.navigate(GamesRoute) { launchSingleTop = true } },
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
                 onNavigateToQuran = {
                     navController.navigate("quran") {
@@ -65,23 +59,15 @@ fun NavigationGraph(
                     com.menna.nabatan_7asena.platform.platformHomeViewModel(), onBack = { navController.popBackStack() })
             }
         }
-        composable(WheelRoute) {
-            DailyWheelScreen(
-                onBack = { navController.popBackStack() },
-                onGames = { navController.navigate(GamesRoute) { launchSingleTop = true } },
-                onBonus = { navController.navigate(gameRoute(KidsGame.BONUS)) { launchSingleTop = true } },
-                viewModel = rewards
-            )
-        }
-        composable(GamesRoute) {
-            KidsGamesScreen(
-                onBack = { navController.popBackStack() },
-                onGame = { game -> navController.navigate(gameRoute(game)) { launchSingleTop = true } },
-                viewModel = rewards
-            )
-        }
-        KidsGame.entries.forEach { game ->
-            composable(gameRoute(game)) { KidsGameScreen(game, onBack = { navController.popBackStack() }) }
+        composable(WheelRoute) { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                DailyWheelScreen(
+                    onBack = { navController.popBackStack() },
+                    viewModel = rewards,
+                    home = com.menna.nabatan_7asena.platform.platformHomeViewModel()
+                )
+            }
         }
         composable("sebha") { SebhaScreen() }
         composable("leaderboard") { LeaderboardScreen() }

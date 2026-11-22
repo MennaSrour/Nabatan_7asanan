@@ -16,12 +16,12 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeLayout(state: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onWheel: () -> Unit, onGames: () -> Unit, onAddTask: () -> Unit) {
+fun HomeLayout(state: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onAddTask: () -> Unit) {
     val background = if (state.isNightTheme) NightBackgroundGradient
     else Brush.verticalGradient(listOf(SummerTheme.colors.dayBackground, SummerTheme.colors.dayBackground))
     Scaffold(containerColor = SummerTheme.colors.transparent, snackbarHost = { HomeSnackbarHost(snackbar) }) { padding ->
         Box(Modifier.fillMaxSize().background(background)) {
-            HomeTaskFeed(state, actions, onSettings, onWheel, onGames, onAddTask, padding.calculateBottomPadding())
+            HomeTaskFeed(state, actions, onSettings, onAddTask, padding.calculateBottomPadding())
         }
     }
 }

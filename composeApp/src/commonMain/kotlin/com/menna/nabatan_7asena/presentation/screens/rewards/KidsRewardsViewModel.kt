@@ -15,14 +15,18 @@ import kotlinx.datetime.LocalDate
 
 internal data class RewardAccount(val profileId: String, val day: LocalDate)
 
+internal data class RewardDay(val account: RewardAccount, val status: DailyRewardStatus)
+
 internal sealed interface SpinState {
     data object Idle : SpinState
     data object Saving : SpinState
-    data class Won(val prize: WheelPrize) : SpinState
+    data class Won(val account: RewardAccount, val prize: WheelPrize) : SpinState
     data object Failed : SpinState
 }
 
 internal data class GamePayout(
+    val account: RewardAccount,
+    val game: KidsGame,
     val requested: Int,
     val score: Int?,
     val credited: Int? = null,
@@ -44,9 +48,9 @@ open class KidsRewardsViewModel(
     internal val account = combine(users.getCurrentUser().map { it.id.ifBlank { "local" } }.distinctUntilChanged(), day, ::RewardAccount)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    internal val status = account.transformLatest<RewardAccount?, DailyRewardStatus?> { current ->
+    internal val status = account.transformLatest<RewardAccount?, RewardDay?> { current ->
         emit(null)
-        if (current != null) emitAll(rewards.observe(current.profileId, current.day))
+        if (current != null) emitAll(rewards.observe(current.profileId, current.day).map { RewardDay(current, it) })
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _spin = MutableStateFlow<SpinState>(SpinState.Idle)
@@ -63,16 +67,16 @@ open class KidsRewardsViewModel(
         }
     }
 
-    internal fun spinWheel() {
-        val current = account.value ?: return
-        val currentStatus = status.value ?: return
-        if (currentStatus.prize != null || currentStatus.spinPending ||
+    internal fun spinWheel(current: RewardAccount) {
+        if (account.value != current) return
+        val currentStatus = status.value?.takeIf { it.account == current }?.status ?: return
+        if (currentStatus.prize != null || currentStatus.spinPending || currentStatus.clockRolledBack ||
             _spin.value == SpinState.Saving || _spin.value is SpinState.Won) return
         _spin.value = SpinState.Saving
         viewModelScope.launch {
             try {
                 val prize = rewards.spin(current.profileId, current.day)
-                _spin.value = if (prize == null) SpinState.Idle else SpinState.Won(prize)
+                _spin.value = if (prize == null) SpinState.Idle else SpinState.Won(current, prize)
                 sync(current)
             } catch (e: CancellationException) {
                 throw e
@@ -91,9 +95,10 @@ open class KidsRewardsViewModel(
     }
 
     internal fun finishGame(current: RewardAccount, game: KidsGame, stars: Int, score: Int? = null) {
-        val previous = _payout.value
+        if (account.value != current || status.value?.takeIf { it.account == current }?.status?.prize?.game != game) return
+        val previous = _payout.value?.takeIf { it.account == current && it.game == game }
         if (previous != null && !previous.failed) return
-        val result = GamePayout(stars, score)
+        val result = GamePayout(current, game, stars, score)
         _payout.value = result
         viewModelScope.launch {
             try {
