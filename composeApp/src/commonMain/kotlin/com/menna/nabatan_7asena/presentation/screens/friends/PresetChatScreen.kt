@@ -25,8 +25,9 @@ import com.menna.nabatan_7asena.presentation.common.*
 import com.menna.nabatan_7asena.resources.painterResource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import com.menna.nabatan_7asena.domain.entity.User
 
@@ -135,7 +136,7 @@ private fun PresetChatContent(
 private fun MessageBubble(message: ChatMessage, sent: Boolean, profile: FriendProfile?) {
     val dateTime = Instant.fromEpochSeconds(message.time.seconds, message.time.nanoseconds.toLong())
         .toLocalDateTime(TimeZone.currentSystemDefault())
-    val stamp = "${dateTime.dayOfMonth}/${dateTime.monthNumber}  ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
+    val stamp = "${dateTime.day}/${dateTime.month.number}  ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, if (sent) Alignment.Start else Alignment.End),

@@ -83,20 +83,33 @@ internal fun FriendsShortcut(onClick: () -> Unit) {
 @Composable
 internal fun FriendsScaffold(title: String, onBack: () -> Unit, snackbar: SnackbarHostState, content: @Composable (PaddingValues) -> Unit) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Scaffold(
-            containerColor = FriendsCream,
-            contentColor = FriendsPurple,
-            topBar = {
-                TopAppBar(
-                    title = { Text(title) },
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع") } },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = FriendsLavender,
-                        titleContentColor = FriendsPurple, navigationIconContentColor = FriendsPurple)
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-            content = content
-        )
+        MaterialTheme(
+            colorScheme = lightColorScheme(
+                primary = FriendsPurple,
+                onPrimary = Color.White,
+                primaryContainer = FriendsLavender,
+                onPrimaryContainer = FriendsPurple,
+                surface = FriendsCream,
+                onSurface = FriendsPurple,
+                onSurfaceVariant = FriendsPurple,
+                outline = FriendsPurple
+            )
+        ) {
+            Scaffold(
+                containerColor = FriendsCream,
+                contentColor = FriendsPurple,
+                topBar = {
+                    TopAppBar(
+                        title = { Text(title) },
+                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع") } },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = FriendsLavender,
+                            titleContentColor = FriendsPurple, navigationIconContentColor = FriendsPurple)
+                    )
+                },
+                snackbarHost = { SnackbarHost(snackbar) },
+                content = content
+            )
+        }
     }
 }
 
