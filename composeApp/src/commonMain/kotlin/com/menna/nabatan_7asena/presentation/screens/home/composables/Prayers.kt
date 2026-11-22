@@ -44,7 +44,7 @@ import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 
 private val PRAYER_ORDER = listOf("الفجر", "الظهر", "العصر", "المغرب", "العشاء")
 
-private data class PrayerSky(val gradient: List<Color>, val labelAccent: Color)
+internal data class PrayerSky(val gradient: List<Color>, val labelAccent: Color)
 
 private val PRAYER_SKIES = mapOf(
     "الفجر" to PrayerSky(
@@ -69,12 +69,12 @@ private val PRAYER_SKIES = mapOf(
     )
 )
 
-private fun defaultSky(name: String) = PRAYER_SKIES[name] ?: PrayerSky(
+internal fun prayerSky(name: String) = PRAYER_SKIES[name.removePrefix("صلاة ").trim()] ?: PrayerSky(
     gradient = listOf(Color(0xFF64748B), Color(0xFF94A3B8)),
     labelAccent = Color(0xFF475569)
 )
 
-private fun prayerIconRes(name: String) = when (name) {
+internal fun prayerIconRes(name: String) = when (name) {
     "الفجر" -> "fajr"
     "الظهر" -> "zuhr_sun"
     "العصر" -> "asr_sun"
@@ -117,7 +117,7 @@ private fun PrayerCard(
     isFocused: Boolean,
     onClick: () -> Unit
 ) {
-    val sky = remember(prayer.title) { defaultSky(prayer.title) }
+    val sky = remember(prayer.title) { prayerSky(prayer.title) }
 
     val cardWidth by animateDpAsState(if (isFocused) 92.dp else 76.dp, tween(450), label = "cardWidth")
     val cardHeight by animateDpAsState(

@@ -11,9 +11,11 @@ import androidx.room.RoomDatabase
         DailyRecordEntity::class,
         UserStatsEntity::class,
         DailyPlanEntity::class,
-        ExtraTaskEntity::class
+        ExtraTaskEntity::class,
+        DailyRewardEntity::class,
+        QuranJourneyEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
 @ConstructedBy(AppDatabaseConstructor::class)

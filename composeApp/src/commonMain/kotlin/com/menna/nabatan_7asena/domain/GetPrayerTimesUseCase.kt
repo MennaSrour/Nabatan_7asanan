@@ -6,6 +6,13 @@ import kotlinx.coroutines.CancellationException
 class GetPrayerTimesUseCase constructor(
     private val repository: PrayerTimesRepository
 ) {
+    suspend fun at(request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?, date: String): PrayerTimes? {
+        if (request == null) return null
+        return try { repository.getPrayerTimes(request, date) }
+        catch (e: CancellationException) { throw e }
+        catch (_: Exception) { null }
+    }
+
     suspend fun exact(city: String, country: String, date: String): PrayerTimes? = try {
         repository.getExactPrayerTimes(city, country, date)
     } catch (e: CancellationException) {

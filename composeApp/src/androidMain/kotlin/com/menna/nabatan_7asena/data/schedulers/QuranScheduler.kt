@@ -13,10 +13,8 @@ import com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 
 class QuranScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -25,27 +23,27 @@ class QuranScheduler @Inject constructor(
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    fun scheduleWerd(times: PrayerTimes) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val stats = appDao.getUserStats().firstOrNull()
-            if (stats?.quranNotifications == false) return@launch // المستخدم قافل التنبيه، منجدولش حاجة
+    suspend fun scheduleWerd(times: PrayerTimes, timeZoneId: String) {
+        val stats = appDao.getUserStats().firstOrNull()
+        if (stats?.quranNotifications == false) return // المستخدم قافل التنبيه، منجدولش حاجة
 
-            val dayId = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-            val plan = dailyRepository.getPlanForDay(dayId)
+        val dayId = prayerCalendar(timeZoneId).get(Calendar.DAY_OF_YEAR)
+        val plan = dailyRepository.getPlanForDay(dayId)
 
-            scheduleOne(times.dhuhr, 20, plan?.quranWerd?.dhuhr, AlarmConstants.ID_QURAN_DHUHR)
-            scheduleOne(times.asr, 20, plan?.quranWerd?.asr, AlarmConstants.ID_QURAN_ASR)
-            scheduleOne(times.maghrib, 20, plan?.quranWerd?.maghrib, AlarmConstants.ID_QURAN_MAGHRIB)
-        }
+        scheduleOne(times.dhuhr, 20, plan?.quranWerd?.dhuhr, AlarmConstants.ID_QURAN_DHUHR, timeZoneId)
+        scheduleOne(times.asr, 20, plan?.quranWerd?.asr, AlarmConstants.ID_QURAN_ASR, timeZoneId)
+        scheduleOne(times.maghrib, 20, plan?.quranWerd?.maghrib, AlarmConstants.ID_QURAN_MAGHRIB, timeZoneId)
     }
 
-    private fun scheduleOne(timeStr: String, delayMin: Int, wird: String?, id: Int) {
+    private suspend fun scheduleOne(timeStr: String, delayMin: Int, wird: String?, id: Int, timeZoneId: String) {
+        kotlin.coroutines.coroutineContext.ensureActive()
         try {
             val parts = timeStr.trim().split(" ")[0].split(":")
-            val cal = Calendar.getInstance().apply {
+            val cal = prayerCalendar(timeZoneId).apply {
                 set(Calendar.HOUR_OF_DAY, parts[0].toInt())
                 set(Calendar.MINUTE, parts[1].toInt())
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
                 add(Calendar.MINUTE, delayMin)
             }
 
@@ -60,7 +58,7 @@ class QuranScheduler @Inject constructor(
                 val pendingIntent = PendingIntent.getBroadcast(
                     context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+                alarmManager?.scheduleReminder(cal.timeInMillis, pendingIntent)
             }
         } catch (e: Exception) { e.printStackTrace() }
     }

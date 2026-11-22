@@ -2,7 +2,7 @@
 
 Enable the Anonymous sign-in provider in Firebase Authentication for the project used by the Android and iOS hosts. The authenticated Firebase UID owns the social profile. The app keeps its existing local profile ID for the leaderboard and Garden.
 
-The repository did not have a copy of the deployed Firestore rules. Merge the helpers and social collection matches from `firestore.rules` into the existing `/databases/{database}/documents` rules before deployment. Keep the deployed rules for daily plans, leaderboard, quiz, and Garden backups. Review any recursive wildcard permissions because Firestore grants a request if any matching rule allows it.
+The repository's `firestore.rules` includes the social rules alongside the other app collections. Review any deployed rules that differ from the repository before publishing. Recursive wildcard permissions can grant access even when another matching rule denies it.
 
 The client reserves a friend code and its profile in the same transaction. Code lookups require an exact document ID and can never perform a list query. Declined requests stay declined to prevent the same pair from repeatedly sending requests. Chat access starts only after the recipient accepts.
 

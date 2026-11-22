@@ -4,6 +4,10 @@ import com.menna.nabatan_7asena.domain.entity.OfficialQuizAttempt
 import com.menna.nabatan_7asena.platform.PlatformPreferences
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 
 interface OfficialAttemptStorage { fun read(): String?; fun write(value: String) }
 class PlatformOfficialAttemptStorage : OfficialAttemptStorage {
@@ -12,6 +16,12 @@ class PlatformOfficialAttemptStorage : OfficialAttemptStorage {
     override fun write(value: String) = prefs.putString("attempts_v1", value)
 }
 class OfficialAttemptStore(private val storage: OfficialAttemptStorage = PlatformOfficialAttemptStorage()) {
+    private val revision = MutableStateFlow(0L)
+
+    fun observeCompleted(userId: String) = revision
+        .map { all().values.any { it.userId == userId && it.completed } }
+        .distinctUntilChanged()
+
     private val json = Json { ignoreUnknownKeys = true }
     private fun all(): Map<String, OfficialQuizAttempt> {
         val saved = storage.read()?.let { json.decodeFromString<Map<String, OfficialQuizAttempt>>(it) } ?: emptyMap()
@@ -28,5 +38,6 @@ class OfficialAttemptStore(private val storage: OfficialAttemptStorage = Platfor
         require(attempt.userId.isNotBlank() && attempt.score in 0..5)
         kotlinx.datetime.LocalDate.parse(attempt.weekId)
         storage.write(json.encodeToString(all() + ("${attempt.userId}|${attempt.weekId}" to attempt)))
+        revision.update { it + 1 }
     }
 }

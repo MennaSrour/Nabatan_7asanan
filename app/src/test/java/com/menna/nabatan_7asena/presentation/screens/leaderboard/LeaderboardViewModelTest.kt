@@ -34,6 +34,7 @@ class LeaderboardViewModelTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
         runCurrent()
         assertEquals(50L, viewModel.uiState.value.currentUserRank)
+        assertEquals(2, viewModel.uiState.value.currentUser?.completedKhatmahs)
         assertEquals(entries, viewModel.uiState.value.list)
         assertTrue(repository.rankRequests.isEmpty())
     }
@@ -41,7 +42,7 @@ class LeaderboardViewModelTest {
     @Test fun outsideTop50DisplaysAggregatedRankAndSavedProfileWithoutChangingList() = runTest(dispatcher) {
         val entries = (1..50).map { entry("user-$it") }
         repository.leaderboard.value = Resource.Success(entries)
-        repository.user.value = repository.user.value.copy(quranPartsFinished = 4, avatarIndex = 2)
+        repository.user.value = repository.user.value.copy(completedKhatmahs = 4, avatarIndex = 2)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
         runCurrent()
         assertEquals(124L, viewModel.uiState.value.currentUserRank)

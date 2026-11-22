@@ -17,6 +17,7 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 @OptIn(ExperimentalMaterial3Api::class)
 fun LazyListScope.homePrayerItems(state: HomeUiState, actions: HomeActions, tint: Color) {
     item { HomeSectionHeader(prayerBadgeStyle(""), genderedStringResource(GenderedStrings.homePrayers), tint) }
+    if (state.needsPrayerLocation) return
     if (!state.hasPrayerLoadError) item { NextPrayerCountdownCard(state) }
     item {
         if (state.hasPrayerLoadError) NoInternetState(

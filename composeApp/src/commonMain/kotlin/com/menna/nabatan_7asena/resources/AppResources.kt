@@ -290,6 +290,8 @@ object AppResources {
         const val gender_boy_male: Int = -965162277
         const val gender_girl_female: Int = -850149861
         const val gender_girl_male: Int = -1616590941
+        const val hijri_offset_hint: Int = -373710231
+        const val hijri_offset_title: Int = -933101212
         const val home_add_task_female: Int = -1205851725
         const val home_add_task_male: Int = -945392587
         const val home_daily_tasks_female: Int = -398044252
@@ -370,6 +372,10 @@ object AppResources {
         const val onboarding_battery_title_male: Int = -477518811
         const val onboarding_continue_female: Int = -1712343898
         const val onboarding_continue_male: Int = -1624248577
+        const val onboarding_exact_description_female: Int = -789901095
+        const val onboarding_exact_description_male: Int = -152457036
+        const val onboarding_exact_title_female: Int = -389369950
+        const val onboarding_exact_title_male: Int = -1299481296
         const val onboarding_location_description_female: Int = -2004548795
         const val onboarding_location_description_male: Int = -926694993
         const val onboarding_location_hint_female: Int = -1491413512
@@ -394,14 +400,37 @@ object AppResources {
         const val onboarding_welcome_description_male: Int = -1363656928
         const val onboarding_welcome_title_female: Int = -264575138
         const val onboarding_welcome_title_male: Int = -656570726
+        const val permission_battery: Int = -1572410506
+        const val permission_battery_hint: Int = -869754238
+        const val permission_disabled: Int = -955260370
+        const val permission_enabled: Int = -1567513504
+        const val permission_exact: Int = -1827750427
+        const val permission_exact_hint: Int = -151249002
+        const val permission_location: Int = -1653668602
+        const val permission_location_hint: Int = -677674146
+        const val permission_notifications: Int = -2091285090
+        const val permission_notifications_hint: Int = -1802475774
+        const val permissions_title: Int = -1402592661
         const val playlist_loop_infinite: Int = -687418361
         const val playlist_loop_progress: Int = -1527523903
         const val playlist_repeat_less: Int = -833897909
         const val playlist_repeat_more: Int = -1766859542
+        const val prayer_choose_location: Int = -480541854
         const val prayer_current_female: Int = -858646222
         const val prayer_current_male: Int = -1689989627
+        const val prayer_location_settings: Int = -1848997639
+        const val prayer_location_used: Int = -1485416277
+        const val prayer_method_auto: Int = -1319818881
+        const val prayer_method_egypt: Int = -1435101137
+        const val prayer_method_isna: Int = -1476809984
+        const val prayer_method_mwl: Int = -159360539
+        const val prayer_method_saudi: Int = -1542494407
+        const val prayer_method_title: Int = -1825161260
         const val prayer_next_female: Int = -660932317
         const val prayer_next_male: Int = -832593949
+        const val prayer_no_location: Int = -1801060903
+        const val prayer_saved_location: Int = -1324300335
+        const val prayer_use_gps: Int = -323866038
         const val quiz_almost_female: Int = -365289883
         const val quiz_almost_male: Int = -1792982285
         const val quiz_challenge_female: Int = -1860799762
@@ -746,6 +775,46 @@ object AppResources {
         const val update_required_male: Int = -743870644
         const val update_version_female: Int = -255135273
         const val update_version_male: Int = -1044004342
+        const val world_apple: Int = -577329848
+        const val world_available_quantity: Int = -461746265
+        const val world_bench: Int = -1839163853
+        const val world_blossom: Int = -8423012
+        const val world_decoration: Int = -814128419
+        const val world_decoration_inventory: Int = -1580654494
+        const val world_empty_plot: Int = -1936519195
+        const val world_entry_stats: Int = -968859957
+        const val world_expand: Int = -495475559
+        const val world_expansion_hint: Int = -327765083
+        const val world_fountain: Int = -1324167179
+        const val world_hidden: Int = -638043261
+        const val world_hide: Int = -1571539313
+        const val world_in_inventory: Int = -207143992
+        const val world_inventory: Int = -186007261
+        const val world_inventory_empty: Int = -1247552620
+        const val world_land_limit_female: Int = -996535202
+        const val world_land_limit_male: Int = -992533577
+        const val world_max_land: Int = -1499387201
+        const val world_move_here: Int = -88657863
+        const val world_no_placed: Int = -1484478731
+        const val world_olive: Int = -608988890
+        const val world_owned_quantity: Int = -359484247
+        const val world_palm: Int = -1566083
+        const val world_place_error_female: Int = -303812207
+        const val world_place_error_male: Int = -1732876277
+        const val world_place_here: Int = -1280112624
+        const val world_place_manage: Int = -1498662798
+        const val world_placed_inventory: Int = -21601555
+        const val world_plant_here: Int = -1695631118
+        const val world_plot_capacity: Int = -1901038614
+        const val world_plot_chip: Int = -2008440322
+        const val world_return_inventory: Int = -474470638
+        const val world_scene_description: Int = -1079425858
+        const val world_selected_plot: Int = -1595978414
+        const val world_shop_hint: Int = -1326420419
+        const val world_show: Int = -1262279515
+        const val world_tree_inventory: Int = -1079458660
+        const val world_tree_xp: Int = -1430391634
+        const val world_visible: Int = -1635414212
     }
 }
 
@@ -965,6 +1034,8 @@ object ResourceCatalog {
         AppResources.string.gender_boy_male to Res.string.gender_boy_male,
         AppResources.string.gender_girl_female to Res.string.gender_girl_female,
         AppResources.string.gender_girl_male to Res.string.gender_girl_male,
+        AppResources.string.hijri_offset_hint to Res.string.hijri_offset_hint,
+        AppResources.string.hijri_offset_title to Res.string.hijri_offset_title,
         AppResources.string.home_add_task_female to Res.string.home_add_task_female,
         AppResources.string.home_add_task_male to Res.string.home_add_task_male,
         AppResources.string.home_daily_tasks_female to Res.string.home_daily_tasks_female,
@@ -1045,6 +1116,10 @@ object ResourceCatalog {
         AppResources.string.onboarding_battery_title_male to Res.string.onboarding_battery_title_male,
         AppResources.string.onboarding_continue_female to Res.string.onboarding_continue_female,
         AppResources.string.onboarding_continue_male to Res.string.onboarding_continue_male,
+        AppResources.string.onboarding_exact_description_female to Res.string.onboarding_exact_description_female,
+        AppResources.string.onboarding_exact_description_male to Res.string.onboarding_exact_description_male,
+        AppResources.string.onboarding_exact_title_female to Res.string.onboarding_exact_title_female,
+        AppResources.string.onboarding_exact_title_male to Res.string.onboarding_exact_title_male,
         AppResources.string.onboarding_location_description_female to Res.string.onboarding_location_description_female,
         AppResources.string.onboarding_location_description_male to Res.string.onboarding_location_description_male,
         AppResources.string.onboarding_location_hint_female to Res.string.onboarding_location_hint_female,
@@ -1069,14 +1144,37 @@ object ResourceCatalog {
         AppResources.string.onboarding_welcome_description_male to Res.string.onboarding_welcome_description_male,
         AppResources.string.onboarding_welcome_title_female to Res.string.onboarding_welcome_title_female,
         AppResources.string.onboarding_welcome_title_male to Res.string.onboarding_welcome_title_male,
+        AppResources.string.permission_battery to Res.string.permission_battery,
+        AppResources.string.permission_battery_hint to Res.string.permission_battery_hint,
+        AppResources.string.permission_disabled to Res.string.permission_disabled,
+        AppResources.string.permission_enabled to Res.string.permission_enabled,
+        AppResources.string.permission_exact to Res.string.permission_exact,
+        AppResources.string.permission_exact_hint to Res.string.permission_exact_hint,
+        AppResources.string.permission_location to Res.string.permission_location,
+        AppResources.string.permission_location_hint to Res.string.permission_location_hint,
+        AppResources.string.permission_notifications to Res.string.permission_notifications,
+        AppResources.string.permission_notifications_hint to Res.string.permission_notifications_hint,
+        AppResources.string.permissions_title to Res.string.permissions_title,
         AppResources.string.playlist_loop_infinite to Res.string.playlist_loop_infinite,
         AppResources.string.playlist_loop_progress to Res.string.playlist_loop_progress,
         AppResources.string.playlist_repeat_less to Res.string.playlist_repeat_less,
         AppResources.string.playlist_repeat_more to Res.string.playlist_repeat_more,
+        AppResources.string.prayer_choose_location to Res.string.prayer_choose_location,
         AppResources.string.prayer_current_female to Res.string.prayer_current_female,
         AppResources.string.prayer_current_male to Res.string.prayer_current_male,
+        AppResources.string.prayer_location_settings to Res.string.prayer_location_settings,
+        AppResources.string.prayer_location_used to Res.string.prayer_location_used,
+        AppResources.string.prayer_method_auto to Res.string.prayer_method_auto,
+        AppResources.string.prayer_method_egypt to Res.string.prayer_method_egypt,
+        AppResources.string.prayer_method_isna to Res.string.prayer_method_isna,
+        AppResources.string.prayer_method_mwl to Res.string.prayer_method_mwl,
+        AppResources.string.prayer_method_saudi to Res.string.prayer_method_saudi,
+        AppResources.string.prayer_method_title to Res.string.prayer_method_title,
         AppResources.string.prayer_next_female to Res.string.prayer_next_female,
         AppResources.string.prayer_next_male to Res.string.prayer_next_male,
+        AppResources.string.prayer_no_location to Res.string.prayer_no_location,
+        AppResources.string.prayer_saved_location to Res.string.prayer_saved_location,
+        AppResources.string.prayer_use_gps to Res.string.prayer_use_gps,
         AppResources.string.quiz_almost_female to Res.string.quiz_almost_female,
         AppResources.string.quiz_almost_male to Res.string.quiz_almost_male,
         AppResources.string.quiz_challenge_female to Res.string.quiz_challenge_female,
@@ -1421,6 +1519,46 @@ object ResourceCatalog {
         AppResources.string.update_required_male to Res.string.update_required_male,
         AppResources.string.update_version_female to Res.string.update_version_female,
         AppResources.string.update_version_male to Res.string.update_version_male,
+        AppResources.string.world_apple to Res.string.world_apple,
+        AppResources.string.world_available_quantity to Res.string.world_available_quantity,
+        AppResources.string.world_bench to Res.string.world_bench,
+        AppResources.string.world_blossom to Res.string.world_blossom,
+        AppResources.string.world_decoration to Res.string.world_decoration,
+        AppResources.string.world_decoration_inventory to Res.string.world_decoration_inventory,
+        AppResources.string.world_empty_plot to Res.string.world_empty_plot,
+        AppResources.string.world_entry_stats to Res.string.world_entry_stats,
+        AppResources.string.world_expand to Res.string.world_expand,
+        AppResources.string.world_expansion_hint to Res.string.world_expansion_hint,
+        AppResources.string.world_fountain to Res.string.world_fountain,
+        AppResources.string.world_hidden to Res.string.world_hidden,
+        AppResources.string.world_hide to Res.string.world_hide,
+        AppResources.string.world_in_inventory to Res.string.world_in_inventory,
+        AppResources.string.world_inventory to Res.string.world_inventory,
+        AppResources.string.world_inventory_empty to Res.string.world_inventory_empty,
+        AppResources.string.world_land_limit_female to Res.string.world_land_limit_female,
+        AppResources.string.world_land_limit_male to Res.string.world_land_limit_male,
+        AppResources.string.world_max_land to Res.string.world_max_land,
+        AppResources.string.world_move_here to Res.string.world_move_here,
+        AppResources.string.world_no_placed to Res.string.world_no_placed,
+        AppResources.string.world_olive to Res.string.world_olive,
+        AppResources.string.world_owned_quantity to Res.string.world_owned_quantity,
+        AppResources.string.world_palm to Res.string.world_palm,
+        AppResources.string.world_place_error_female to Res.string.world_place_error_female,
+        AppResources.string.world_place_error_male to Res.string.world_place_error_male,
+        AppResources.string.world_place_here to Res.string.world_place_here,
+        AppResources.string.world_place_manage to Res.string.world_place_manage,
+        AppResources.string.world_placed_inventory to Res.string.world_placed_inventory,
+        AppResources.string.world_plant_here to Res.string.world_plant_here,
+        AppResources.string.world_plot_capacity to Res.string.world_plot_capacity,
+        AppResources.string.world_plot_chip to Res.string.world_plot_chip,
+        AppResources.string.world_return_inventory to Res.string.world_return_inventory,
+        AppResources.string.world_scene_description to Res.string.world_scene_description,
+        AppResources.string.world_selected_plot to Res.string.world_selected_plot,
+        AppResources.string.world_shop_hint to Res.string.world_shop_hint,
+        AppResources.string.world_show to Res.string.world_show,
+        AppResources.string.world_tree_inventory to Res.string.world_tree_inventory,
+        AppResources.string.world_tree_xp to Res.string.world_tree_xp,
+        AppResources.string.world_visible to Res.string.world_visible,
     )
     val rawPaths = mapOf(
         AppResources.raw.adam to "files/adam.mp3",

@@ -2,13 +2,12 @@
 
 package com.menna.nabatan_7asena.data.repository
 
-import com.menna.nabatan_7asena.data.remote.FirebaseAvailability
+import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
 import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.domain.entity.PresetMessage
 import com.menna.nabatan_7asena.domain.entity.User
 import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.Direction
 import dev.gitlive.firebase.firestore.BaseTimestamp
 import dev.gitlive.firebase.firestore.Source
@@ -60,7 +59,7 @@ private data class CreditWrite(val chatId: String, val senderId: String, val tim
 internal data class ChatMessage(val id: String, val preset: PresetMessage, val senderId: String, val time: Timestamp)
 internal class FriendsActionError(message: String) : Exception(message)
 
-internal class FriendsRepository {
+internal class FriendsRepository(private val firebase: FirebaseDataSource) {
     private val sessionMutex = Mutex()
     private val firestore get() = Firebase.firestore
     private val profiles get() = firestore.collection("friendProfiles")
@@ -68,13 +67,10 @@ internal class FriendsRepository {
     private val friendships get() = firestore.collection("friendships")
 
     suspend fun account(user: User): FriendsAccount = sessionMutex.withLock {
-        check(FirebaseAvailability.isConfigured)
-        val auth = Firebase.auth
-        var uid = auth.currentUser?.uid ?: requireNotNull(auth.signInAnonymously().user).uid
+        var uid = firebase.ownerUid()
         var profile = profiles.document(uid).get(Source.SERVER).takeIf { it.exists }?.data<FriendProfile>()
         if (profile != null && profile.profileId != user.id) {
-            auth.signOut()
-            uid = requireNotNull(auth.signInAnonymously().user).uid
+            uid = firebase.renewAnonymousOwner(uid)
             profile = null
         }
         val saved = profile ?: reserveCode(uid, user)
@@ -146,8 +142,8 @@ internal class FriendsRepository {
             val doc = firestore.collection("leaderboard").document(profile.profileId).get()
             val score = if (doc.exists) doc.data<UserRankDto>() else UserRankDto()
             LeaderboardEntry(profile.profileId, "صديق ${profile.friendCode}", profile.avatarGender,
-                score.totalStars, score.quranPartsFinished, 0, profile.avatarIndex)
-        } + LeaderboardEntry(user.id, user.name, user.gender, user.totalStars, user.quranPartsFinished, 0, user.avatarIndex)
+                score.totalStars, score.completedKhatmahs, 0, profile.avatarIndex)
+        } + LeaderboardEntry(user.id, user.name, user.gender, user.totalStars, user.completedKhatmahs, 0, user.avatarIndex)
         return entries.distinctBy { it.userId }.sortedWith(compareByDescending<LeaderboardEntry> { it.totalStars }.thenBy { it.userId })
             .mapIndexed { index, entry -> entry.copy(rank = index + 1) }
     }

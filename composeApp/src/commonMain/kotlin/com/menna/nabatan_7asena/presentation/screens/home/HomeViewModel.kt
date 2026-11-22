@@ -1,11 +1,18 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
 package com.menna.nabatan_7asena.presentation.screens.home
 
+import com.menna.nabatan_7asena.domain.entity.missingDailyGiftTasks
+import com.menna.nabatan_7asena.data.repository.QuranJourneyRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.core.audio.AudioPlayerManager
 import com.menna.nabatan_7asena.core.util.DateUtils
 import com.menna.nabatan_7asena.core.util.PrayerSlot
 import com.menna.nabatan_7asena.core.util.PrayerTimeline
+import com.menna.nabatan_7asena.data.local.PrayerSettingsStore
+import com.menna.nabatan_7asena.domain.entity.toPrayerPlace
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import com.menna.nabatan_7asena.domain.LocationTracker
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.Activity
@@ -50,8 +57,44 @@ open class HomeViewModel constructor(
     private val audioPlayerManager: AudioPlayerManager,
     private val quranRepository: QuranRepository,
     private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
-    private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository
+    private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository,
+    private val quranJourney: QuranJourneyRepository,
+    private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository,
+    internal val ramadanCalendar: com.menna.nabatan_7asena.data.repository.RamadanCalendarRepository
 ) : ViewModel(), HomeActions {
+
+    suspend fun awardPrayerGuideBonus(): Boolean {
+        val user = getCurrentUserUseCase().first()
+        check(user.id.isNotBlank() && user.id != "local")
+        return dailyActivityRepository.awardPrayerGuideBonus(user.id)
+    }
+
+    internal val ramadanProfileIds = getCurrentUserUseCase().map { it.id }.distinctUntilChanged()
+
+    private fun syncRamadanCalendar() = viewModelScope.launch {
+        ramadanProfileIds.collectLatest { profileId ->
+            if (profileId.isBlank() || profileId == "local") return@collectLatest
+            val synced = mutableMapOf<Int, Set<Int>>()
+            ramadanCalendar.observeBackups(profileId).distinctUntilChanged().collectLatest { years ->
+                for ((year, completed) in years) {
+                    val pending = completed - synced[year].orEmpty()
+                    if (pending.isEmpty()) continue
+                    while (true) {
+                        try {
+                            ramadanCalendar.backup(profileId, year, pending)
+                            synced[year] = completed
+                            break
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (error: Exception) {
+                            // Room retains the completion for a later retry.
+                        }
+                        delay(30_000)
+                    }
+                }
+            }
+        }
+    }
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -72,11 +115,26 @@ open class HomeViewModel constructor(
 
     override fun onTaskClicked(item: HomeUiState.UiTaskItem) {
         when (item.category) {
-            TaskCategory.QURAN -> _uiMessage.trySend(HomeEffect.NavigateToQuran)
+            TaskCategory.QURAN -> _uiMessage.trySend(HomeEffect.NavigateToQuran(item.wird?.firstPage))
             TaskCategory.AZKAR -> _uiMessage.trySend(HomeEffect.NavigateToSebha)
             else -> onTaskChecked(item)
         }
     }
+
+    private var locationRefreshJob: Job? = null
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun refreshPrayerLocation() {
+        if (locationRefreshJob?.isActive == true) return
+        locationRefreshJob = viewModelScope.launch {
+            PrayerSettingsStore.state.map { it.selectedCity }.distinctUntilChanged().flatMapLatest { selected ->
+                if (selected == null) currentLocation.foregroundLocations() else emptyFlow()
+            }.collect { location ->
+                location.toPrayerPlace()?.let(PrayerSettingsStore::saveGps)
+            }
+        }
+        retrySignal.update { it + 1 }
+    }
+    fun stopPrayerLocationUpdates() { locationRefreshJob?.cancel(); locationRefreshJob = null }
 
     override fun retryLoadingData() {
         retrySignal.update { it + 1 }
@@ -94,25 +152,22 @@ open class HomeViewModel constructor(
             delay(60_000L - AppClock.nowMillis() % 60_000L)
         }
     }
-    private val dateFlow: Flow<LocalDate> = minuteTicker
-        .map { AppClock.today() }
-        .distinctUntilChanged()
+    private val dateFlow: Flow<LocalDate> = combine(minuteTicker,
+        PrayerSettingsStore.state.map { it.place?.timeZoneId }.distinctUntilChanged()) { _, zoneId ->
+        kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis())
+            .toLocalDateTime(TimeZone.of(zoneId ?: TimeZone.currentSystemDefault().id)).date
+    }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val combinedUiState = combine(dateFlow, retrySignal) { today, _ -> today }.flatMapLatest { date ->
+    private val combinedUiState = combine(dateFlow, retrySignal, PrayerSettingsStore.state) { _, _, settings ->
+        val zone = TimeZone.of(settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id)
+        kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis()).toLocalDateTime(zone).date to settings
+    }.flatMapLatest { (date, settings) ->
         val today = AppClock.dateString(date)
         combine(
             getCurrentUserUseCase(),
 
-            flow {
-                emit(Pair("Cairo", "Egypt"))
-                val location = kotlinx.coroutines.withTimeoutOrNull(3000) {
-                    currentLocation.getCurrentLocation()
-                }
-                if (location != null) {
-                    emit(Pair(location.city ?: "Cairo", location.country ?: "Egypt"))
-                }
-            },
+            flow { emit(settings) },
 
             flow {
                 emit(null as DailyContent?)
@@ -126,29 +181,39 @@ open class HomeViewModel constructor(
 
             playingTaskId
         ) { domainUser, cityCountryPair, dailyContent, currentPlayingId ->
-            val (city, country) = cityCountryPair
-            val activities = getDailyActivitiesUseCase(today, city, country)
+            val activities = getDailyActivitiesUseCase(today, cityCountryPair.request)
                 .onEach { _hasLoadError.value = false }
                 .catch { _hasLoadError.value = true; emit(emptyList()) }
-            val activitiesFlow = combine(activities, prayerBoundaries(date, city, country)) { tasks, bounds -> tasks to bounds }
+            val activitiesFlow = combine(activities, prayerBoundaries(date, settings.request)) { tasks, bounds -> tasks to bounds }
             Triple(domainUser, dailyContent, Pair(activitiesFlow, currentPlayingId))
         }
             .flatMapLatest { (user, dailyContent, flowPair) ->
             val (activitiesFlow, currentPlayingId) = flowPair
 
-            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker, gardenRepository.observe(user.id)) { activitiesAndBounds, tempStatusMap, _, observedGarden ->
+            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker, gardenRepository.observe(user.id),
+                quranJourney.observe(user.id)) { activitiesAndBounds, tempStatusMap, _, observedGarden, journey ->
                 val (domainActivities, bounds) = activitiesAndBounds
                 val gardenResult = creditGarden(user.id, date, domainActivities, observedGarden)
                 val garden = (gardenResult as? Resource.Success)?.data
                 val currentPartToRead = user.quranPartsFinished + 1
-                val nowMinutes = PrayerTimeline.nowMinutes()
+                val localNow = kotlin.time.Instant.fromEpochMilliseconds(AppClock.nowMillis()).toLocalDateTime(
+                    TimeZone.of(settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id))
+                val nowMinutes = localNow.hour * 60 + localNow.minute
 
                 val baseTasks = domainActivities.map { activity ->
                     val uiModel = activity.toUiModel(currentPartToRead)
                     val tempStatus = tempStatusMap[uiModel.id]
                     val isDone = tempStatus ?: uiModel.isCompleted
 
-                    uiModel.copy(
+                    val wird = if (uiModel.category == TaskCategory.QURAN) journey.wirdFor(date) else null
+                    if (wird != null) {
+                        uiModel.copy(
+                            title = "ورد الختمة اليوم",
+                            subtitle = "صفحة ${wird.firstPage} – ${wird.lastPage}",
+                            isCompleted = journey.lastWirdDate == date,
+                            wird = wird
+                        )
+                    } else uiModel.copy(
                         isCompleted = isDone,
                         isPlaying = uiModel.id == currentPlayingId
                     )
@@ -168,11 +233,20 @@ open class HomeViewModel constructor(
                 val currentCompletedCount = uiTasks.count { it.isCompleted }
                 val hasPrayerLoadError = !_hasLoadError.value && uiTasks.none { it.category == TaskCategory.PRAYER }
 
+                val extraGiftTasks = domainActivities.filterIsInstance<Activity.Task>()
+                    .filter { it.category == TaskCategory.EXTRA }.map { it.id }
+                val completedGiftTasks = domainActivities.filter { it.isCompleted && tempStatusMap[it.id] != false }
+                    .map { it.id }.toSet()
+
                 HomeUiState(
                     isLoading = false,
                     user = user.toUiUser(),
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
+                    dailyGiftTotal = missingDailyGiftTasks(extraGiftTasks, emptySet()),
+                    dailyGiftRemaining = missingDailyGiftTasks(extraGiftTasks, completedGiftTasks),
+                    dailyRiddle = dailyContent?.riddle,
+                    showKhatmahCelebration = journey.celebrationPending,
                     gardenProfileId = user.id,
                     gardenEarnedStars = user.totalStars,
                     garden = garden,
@@ -181,7 +255,11 @@ open class HomeViewModel constructor(
                     prayerDate = date,
                     previousIshaMinutes = bounds.first,
                     tomorrowFajrMinutes = bounds.second,
-                    hijriDate = DateUtils.getCurrentHijriDate(offsetDays = 0),
+                    hijriDate = DateUtils.getCurrentHijriDate(offsetDays = settings.hijriDateOffset.toLong()),
+                    seasonalCalendar = com.menna.nabatan_7asena.core.util.SeasonalThemeManager.forDate(DateUtils.currentHijriParts(settings.hijriDateOffset)),
+                    prayerTimeZone = settings.place?.timeZoneId ?: TimeZone.currentSystemDefault().id,
+                    prayerLocationLabel = settings.place?.city.orEmpty(),
+                    needsPrayerLocation = settings.request == null,
                     isNightTheme = computeIsNightTheme(uiTasks, nowMinutes),
                     hasLoadError = _hasLoadError.value,
                     hasPrayerLoadError = hasPrayerLoadError
@@ -195,16 +273,17 @@ open class HomeViewModel constructor(
     init {
         observeCombined()
         observeQuranBookmark()
+        syncRamadanCalendar()
     }
 
-    private fun prayerBoundaries(date: LocalDate, city: String, country: String) = flow {
+    private fun prayerBoundaries(date: LocalDate, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?) = flow {
         emit(Pair<Int?, Int?>(null, null))
         val bounds = coroutineScope {
             val previous = async {
-                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.minus(1, DateTimeUnit.DAY))) }
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.at(request, AppClock.dateString(date.minus(1, DateTimeUnit.DAY))) }
             }
             val next = async {
-                withTimeoutOrNull(5000) { getPrayerTimesUseCase.exact(city, country, AppClock.dateString(date.plus(1, DateTimeUnit.DAY))) }
+                withTimeoutOrNull(5000) { getPrayerTimesUseCase.at(request, AppClock.dateString(date.plus(1, DateTimeUnit.DAY))) }
             }
             PrayerTimeline.parseMinutes(previous.await()?.isha) to PrayerTimeline.parseMinutes(next.await()?.fajr)
         }
@@ -234,6 +313,10 @@ open class HomeViewModel constructor(
                         user = state.user,
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
+                        dailyGiftTotal = state.dailyGiftTotal,
+                        dailyGiftRemaining = state.dailyGiftRemaining,
+                        dailyRiddle = state.dailyRiddle,
+                        showKhatmahCelebration = state.showKhatmahCelebration,
                         gardenProfileId = state.gardenProfileId,
                         gardenEarnedStars = state.gardenEarnedStars,
                         isGardenShopBusy = currentState.gardenProfileId == state.gardenProfileId && currentState.isGardenShopBusy,
@@ -243,12 +326,17 @@ open class HomeViewModel constructor(
                         isGardenUnavailable = state.isGardenUnavailable,
                         gardenNeedsWater = state.gardenNeedsWater,
                         isWateringGarden = currentState.gardenProfileId == state.gardenProfileId && currentState.isWateringGarden,
+                        gardenWateredTreeId = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenWateredTreeId else null,
                         gardenWateringSequence = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenWateringSequence else 0,
                         gardenSaveFailed = currentState.gardenProfileId == state.gardenProfileId && currentState.gardenSaveFailed,
                         prayerDate = state.prayerDate,
                         previousIshaMinutes = state.previousIshaMinutes,
                         tomorrowFajrMinutes = state.tomorrowFajrMinutes,
                         hijriDate = state.hijriDate,
+                        seasonalCalendar = state.seasonalCalendar,
+                        prayerTimeZone = state.prayerTimeZone,
+                        prayerLocationLabel = state.prayerLocationLabel,
+                        needsPrayerLocation = state.needsPrayerLocation,
                         isNightTheme = state.isNightTheme,
                         hasLoadError = state.hasLoadError,
                         hasPrayerLoadError = state.hasPrayerLoadError
@@ -269,41 +357,55 @@ open class HomeViewModel constructor(
         catch (e: Exception) { Resource.Error(e) }
     }
 
-    override fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration) = updateGardenShop(item, null)
-    override fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean) = updateGardenShop(item, equipped)
+    override fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration) =
+        buyGardenProduct(com.menna.nabatan_7asena.domain.entity.GardenProduct.entries.first { it.id == item.id })
+    override fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.equip(owner, item, equipped); false }
+    override fun buyGardenProduct(product: com.menna.nabatan_7asena.domain.entity.GardenProduct) =
+        updateGardenWorld { owner -> gardenRepository.buyProduct(owner, product).purchased }
+    override fun plantGardenTree(treeId: String, plot: Int?) =
+        updateGardenWorld { owner -> gardenRepository.plantTree(owner, treeId, plot); false }
+    override fun showGardenTree(treeId: String, visible: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.showTree(owner, treeId, visible); false }
+    override fun placeGardenDecoration(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, plot: Int) =
+        updateGardenWorld { owner -> gardenRepository.placeDecoration(owner, item, plot); false }
+    override fun manageGardenPlacement(id: String, plot: Int?, visible: Boolean?, remove: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.managePlacement(owner, id, plot, visible, remove); false }
 
-    private fun updateGardenShop(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean?) {
+    private fun updateGardenWorld(operation: suspend (String) -> Boolean) {
         val owner = _uiState.value.gardenProfileId
         if (owner.isBlank() || _uiState.value.isGardenShopBusy || _uiState.value.isGardenUnavailable) return
         _uiState.update { it.copy(isGardenShopBusy = true, gardenShopError = null) }
         viewModelScope.launch {
             try {
-                val purchase = if (equipped == null) gardenRepository.buy(owner, item) else null
-                if (purchase == null) gardenRepository.equip(owner, item, requireNotNull(equipped))
+                val bought = operation(owner)
                 _uiState.update { if (it.gardenProfileId != owner) it else it.copy(
-                    gardenPurchaseSequence = it.gardenPurchaseSequence + if (purchase?.purchased == true) 1 else 0) }
+                    gardenPurchaseSequence = it.gardenPurchaseSequence + if (bought) 1 else 0) }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
-                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(gardenShopError =
-                    if (e is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars)
-                        com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
-                    else com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed) }
+                val error = when (e) {
+                    is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
+                    is com.menna.nabatan_7asena.domain.entity.GardenLandLimit -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenLandLimit
+                    is com.menna.nabatan_7asena.domain.entity.GardenPlacementUnavailable -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenPlacementUnavailable
+                    else -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed
+                }
+                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(gardenShopError = error) }
             } finally { _uiState.update { if (it.gardenProfileId == owner) it.copy(isGardenShopBusy = false) else it } }
         }
     }
 
     override fun openGarden() { _uiMessage.trySend(HomeEffect.NavigateToGarden) }
 
-    override fun waterGarden() {
+    override fun waterGarden(treeId: String?) {
         val current = _uiState.value
         if (current.isWateringGarden || current.gardenProfileId.isBlank() || (current.garden?.waterDrops ?: 0) <= 0) return
         _uiState.update { it.copy(isWateringGarden = true, gardenSaveFailed = false) }
         viewModelScope.launch {
             try {
-                val next = gardenRepository.water(current.gardenProfileId, AppClock.today())
+                val next = gardenRepository.water(current.gardenProfileId, AppClock.today(), treeId)
                 _uiState.update {
                     if (it.gardenProfileId != current.gardenProfileId) it
-                    else it.copy(isWateringGarden = false, garden = next.progress, gardenWateringSequence = it.gardenWateringSequence + if (next.applied) 1 else 0)
+                    else it.copy(isWateringGarden = false, gardenWateredTreeId = if (next.applied) treeId ?: next.progress.trees.firstOrNull { tree -> tree.plotIndex != null }?.id else it.gardenWateredTreeId, gardenWateringSequence = it.gardenWateringSequence + if (next.applied) 1 else 0)
                 }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
@@ -334,13 +436,16 @@ open class HomeViewModel constructor(
 
     fun markTaskCompletedExternally(taskId: Int) {
         viewModelScope.launch {
-            val alreadyDone = _uiState.value.tasks.firstOrNull { it.id == taskId }?.isCompleted == true
-            if (alreadyDone) return@launch
+            val task = _uiState.value.tasks.firstOrNull { it.id == taskId }
+            if (task?.isCompleted == true) return@launch
+            if (task?.wird != null) {
+                completeKhatmahTask(task)
+                return@launch
+            }
 
             tempCompletedTaskIds.update { it + (taskId to true) }
             val res = toggleActivityStatusUseCase(currentDate(), taskId, true)
             if (res is Resource.Success) {
-                val task = _uiState.value.tasks.firstOrNull { it.id == taskId }
                 if (task?.category == TaskCategory.QURAN) {
                     incrementQuranPartUseCase()
                 }
@@ -350,6 +455,10 @@ open class HomeViewModel constructor(
     }
 
     override fun onTaskChecked(item: HomeUiState.UiTaskItem) {
+        if (item.wird != null) {
+            if (!item.isCompleted) completeKhatmahTask(item)
+            return
+        }
         viewModelScope.launch {
             if (item.category == TaskCategory.PRAYER) {
                 val prayerTime = item.subtitle
@@ -373,6 +482,35 @@ open class HomeViewModel constructor(
                     }
                 }
                 tempCompletedTaskIds.update { it - item.id }
+            }
+        }
+    }
+
+    private fun completeKhatmahTask(item: HomeUiState.UiTaskItem) {
+        val wird = item.wird ?: return
+        val date = _uiState.value.prayerDate ?: return
+        val id = _uiState.value.gardenProfileId
+        viewModelScope.launch {
+            try {
+                quranJourney.complete(id, date, wird)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                sendMessage("تعذّر حفظ ورد اليوم. حاوِل مرة أخرى.")
+            }
+        }
+    }
+
+    fun dismissKhatmahCelebration(startNew: Boolean) {
+        val id = _uiState.value.gardenProfileId
+        viewModelScope.launch {
+            try {
+                quranJourney.dismissCelebration(id)
+                if (startNew) _uiMessage.send(HomeEffect.NavigateToKhatmah)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                sendMessage("تعذّر حفظ التغيير. حاوِل مرة أخرى.")
             }
         }
     }
@@ -423,22 +561,22 @@ open class HomeViewModel constructor(
         _uiState.update { it.copy(showCelebration = false) }
     }
 
-    override fun openDailyChallenge() {
-        viewModelScope.launch {
-            val todayRiddle = getDailyActivitiesUseCase.getTodayRiddle()
-            if (todayRiddle != null && todayRiddle.riddle != null) {
-                _uiState.update {
-                    it.copy(currentRiddle = todayRiddle.riddle, showChallengeDialog = true)
-                }
-            }
-        }
+    internal fun canOpenDailyGift(profileId: String, date: LocalDate): Boolean {
+        val state = _uiState.value
+        return state.isDailyGiftUnlocked && date == AppClock.today() && state.prayerDate == date &&
+            state.gardenProfileId.ifBlank { "local" } == profileId && !addingTask &&
+            tempCompletedTaskIds.value.values.none { !it }
     }
 
-    override fun closeChallenge() {
-        _uiState.update { it.copy(showChallengeDialog = false) }
+    override fun openDailyGift(lockedReminder: String) {
+        val profile = _uiState.value.gardenProfileId.ifBlank { "local" }
+        _uiMessage.trySend(
+            if (canOpenDailyGift(profile, AppClock.today())) HomeEffect.NavigateToDailyGift
+            else HomeEffect.ShowMessage(lockedReminder)
+        )
     }
 
-    override fun onCorrectAnswer() {
+    internal fun onCorrectAnswer() {
         audioPlayerManager.playCorrectAnswerSound()
     }
 

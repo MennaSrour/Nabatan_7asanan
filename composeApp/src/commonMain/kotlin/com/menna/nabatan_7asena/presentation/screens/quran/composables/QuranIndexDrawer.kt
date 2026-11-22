@@ -2,6 +2,12 @@ package com.menna.nabatan_7asena.presentation.screens.quran.composables
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -22,7 +28,8 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuranIndexDrawer(state: QuranUiState, actions: QuranActions, layout: QuranLayoutState) {
+fun QuranIndexDrawer(state: QuranUiState, actions: QuranActions, layout: QuranLayoutState,
+                     onKhatmah: () -> Unit, onMemorization: () -> Unit) {
     val q = SummerTheme.quran
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
@@ -34,6 +41,18 @@ fun QuranIndexDrawer(state: QuranUiState, actions: QuranActions, layout: QuranLa
                 .padding(bottom = FloatingBarClearance)
         ) {
             QuranIndexHeading()
+
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    layout.scope.launch { layout.drawerState.close() }
+                    onKhatmah()
+                }, modifier = Modifier.weight(1f)) { Text("ختمتي", maxLines = 1) }
+                OutlinedButton(onClick = {
+                    layout.scope.launch { layout.drawerState.close() }
+                    onMemorization()
+                }, modifier = Modifier.weight(1f)) { Text("رحلة الحفظ", maxLines = 1) }
+            }
 
             var indexTab by remember { mutableStateOf(0) }
 
