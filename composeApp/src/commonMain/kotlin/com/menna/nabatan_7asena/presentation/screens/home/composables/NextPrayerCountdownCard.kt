@@ -69,7 +69,7 @@ private fun rememberPrayerClock(): kotlin.time.Instant {
 @Composable
 private fun CountdownHeading(countdown: PrayerCountdown?) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        HomeIconBadge(prayerBadgeStyle(countdown?.name.orEmpty()), Modifier.size(42.dp))
+        OriginalPrayerIcon(countdown?.name.orEmpty(), Modifier.size(48.dp))
         Column(Modifier.weight(1f)) {
             Text(if (countdown == null) stringResource(R.string.countdown_waiting)
                 else stringResource(R.string.countdown_until, countdown.name),
@@ -95,7 +95,7 @@ private fun PrayerCountdownTimeline(countdown: PrayerCountdown) {
             .clip(RoundedCornerShape(50)).background(SummerTheme.colors.highlightAccent.copy(0.12f))) {
             Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(SummerTheme.colors.goldWarm))
         }
-        HomeIconBadge(prayerBadgeStyle(countdown.name), Modifier.align(Alignment.CenterStart)
+        OriginalPrayerIcon(countdown.name, Modifier.align(Alignment.CenterStart)
             .offset(x = (maxWidth - 32.dp).coerceAtLeast(0.dp) * fraction).size(32.dp))
     }
 }

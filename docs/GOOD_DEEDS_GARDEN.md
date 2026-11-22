@@ -1,77 +1,75 @@
-# Good deeds garden
+# Good deeds garden world
 
-The Home garden is drawn entirely with shared Compose Canvas paths, gradients and
-layers. Home contains a compact stage/drop preview that opens the dedicated full-screen garden route.
-The garden shares the Home ViewModel owner, hides the floating navigation bar,
-and uses the Home day/night state for sky, moon/stars and tree lighting. Seed, sprout,
-sapling, young tree, blooming tree and fruiting garden begin at 0, 2, 8, 18, 35 and
-60 garden XP respectively. Stage is derived from persisted XP, so there is no
-separate level value that can drift out of sync. The mature garden keeps growing
-its XP without resetting or losing fruit.
+Home shows a compact, Canvas-illustrated garden preview with planted-tree and water
+counts. It opens a dedicated Arabic RTL garden route using the Home ViewModel and
+app day/night theme. The horizontally pannable landscape starts with four plots.
+Each 50-star expansion adds three plots, up to sixteen. Every plot supports one
+tree and three decoration placements. Plot zero appears at the right; accessible
+plot chips supplement Canvas hit targets. Drawing culls trees and decorations
+outside the viewport, and idle animations stop outside the STARTED lifecycle state.
 
-One **persisted completed task** earns one water drop. Optimistic UI checkmarks
-are excluded. The reward ledger records task IDs for the latest credited local
-date: rechecking, reopening Home, or repeating the same snapshot cannot grant
-another drop. The same task can earn again on a later day. Older-date snapshots
-cannot replay rewards. Watering spends one drop for one XP; missed days neither
-remove XP nor consume water. A gentle reminder appears when last watered before
-today. This is garden XP, separate from the app's existing star score.
+## Trees and watering
 
-`GardenRepository` owns updates. A mutex serializes reward/watering changes; the
-versioned per-profile JSON snapshot is written before publishing new state.
-Android SharedPreferences and iOS NSUserDefaults use the existing platform
-preferences abstraction. Unreadable/unsupported snapshots are preserved and
-reported rather than replaced with an empty garden. A failed write cannot publish
-growth or consume a drop. The watering animation is triggered only after a
-successful applied watering operation, and does not replay merely on expansion.
-Idle animation composition stops outside the STARTED lifecycle state.
+Palm, apple, olive and blossom trees are independent owned instances. Each begins
+as a seed and advances at 0, 2, 8, 18, 35 and 60 XP through six visual stages.
+Stage is derived from XP. Selecting a planted tree shows its individual progress;
+watering spends one shared drop for one XP on that visible tree only. Moving,
+hiding or returning a tree to inventory retains its identity and growth. Mature
+trees retain subsequent XP. Legacy aggregate garden XP equals the sum across all
+owned trees, including trees in inventory.
 
-Registered profiles also upload a **device-specific backup** to
-`gardens/{profileId}/devices/{deviceId}` through GitLive Firestore. Device identity,
-revision, XP, drops, ledger and last-watered date survive process restarts locally.
-The backup uses a separate collection and cannot replace leaderboard/profile
-fields or another device's garden. Acknowledgements mark only the revision that
-was uploaded; newer local changes remain pending. Failures and seven-second
-timeouts leave progress playable locally, with retries at one-minute intervals
-while the Home ViewModel is alive. Guests never upload. Backup permissions must
-be allowed by the project's deployed Firestore policy; this repository does not
-contain that policy. No new Firebase authentication scheme is introduced.
+One persisted completed daily task earns one drop. Optimistic checkmarks are
+excluded. The existing daily task-ID ledger prevents duplicate rewards from
+rechecking or replayed snapshots; the same task may earn again on a later day.
+Missed days never remove XP or water. Reminders use the selected tree's watering
+date. Garden XP is separate from achievement stars.
 
-This backup is not a cross-device merge or automatic cloud restore mechanism.
-Device gardens remain independent, avoiding duplicate rewards or overwriting
-another device's progress. No production Firestore writes were used for testing.
+## Repeatable shop and placement
 
-Validation covers stage thresholds, once-per-day rewards, non-punitive misses,
-local restore, profile isolation, corrupt/failed persistence, concurrent watering,
-backup failure/cancellation, device identity, and mutations during an upload.
-Visual appearance, motion/accessibility settings and native iOS rendering still
-need device review; common metadata and Android builds check shared API usage.
+The shop sells four tree species, eight decorations (butterflies, birds, flowers,
+lantern, rainbow, stars, bench and fountain), and land expansions. Purchases add
+copies to inventory; owned quantity badges do not impose a one-purchase limit.
+Tree, decoration-stock and placed-decoration tabs support planting, placement,
+moving, hiding and returning items to inventory. Hidden items still reserve their
+plot/slot and owned copy; removing a placement frees it for reuse. Placement and
+visibility changes cost nothing and do not refund stars.
 
-## Garden shop
+Spendable balance is `max(0, achievement stars - spentStars)`. Shopping does not
+reduce leaderboard scores. If an achievement is undone, balance can fall to zero;
+owned items remain. The repository reads the matching profile's current star total
+inside its serialized purchase operation. Costs, ownership, land, placements and
+revision are saved atomically before state is published. Insufficient funds,
+placement conflicts, expansion limits or failed writes cannot partially charge or
+unlock items. Purchase celebration plays only after a saved purchase.
 
-The Garden screen opens an Arabic RTL shop sheet with six Canvas decorations:
-butterflies (20 stars), birds (25), extra flowers (10), lantern (30), rainbow (35)
-and magical stars (15). All stages can equip them. Butterflies are now an equipped
-shop decoration rather than an automatic maturity effect; ordinary stage blossoms,
-meadow flowers and night-sky stars remain part of the base scene.
+## Persistence and backup
 
-The spendable shop balance is `max(0, current achievement stars - spentStars)`.
-Achievement/leaderboard stars remain unchanged by shopping. This preserves ranking
-and existing task undo/award behavior. If an achievement is undone, the shop balance
-can fall to zero; owned items are retained, and subsequent earnings count against
-the same spent total. There is no negative balance or refund from toggling an item.
+GardenRepository serializes mutations with a mutex and writes the per-profile JSON
+snapshot before publishing. Android SharedPreferences and iOS NSUserDefaults use
+the existing platform preferences abstraction. Snapshot version 2 is explicitly
+encoded under the existing preference key. Version-1 gardens migrate to one apple
+tree with their existing XP and watering date; water, reward ledgers, spending and
+owned decorations survive, and equipped decorations become placed instances.
+Migration introduces no purchase charge. Unsupported or corrupt snapshots are
+preserved and reported. Older clients reject the new snapshot version rather than
+silently dropping world fields.
 
-The repository reads the current matching Room profile's star total inside its
-serialized purchase operation. Price, currency spent, ownership, automatic equip
-and revision are committed together in the existing local JSON snapshot before
-publishing. Repeated buys of an owned item are no-ops; insufficient funds, a changed
-profile, or a failed save cannot charge/unlock it. Equip operations require ownership
-and never cost stars. Pre-shop snapshots decode with empty ownership/equipment and
-zero spending, preserving XP, water and reward ledgers.
+Registered profiles back up to `gardens/{profileId}/devices/{deviceId}` through
+GitLive Firestore. Tree identities/species/XP/plots, decoration quantities and
+placements, land expansions and the existing wallet/reward fields join that backup.
+Exact-revision acknowledgements preserve newer pending changes. Failed uploads or
+seven-second timeouts leave local play available; retries run every minute while
+the Home ViewModel is alive. Guests never upload. Deployment must allow these
+paths in the existing Firestore policy; that policy is not in this repository.
 
-Shop fields join the existing per-profile, per-device Firestore backup and pending
-revision/retry mechanism. This remains a local game wallet with cloud backup, not a
-shared multi-device transactional economy or cloud-restore service. Purchases do not
-change leaderboard documents. The UI announces successful saved purchases with a
-Canvas confetti banner; reopening the shop does not replay the celebration. Shop
-idle animation stops outside the STARTED lifecycle state.
+This is a device-specific backup, not a cross-device merge or automatic cloud
+restore mechanism. It cannot replace leaderboard/profile data or another device's
+garden. No production Firestore writes were used in verification.
+
+## Verification
+
+Unit coverage includes legacy migration, independent growth, inventory round trips,
+quantity/slot validation, concurrent purchases and placements, expansion limits,
+profile isolation, failed-write rollback and backup revisions. Android debug builds,
+common Kotlin metadata and unit tests validate shared code. Native iOS rendering,
+on-device visuals and live Firebase behavior still require device review.
