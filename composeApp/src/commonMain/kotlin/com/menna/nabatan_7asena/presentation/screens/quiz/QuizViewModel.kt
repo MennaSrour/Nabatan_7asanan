@@ -19,9 +19,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import com.menna.nabatan_7asena.platform.Log
 import com.menna.nabatan_7asena.domain.entity.OfficialQuizAttempt
 import com.menna.nabatan_7asena.domain.entity.OfficialAttemptAlreadyUsed
 import kotlinx.coroutines.launch
+
+private const val OFFICIAL_REQUEST_TIMEOUT_MS = 15_000L
 
 open class QuizViewModel constructor(
     private val getWeeklyStudyQuestions: GetWeeklyStudyQuestionsUseCase,
@@ -41,6 +45,7 @@ open class QuizViewModel constructor(
 
     private var overviewDate: kotlinx.datetime.LocalDate? = null
     private var overviewJob: Job? = null
+    private var winnersJob: Job? = null
     private var activeAttempt: OfficialQuizAttempt? = null
 
     private var timerJob: Job? = null
@@ -59,24 +64,53 @@ open class QuizViewModel constructor(
 
     private fun loadOverview() {
         if (overviewJob?.isActive == true) return
-        overviewDate = today()
+        val date = today()
+        val dateChanged = overviewDate != date
+        overviewDate = date
         overviewJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isCompetitionDay = isCompetitionDay(), errorMessage = null) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isCompetitionDay = isCompetitionDay(),
+                    officialAttempt = if (dateChanged) null else it.officialAttempt,
+                    officialStatusAvailable = false,
+                    errorMessage = null
+                )
+            }
             try {
-                val attempt = withTimeout(5000) { official.status() }
-                _uiState.update { it.copy(officialAttempt = attempt, officialStatusAvailable = true) }
+                val verified = withTimeoutOrNull(OFFICIAL_REQUEST_TIMEOUT_MS) {
+                    val attempt = official.status()
+                    _uiState.update { it.copy(officialAttempt = attempt, officialStatusAvailable = true) }
+                    true
+                }
+                if (verified == null) Log.w("FridayQuiz", "Official attempt verification timed out")
             } catch (e: CancellationException) {
-                if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
-                _uiState.update { it.copy(officialStatusAvailable = false) }
-            } catch (e: Exception) { _uiState.update { it.copy(officialStatusAvailable = false) } }
-            try {
-                val winners = withTimeout(5000) { getRecentWinners() }
-                _uiState.update { it.copy(winners = winners) }
-            } catch (e: CancellationException) {
-                if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
-            } catch (_: Exception) { }
-            _uiState.update { it.copy(isLoading = false) }
-            try { official.syncPending() } catch (e: CancellationException) { throw e } catch (_: Exception) { }
+                throw e
+            } catch (e: Exception) {
+                Log.e("FridayQuiz", "Could not verify official attempt", e)
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+        if (dateChanged || winnersJob?.isActive != true) {
+            winnersJob?.cancel()
+            winnersJob = viewModelScope.launch {
+                try {
+                    val winners = withTimeoutOrNull(5000) { getRecentWinners() }
+                    if (winners != null) _uiState.update { it.copy(winners = winners) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("FridayQuiz", "Could not load recent winners", e)
+                }
+                try {
+                    official.syncPending()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("FridayQuiz", "Could not sync pending official attempts", e)
+                }
+            }
         }
     }
 
@@ -108,7 +142,7 @@ open class QuizViewModel constructor(
             try {
                 val questions = getWeeklyCompetitionQuestions()
                 check(questions.isNotEmpty()) { "No challenge questions" }
-                val attempt = withTimeout(5000) { official.begin() }
+                val attempt = withTimeout(OFFICIAL_REQUEST_TIMEOUT_MS) { official.begin() }
                 activeAttempt = attempt
                 _uiState.update { it.copy(officialAttempt = attempt, competitionCards = questions.map { question -> QuizCardState(question) }, preCompetitionCountdown = 3) }
                 runPreCompetitionCountdown()
@@ -234,7 +268,13 @@ open class QuizViewModel constructor(
                     else current.copy(officialAttempt = saved, competitionScore = saved.score, competitionFinished = true, submittingCompetition = false,
                         mode = if (exitToOverview) QuizMode.NONE else current.mode, preCompetitionCountdown = null)
                 }
-                official.syncPending()
+                try {
+                    official.syncPending()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("FridayQuiz", "Could not sync pending official attempts", e)
+                }
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) { _uiState.update { it.copy(errorMessage = GenderedStrings.quizOfficialSaveError) } }
             finally { _uiState.update { it.copy(submittingCompetition = false) } }

@@ -6,6 +6,7 @@ import com.menna.nabatan_7asena.domain.repository.*
 import com.menna.nabatan_7asena.domain.usecase.*
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 import org.junit.*
@@ -16,6 +17,7 @@ class QuizOfficialAttemptTest {
     private val dispatcher = StandardTestDispatcher()
     private val store = ViewModelStore()
     private var used: OfficialQuizAttempt? = null
+    private var verificationDelayMs = 0L
     private var starts = 0
     private var studies = 0
     private var day = kotlinx.datetime.LocalDate(2026, 11, 27)
@@ -27,7 +29,10 @@ class QuizOfficialAttemptTest {
         override suspend fun getRecentWeekWinners() = emptyList<QuizWinner>()
     }
     private val official = object : OfficialQuizRepository {
-        override suspend fun status() = used
+        override suspend fun status(): OfficialQuizAttempt? {
+            delay(verificationDelayMs)
+            return used
+        }
         override suspend fun begin(): OfficialQuizAttempt { starts++; return OfficialQuizAttempt("2026-11-21", "child", "token").also { used = it } }
         override suspend fun finish(attempt: OfficialQuizAttempt, score: Int) = attempt.copy(score = score, completed = true).also { used = it }
         override suspend fun syncPending() = Unit
@@ -43,6 +48,21 @@ class QuizOfficialAttemptTest {
         store.put("quiz", viewModel)
     }
     @After fun teardown() { store.clear(); Dispatchers.resetMain() }
+
+    @Test fun slowServerVerificationStillEnablesFridayChallenge() = runTest(dispatcher) {
+        verificationDelayMs = 6_000
+        runCurrent()
+        advanceTimeBy(6_000)
+        runCurrent()
+
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value.officialStatusAvailable)
+        viewModel.startCompetitionMode()
+        advanceTimeBy(2_200)
+        runCurrent()
+        assertEquals(1, starts)
+        assertEquals(QuizMode.COMPETITION, viewModel.uiState.value.mode)
+    }
 
     @Test fun practiceCanBeRepeatedAfterAnOfficialCompletionButExamCannotRestart() = runTest(dispatcher) {
         used = OfficialQuizAttempt("2026-11-21", "child", "used", 4, true)
