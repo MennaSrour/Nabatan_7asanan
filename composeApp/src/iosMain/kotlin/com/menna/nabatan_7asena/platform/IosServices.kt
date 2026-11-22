@@ -4,6 +4,7 @@ package com.menna.nabatan_7asena.platform
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.menna.nabatan_7asena.data.local.room.AppDatabase
+import com.menna.nabatan_7asena.data.local.room.MIGRATION_5_6
 import com.menna.nabatan_7asena.domain.LocationTracker
 import com.menna.nabatan_7asena.domain.entity.UserLocation
 import com.menna.nabatan_7asena.core.audio.*
@@ -18,7 +19,7 @@ val iosServices: SharedServices by lazy {
     val directory = NSFileManager.defaultManager.URLForDirectory(NSDocumentDirectory, NSUserDomainMask, null, true, null)
         ?: error("Documents directory is unavailable")
     val database = Room.databaseBuilder<AppDatabase>(name = directory.path + "/nabata_db")
-        .setDriver(BundledSQLiteDriver()).setQueryCoroutineContext(Dispatchers.Default).build()
+        .addMigrations(MIGRATION_5_6).setDriver(BundledSQLiteDriver()).setQueryCoroutineContext(Dispatchers.Default).build()
     SharedServices(database.appDao(), IosLocation(), IosAudio(), IosQuranAudio(), IosDownloads(),
         IosAlarms(), IosPermissions(), IosScheduling(), { IosScreenAudio() })
 }

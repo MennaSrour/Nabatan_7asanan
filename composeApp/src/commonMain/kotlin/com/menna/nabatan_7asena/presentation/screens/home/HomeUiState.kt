@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.presentation.screens.home
 
 import com.menna.nabatan_7asena.core.util.PrayerPhase
 import com.menna.nabatan_7asena.domain.entity.DailyContent
+import com.menna.nabatan_7asena.domain.entity.Wird
 import com.menna.nabatan_7asena.domain.entity.TaskCategory
 
 data class HomeUiState(
@@ -28,6 +29,7 @@ data class HomeUiState(
     val showCelebration: Boolean = false,
     val isNightTheme: Boolean = false,
     val hasBookmark: Boolean = false,
+    val showKhatmahCelebration: Boolean = false,
     val showChallengeDialog: Boolean = false,
     val currentRiddle: DailyContent.Riddle? = null,
     // فشل تحميل مهام/صلوات اليوم (الأغلب الأعم: مفيش إنترنت) — منفصل عمداً عن
@@ -57,6 +59,7 @@ data class HomeUiState(
         val emoji: String,
         val category: TaskCategory,
         val isPlaying: Boolean = false,
+        val wird: Wird? = null,
         /** null لأي مهمة مش صلاة. */
         val prayerPhase: PrayerPhase? = null,
         /** الصلاة اللي عليها الدور: الحالية، أو الجاية لو لسه قبل الفجر. */

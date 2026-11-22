@@ -62,11 +62,16 @@ class FirebaseDataSource constructor(
         return higherScores + 1
     }
 
-    suspend fun uploadUserScore(dto: UserRankDto) {
+    suspend fun uploadUserScore(dto: UserRankDto, includeQuranSummary: Boolean = false) {
         try {
-            firestore.collection("leaderboard")
-                .document(dto.userId)
-                .set(dto)
+            val document = firestore.collection("leaderboard").document(dto.userId)
+            if (includeQuranSummary) {
+                document.set(dto, merge = true) { encodeDefaults = true }
+            } else {
+                document.set(dto, "userId", "name", "gender", "totalStars", "quranPartsFinished", "avatarIndex") {
+                    encodeDefaults = true
+                }
+            }
         } catch (e: Exception) {
             Log.e("FirebaseDataSource", "حدث خطأ في رفع نتيجة المستخدم ${dto.userId}", e)
             throw e

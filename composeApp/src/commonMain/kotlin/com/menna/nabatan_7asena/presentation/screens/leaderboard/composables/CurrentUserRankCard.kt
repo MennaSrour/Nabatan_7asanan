@@ -27,7 +27,7 @@ internal fun CurrentUserRankCard(state: LeaderboardUiState, modifier: Modifier =
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LeaderboardRankBadge(state.currentUserRank?.toString() ?: "—", state.isRankLoading)
                 LeaderboardMemberDetails(user.name, user.gender, user.avatarIndex, user.totalStars,
-                    user.quranPartsFinished, isCurrentUser = true, modifier = Modifier.weight(1f))
+                    user.completedKhatmahs, isCurrentUser = true, modifier = Modifier.weight(1f))
             }
         }
     }
