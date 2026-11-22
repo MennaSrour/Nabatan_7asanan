@@ -16,7 +16,12 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @Serializable
-private data class GardenSnapshot(val version: Int = 2, val deviceId: String, val profiles: Map<String, GardenProgress> = emptyMap())
+private data class GardenSnapshot(
+    val version: Int = 2,
+    val deviceId: String,
+    val profiles: Map<String, GardenProgress> = emptyMap(),
+    val receivedGifts: Map<String, Set<String>> = emptyMap()
+)
 
 @OptIn(ExperimentalUuidApi::class)
 class GardenRepositoryImpl(
@@ -48,6 +53,26 @@ class GardenRepositoryImpl(
         val failure = loadError
         if (failure != null) emit(Resource.Error(failure))
         else emitAll(state.map { Resource.Success(it.profiles[profileId] ?: GardenProgress().asWorld()) }.distinctUntilChanged())
+    }
+
+    internal suspend fun creditFriendGifts(profileId: String, receiptIds: Set<String>) = mutex.withLock {
+        check(loadError == null) { "Garden storage could not be read" }
+        val current = state.value
+        val received = current.receivedGifts[profileId].orEmpty()
+        val newGifts = receiptIds - received
+        if (newGifts.isEmpty()) return@withLock
+        val progress = current.profiles[profileId] ?: GardenProgress().asWorld()
+        check(progress.waterDrops <= Int.MAX_VALUE - newGifts.size && progress.revision < Long.MAX_VALUE)
+        val next = progress.copy(waterDrops = progress.waterDrops + newGifts.size, revision = progress.revision + 1)
+        save(current.copy(
+            profiles = current.profiles + (profileId to next),
+            receivedGifts = current.receivedGifts + (profileId to (received + newGifts))
+        ))
+    }
+
+    private fun save(snapshot: GardenSnapshot) {
+        storage.write(json.encodeToString(GardenSnapshot.serializer(), snapshot))
+        state.value = snapshot
     }
 
     override suspend fun creditTasks(profileId: String, date: LocalDate, completedIds: Set<Int>) =
@@ -105,8 +130,7 @@ class GardenRepositoryImpl(
         next.validate()
         if (next != current) {
             val snapshot = state.value.copy(profiles = state.value.profiles + (profileId to next))
-            storage.write(json.encodeToString(GardenSnapshot.serializer(), snapshot))
-            state.value = snapshot
+            save(snapshot)
         }
         next
     }

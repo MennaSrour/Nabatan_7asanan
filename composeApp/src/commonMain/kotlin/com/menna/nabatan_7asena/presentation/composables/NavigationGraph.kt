@@ -40,7 +40,8 @@ internal const val WheelRoute = "daily-wheel"
 @Composable
 fun NavigationGraph(
     navController: NavHostController,
-    openSettings: () -> Unit
+    openSettings: () -> Unit,
+    openFriends: () -> Unit = {}
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val prayerSettings = PrayerSettingsStore.state.collectAsStateWithLifecycle()
@@ -66,6 +67,7 @@ fun NavigationGraph(
                     navController.navigate(RAMADAN_CALENDAR_ROUTE) { launchSingleTop = true }
                 },
                 onNavigateToSettings = openSettings,
+                onNavigateToFriends = openFriends,
                 onNavigateToWheel = { navController.navigate(WheelRoute) { launchSingleTop = true } },
                 onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
                 onNavigateToBadges = { navController.navigate("progress") { launchSingleTop = true } },
@@ -131,7 +133,7 @@ fun NavigationGraph(
             }
         }
         composable("sebha") { SebhaScreen() }
-        composable("leaderboard") { LeaderboardScreen() }
+        composable("leaderboard") { LeaderboardScreen(onFriends = openFriends) }
         composable("quiz") { QuizScreen() }
         composable("dua") { AzkarAndDuaScreen() }
         composable("quran") { QuranScreen() }

@@ -26,9 +26,16 @@ class FirebaseDataSource constructor(
     }
     private val authMutex = Mutex()
 
-    private suspend fun ownerUid(): String = authMutex.withLock {
+    internal suspend fun ownerUid(): String = authMutex.withLock {
         check(FirebaseAvailability.isConfigured) { "Firebase is not configured for this host" }
         val auth = Firebase.auth
+        auth.currentUser?.uid ?: checkNotNull(auth.signInAnonymously().user).uid
+    }
+
+    internal suspend fun renewAnonymousOwner(expectedUid: String): String = authMutex.withLock {
+        val auth = Firebase.auth
+        val current = auth.currentUser
+        if (current?.uid == expectedUid) auth.signOut()
         auth.currentUser?.uid ?: checkNotNull(auth.signInAnonymously().user).uid
     }
 

@@ -32,7 +32,7 @@ import com.menna.nabatan_7asena.presentation.screens.leaderboard.LeaderboardUiSt
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
-fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHostState) {
+fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHostState, controls: @Composable () -> Unit = {}) {
     Box(modifier = Modifier.fillMaxSize()) {
         LeaderboardBackground()
 
@@ -52,6 +52,7 @@ fun LeaderboardContent(state: LeaderboardUiState, snackbarHostState: SnackbarHos
                     .padding(paddingValues)
             ) {
                 LeaderboardHeader()
+                controls()
 
                 if (state.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

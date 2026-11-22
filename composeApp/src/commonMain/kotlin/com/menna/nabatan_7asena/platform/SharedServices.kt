@@ -43,9 +43,10 @@ class SharedServices(
     }
     val firebase = FirebaseDataSource()
     val ramadanCalendarRepository = RamadanCalendarRepository(dao, firebase)
-    val gardenRepository: GardenRepository = GardenRepositoryImpl(earnedStars = { id ->
+    val gardenRepository = GardenRepositoryImpl(earnedStars = { id ->
         dao.getUserStats().first()?.takeIf { it.userId == id }?.totalStars
     }, backup = firebase::backupGarden)
+    internal val friendsRepository = FriendsRepository(firebase)
     val bookmarks = QuranBookmarkStore()
     val quranLibrary = QuranLibraryStore()
     val firstLaunch: FirstLaunchRepository = FirstLaunchManager()

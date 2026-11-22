@@ -11,11 +11,11 @@ import com.menna.nabatan_7asena.presentation.screens.home.HomeActions
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 
 @Composable
-fun HomeContent(uiState: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit) {
+fun HomeContent(uiState: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit, onFriends: () -> Unit = {}) {
     var showAddSheet by remember { mutableStateOf(false) }
     HomeLayout(uiState, actions, snackbar, onSettings,
         onPrayerGuide = onPrayerGuide, onBadges = onBadges, badgeCount = badgeCount,
-        seasonalMode = seasonalMode, onRamadanCalendar = onRamadanCalendar,
+        seasonalMode = seasonalMode, onRamadanCalendar = onRamadanCalendar, onFriends = onFriends,
         onAddTask = { showAddSheet = true; actions.loadSuggestions() })
     HomeOverlays(uiState, actions, showAddSheet) { showAddSheet = false }
 }

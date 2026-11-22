@@ -22,6 +22,10 @@ fun SettingsProfileHeader(state: SettingsUiState, actions: SettingsActions) {
             enabled = state.userId != null && !state.isSavingAvatar)
         Spacer(Modifier.height(8.dp))
         Text(state.name, color = SummerTheme.colors.textPrimary)
+        if (state.userId != null) {
+            Spacer(Modifier.height(8.dp))
+            com.menna.nabatan_7asena.presentation.screens.friends.FriendCodeCard()
+        }
         if (state.isSavingAvatar) CircularProgressIndicator(color = SummerTheme.colors.goldWarm)
         Spacer(Modifier.height(16.dp))
     }

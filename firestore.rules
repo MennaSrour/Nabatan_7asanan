@@ -127,5 +127,149 @@ service cloud.firestore {
     match /verse_builder_items/{itemId} { allow read: if true; }
     match /speed_challenge_questions/{questionId} { allow read: if true; }
     match /kids_shorts/{shortId} { allow read: if true; }
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function profile(uid) {
+      return /databases/$(database)/documents/friendProfiles/$(uid);
+    }
+    function code(value) {
+      return /databases/$(database)/documents/friendCodes/$(value);
+    }
+    function friendship(id) {
+      return /databases/$(database)/documents/friendships/$(id);
+    }
+    function message(chatId, messageId) {
+      return /databases/$(database)/documents/chats/$(chatId)/messages/$(messageId);
+    }
+    function cooldown(chatId, sender) {
+      return /databases/$(database)/documents/chats/$(chatId)/giftCooldowns/$(sender);
+    }
+    function credit(recipient, messageId) {
+      return /databases/$(database)/documents/friendGardenGifts/$(recipient)/credits/$(messageId);
+    }
+    function exact(data, fields) {
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields);
+    }
+    function validCode(value) {
+      return value is string && value.matches('NB-[2-9A-HJ-NP-Z]{8}');
+    }
+    function accepted(id) {
+      return exists(friendship(id)) && get(friendship(id)).data.status == 'accepted';
+    }
+    function participant(data) {
+      return signedIn() && me() in data.participants;
+    }
+    function chatMember(id) {
+      return signedIn() && accepted(id) && participant(get(friendship(id)).data);
+    }
+    function peer(id) {
+      let pair = get(friendship(id)).data;
+      return pair.senderId == me() ? pair.recipientId : pair.senderId;
+    }
+
+    match /friendCodes/{value} {
+      allow get: if signedIn() && validCode(value);
+      allow create: if signedIn() && validCode(value)
+        && exact(request.resource.data, ['uid']) && request.resource.data.uid == me()
+        && getAfter(profile(me())).data.friendCode == value;
+    }
+
+    match /friendProfiles/{uid} {
+      function validProfile(data) {
+        return exact(data, ['profileId', 'friendCode', 'avatarIndex', 'gender'])
+          && data.profileId is string && data.profileId.matches('[A-Za-z0-9_-]{1,100}')
+          && validCode(data.friendCode)
+          && data.avatarIndex is int && data.avatarIndex >= 0 && data.avatarIndex < 100
+          && data.gender in ['BOY', 'GIRL'];
+      }
+      allow get: if signedIn() && (uid == me()
+        || accepted(me() + ':' + uid) || accepted(uid + ':' + me()));
+      allow create: if signedIn() && uid == me() && validProfile(request.resource.data)
+        && getAfter(code(request.resource.data.friendCode)).data.uid == me();
+      allow update: if signedIn() && uid == me() && validProfile(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarIndex', 'gender']);
+    }
+
+    match /friendships/{id} {
+      // Exact reads of an absent pair let both directions be checked in one transaction.
+      allow get: if (resource != null && participant(resource.data)) || (signedIn() && resource == null
+        && (id.matches(me() + ':[A-Za-z0-9]+') || id.matches('[A-Za-z0-9]+:' + me())));
+      allow list: if participant(resource.data);
+      allow create: if signedIn() && validRequest(request.resource.data);
+      allow update: if signedIn() && resource.data.recipientId == me()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['accepted', 'declined']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+
+      function validRequest(data) {
+        return exact(data, ['senderId', 'recipientId', 'senderCode', 'recipientCode', 'participants', 'status'])
+          && data.senderId == me() && data.recipientId != me()
+          && data.recipientId is string && data.recipientId.matches('[A-Za-z0-9]+')
+          && id == me() + ':' + data.recipientId
+          && data.participants == [me(), data.recipientId] && data.status == 'pending'
+          && validCode(data.senderCode) && validCode(data.recipientCode)
+          && get(code(data.senderCode)).data.uid == me()
+          && get(code(data.recipientCode)).data.uid == data.recipientId
+          && !existsAfter(friendship(data.recipientId + ':' + me()));
+      }
+    }
+
+    match /chats/{chatId} {
+      allow get: if chatMember(chatId);
+
+      match /messages/{messageId} {
+        allow read: if chatMember(chatId);
+        allow create: if chatMember(chatId) && messageId.matches('[A-Za-z0-9]{20}')
+          && validMessage(request.resource.data);
+
+        function validMessage(data) {
+          return exact(data, ['presetId', 'senderId', 'timestamp'])
+            && data.senderId == me() && data.timestamp == request.time
+            && data.presetId in ['peace', 'peace_reply', 'praise', 'keep_going', 'acceptance',
+                'thanks', 'prayer', 'read_quran', 'finished_quran', 'remembrance', 'friday', 'water']
+            && (data.presetId != 'water' || pairedGift());
+        }
+        function pairedGift() {
+          let gift = credit(peer(chatId), messageId);
+          let limit = cooldown(chatId, me());
+          return !exists(gift) && getAfter(gift).data.chatId == chatId
+            && getAfter(limit).data.messageId == messageId
+            && getAfter(limit).data.timestamp == request.time;
+        }
+      }
+
+      match /giftCooldowns/{sender} {
+        allow get: if chatMember(chatId) && sender == me();
+        allow create: if chatMember(chatId) && sender == me() && validCooldown();
+        allow update: if chatMember(chatId) && sender == me() && validCooldown()
+          && request.time.date() > resource.data.timestamp.date();
+
+        function validCooldown() {
+          let data = request.resource.data;
+          return exact(data, ['messageId', 'timestamp']) && data.timestamp == request.time
+            && data.messageId is string && data.messageId.matches('[A-Za-z0-9]{20}')
+            && newGiftMessage(chatId, data.messageId);
+        }
+      }
+    }
+
+    function newGiftMessage(chatId, messageId) {
+      let path = message(chatId, messageId);
+      return !exists(path) && getAfter(path).data.presetId == 'water'
+        && getAfter(path).data.senderId == me() && getAfter(path).data.timestamp == request.time;
+    }
+
+    match /friendGardenGifts/{recipient}/credits/{messageId} {
+      allow read: if signedIn() && recipient == me();
+      allow create: if signedIn() && validCredit(request.resource.data);
+
+      function validCredit(data) {
+        return exact(data, ['chatId', 'senderId', 'timestamp'])
+          && data.chatId is string && data.senderId == me() && data.timestamp == request.time
+          && chatMember(data.chatId) && recipient == peer(data.chatId)
+          && newGiftMessage(data.chatId, messageId);
+      }
+    }
   }
 }

@@ -18,7 +18,7 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeLayout(state: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onAddTask: () -> Unit, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit) {
+fun HomeLayout(state: HomeUiState, actions: HomeActions, snackbar: SnackbarHostState, onSettings: () -> Unit, onAddTask: () -> Unit, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit, onFriends: () -> Unit = {}) {
     val background = when (seasonalMode) {
         SeasonalMode.DEFAULT -> if (state.isNightTheme) NightBackgroundGradient
             else Brush.verticalGradient(listOf(SummerTheme.colors.dayBackground, SummerTheme.colors.dayBackground))
@@ -33,7 +33,7 @@ fun HomeLayout(state: HomeUiState, actions: HomeActions, snackbar: SnackbarHostS
     }
     Scaffold(containerColor = SummerTheme.colors.transparent, snackbarHost = { HomeSnackbarHost(snackbar) }) { padding ->
         Box(Modifier.fillMaxSize().background(background)) {
-            HomeTaskFeed(state, actions, onSettings, onAddTask, padding.calculateBottomPadding(), onPrayerGuide, onBadges, badgeCount, seasonalMode, onRamadanCalendar)
+            HomeTaskFeed(state, actions, onSettings, onAddTask, padding.calculateBottomPadding(), onPrayerGuide, onBadges, badgeCount, seasonalMode, onRamadanCalendar, onFriends)
         }
     }
 }

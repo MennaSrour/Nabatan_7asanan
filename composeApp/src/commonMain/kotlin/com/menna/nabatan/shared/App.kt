@@ -3,7 +3,14 @@ package com.menna.nabatan.shared
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.savedstate.read
 import com.menna.nabatan_7asena.platform.platformMainViewModel
+import com.menna.nabatan_7asena.platform.platformFriendsViewModel
+import com.menna.nabatan_7asena.presentation.screens.friends.FriendsScreen
+import com.menna.nabatan_7asena.presentation.screens.friends.LocalFriendsViewModel
+import com.menna.nabatan_7asena.presentation.screens.friends.PresetChatScreen
 import com.menna.nabatan_7asena.presentation.MainScreenHolder
 import com.menna.nabatan_7asena.presentation.common.LocalUserGender
 import com.menna.nabatan_7asena.presentation.screens.start.StartScreen
@@ -37,7 +44,7 @@ fun App() {
             }
         }
     }
-    CompositionLocalProvider(LocalUserGender provides state.gender) {
+    CompositionLocalProvider(LocalUserGender provides state.gender, LocalFriendsViewModel provides platformFriendsViewModel()) {
         NabataAppTheme(isNightFallback()) { SharedNavigation(nav, model::startManagerWorkerImmediately) }
     }
 }
@@ -53,7 +60,21 @@ private fun SharedNavigation(nav: androidx.navigation.NavHostController, setup: 
         composable("onboarding") { OnboardingScreen(onNavigateToLogin = { setup(); nav.navigate("login") { popUpTo("onboarding") { inclusive = true } } }) }
         composable("login") { LoginScreen({ nav.navigate("home") { popUpTo("login") { inclusive = true } } }) }
         composable("settings") { SettingsScreen({ nav.popBackStack() }, { nav.navigate("splash") { popUpTo(0) { inclusive = true } } }) }
-        composable("home") { MainScreenHolder { nav.navigate("settings") } }
+        composable("home") {
+            MainScreenHolder(openFriends = { nav.navigate("friends") { launchSingleTop = true } }) {
+                nav.navigate("settings")
+            }
+        }
+        composable("friends") {
+            FriendsScreen(onBack = { nav.popBackStack() }) { chatId ->
+                nav.navigate("friends/chat/$chatId") { launchSingleTop = true }
+            }
+        }
+        composable("friends/chat/{chatId}", arguments = listOf(navArgument("chatId") { type = NavType.StringType })) { entry ->
+            entry.arguments?.read { getString("chatId") }?.let { chatId ->
+                PresetChatScreen(chatId) { nav.popBackStack() }
+            }
+        }
         composable("quran") { QuranScreen() }
         composable("sebha") { SebhaScreen() }
     }

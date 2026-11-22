@@ -26,7 +26,8 @@ fun HomeScreen(
     seasonalMode: SeasonalMode = SeasonalMode.DEFAULT,
     onNavigateToRamadanCalendar: () -> Unit = {},
     completedExternalTaskId: Int? = null,
-    viewModel: HomeViewModel = platformHomeViewModel()
+    viewModel: HomeViewModel = platformHomeViewModel(),
+    onNavigateToFriends: () -> Unit = {}
 ) {
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         viewModel.refreshPrayerLocation()
@@ -46,7 +47,7 @@ fun HomeScreen(
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
-    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel(), seasonalMode, onNavigateToRamadanCalendar)
+    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel(), seasonalMode, onNavigateToRamadanCalendar, onFriends = onNavigateToFriends)
     if (state.showKhatmahCelebration) {
         com.menna.nabatan_7asena.presentation.screens.quran.composables.KhatmahCelebrationDialog(
             onDismiss = { viewModel.dismissKhatmahCelebration(false) },

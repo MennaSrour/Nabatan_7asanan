@@ -58,5 +58,9 @@ actual fun platformHomeViewModel(): HomeViewModel = viewModel { HomeViewModel(io
 
 
 @Composable
+internal actual fun platformFriendsViewModel(): com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel =
+    viewModel { com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel(iosServices) }
+
+@Composable
 actual fun platformKidsRewardsViewModel(): KidsRewardsViewModel =
     viewModel { KidsRewardsViewModel(iosServices.userRepository, iosServices.kidsRewardsRepository) }
