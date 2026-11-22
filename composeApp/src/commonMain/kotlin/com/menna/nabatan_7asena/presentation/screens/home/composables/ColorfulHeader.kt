@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PeopleOutline
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -118,10 +121,11 @@ fun ColorfulHeader(
     onSettingsClick: () -> Unit,
     onAvatarClick: () -> Unit,
     isNight: Boolean = false,
-    onFriends: () -> Unit = {}
+    onFriends: (() -> Unit)? = null,
+    hasIncomingRequest: Boolean = false
 ) {
     val headerTextColor = if (isNight) SummerTheme.colors.white else SummerTheme.colors.headerTextDark
-    val settingsIconTint = if (isNight) SummerTheme.colors.white else SummerTheme.colors.settingsIconDark
+    val headerIconTint = if (isNight) SummerTheme.colors.white else SummerTheme.colors.settingsIconDark
 
     val floatingOffset = SummerTheme.rememberFloatingAnimation()
 
@@ -221,22 +225,45 @@ fun ColorfulHeader(
                     }
                 }
             }
-            com.menna.nabatan_7asena.presentation.screens.friends.FriendsShortcut(onFriends)
-            Surface(
-                onClick = onSettingsClick,
-                shape = CircleShape,
-                color = SummerTheme.colors.white.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, SummerTheme.colors.white),
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.Settings,
-                        contentDescription = genderedStringResource(GenderedStrings.settings),
-                        tint = settingsIconTint,
-                        modifier = Modifier.size(22.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (onFriends != null) {
+                    HeaderIconButton(
+                        icon = Icons.Rounded.PeopleOutline,
+                        description = if (hasIncomingRequest) "أصحابي، طلب صداقة جديد" else "أصحابي",
+                        tint = headerIconTint,
+                        onClick = onFriends,
+                        showBadge = hasIncomingRequest
                     )
                 }
+                HeaderIconButton(
+                    icon = Icons.Rounded.Settings,
+                    description = genderedStringResource(GenderedStrings.settings),
+                    tint = headerIconTint,
+                    onClick = onSettingsClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderIconButton(
+    icon: ImageVector,
+    description: String,
+    tint: Color,
+    onClick: () -> Unit,
+    showBadge: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = SummerTheme.colors.white.copy(alpha = 0.15f),
+        border = BorderStroke(1.dp, SummerTheme.colors.white),
+        modifier = Modifier.size(44.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            BadgedBox(badge = { if (showBadge) Badge(containerColor = SummerTheme.colors.goldWarm) }) {
+                Icon(icon, description, tint = tint, modifier = Modifier.size(22.dp))
             }
         }
     }

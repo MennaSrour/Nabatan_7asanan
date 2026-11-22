@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
-import androidx.compose.material.icons.rounded.PeopleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,20 +63,6 @@ internal fun FriendCodeCard() {
 
 @Composable
 internal expect fun rememberFriendCodeCopier(): (String) -> Unit
-
-@Composable
-internal fun FriendsShortcut(onClick: () -> Unit) {
-    val model = LocalFriendsViewModel.current ?: return
-    val state by model.state.collectAsStateWithLifecycle()
-    FilledIconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.filledIconButtonColors(containerColor = FriendsLavender, contentColor = FriendsPurple)
-    ) {
-        BadgedBox(badge = { if (state.incoming.isNotEmpty()) Badge(containerColor = FriendsPurple) }) {
-            Icon(Icons.Rounded.PeopleOutline, if (state.incoming.isEmpty()) "أصحابي" else "أصحابي، طلب صداقة جديد")
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

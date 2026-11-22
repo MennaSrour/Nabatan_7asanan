@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.menna.nabatan_7asena.presentation.screens.friends.LocalFriendsViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
@@ -19,15 +22,28 @@ import com.menna.nabatan_7asena.presentation.screens.seasonal.SeasonalHomeBanner
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit, onFriends: () -> Unit = {}) {
+    val friends = LocalFriendsViewModel.current
+    val hasIncomingRequest = if (friends != null) {
+        val friendsState by friends.state.collectAsStateWithLifecycle()
+        friendsState.incoming.isNotEmpty()
+    } else false
+    val hasUnreadMessage = if (friends != null) {
+        val unread by friends.hasUnreadMessage.collectAsStateWithLifecycle()
+        unread
+    } else false
     val tint = if (state.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
-        item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme, onFriends) }
+        item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme, onFriends.takeIf { friends != null }, hasIncomingRequest) }
         if (seasonalMode != SeasonalMode.DEFAULT) {
             item(key = "seasonal-home-banner") { SeasonalHomeBanner(seasonalMode, onRamadanCalendar) }
         }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
             item { PrayerLocationNotice(state, onSettings) }
-            homeSummaryItems(state, actions, badgeCount, onPrayerGuide, onBadges)
+            homeSummaryItems(
+                state, actions, badgeCount, onPrayerGuide, onBadges,
+                onFriends = onFriends.takeIf { friends != null },
+                hasFriendsUpdate = hasIncomingRequest || hasUnreadMessage
+            )
             if (state.hasLoadError && state.tasks.isEmpty()) {
                 item { NoInternetState(title = genderedStringResource(GenderedStrings.homeLoadError), onRetry = actions::retryLoadingData) }
             } else {

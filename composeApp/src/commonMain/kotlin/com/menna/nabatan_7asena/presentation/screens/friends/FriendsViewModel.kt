@@ -66,6 +66,31 @@ open class FriendsViewModel internal constructor(services: SharedServices) : Vie
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, FriendsState())
 
+    internal val hasUnreadMessage: StateFlow<Boolean> = state
+        .map { it.account?.uid to it.accepted.map { friendship -> friendship.id }.toSet() }
+        .distinctUntilChanged()
+        .flatMapLatest { (uid, chatIds) ->
+            if (uid == null || chatIds.isEmpty()) {
+                flowOf(false)
+            } else {
+                val conversations = chatIds.map { chatId ->
+                    repository.hasUnreadMessages(uid, chatId)
+                        .retryWhen { error, _ ->
+                            if (error is CancellationException) throw error
+                            Log.w("Friends", "Retrying unread message listener: ${error::class.simpleName}")
+                            delay(10_000)
+                            true
+                        }
+                        .onStart { emit(false) }
+                }
+                combine(conversations) { unread -> unread.any { it } }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000, replayExpirationMillis = 0), false)
+
+    internal fun markRead(account: FriendsAccount, relationship: Friendship, message: ChatMessage) {
+        repository.markRead(account.uid, relationship.id, message.time)
+    }
+
     internal fun retry() = retryCount.update { it + 1 }
     internal suspend fun request(code: String) = repository.request(requireNotNull(state.value.account), code)
     internal suspend fun respond(relationship: Friendship, accept: Boolean) = repository.respond(relationship, accept)

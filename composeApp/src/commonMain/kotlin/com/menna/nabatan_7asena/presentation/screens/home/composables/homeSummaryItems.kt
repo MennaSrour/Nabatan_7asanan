@@ -10,9 +10,10 @@ import com.menna.nabatan_7asena.presentation.screens.home.HomeActions
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
-fun LazyListScope.homeSummaryItems(state: HomeUiState, actions: HomeActions, badgeCount: String, onPrayerGuide: () -> Unit, onBadges: () -> Unit) {
+fun LazyListScope.homeSummaryItems(state: HomeUiState, actions: HomeActions, badgeCount: String, onPrayerGuide: () -> Unit, onBadges: () -> Unit, onFriends: (() -> Unit)?, hasFriendsUpdate: Boolean) {
     item { BentoStatsGrid(state.user, Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal, vertical = 6.dp)) }
     item { DailyWisdomCard(state.dailyWisdom, Modifier.padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal, vertical = 6.dp)) }
     item { com.menna.nabatan_7asena.presentation.screens.home.composables.garden.GardenCard(state, actions::openGarden) }
+    if (onFriends != null) item(key = "friends-shortcut") { FriendsHomeCard(onFriends, hasFriendsUpdate) }
     item { HomeShortcutCards(badgeCount, onPrayerGuide, onBadges) }
 }

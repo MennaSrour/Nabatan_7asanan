@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
@@ -24,7 +22,7 @@ import com.menna.nabatan_7asena.presentation.common.components.CollectEffects
 import com.menna.nabatan_7asena.presentation.screens.leaderboard.composables.LeaderboardContent
 
 @Composable
-fun LeaderboardScreen(viewModel: LeaderboardViewModel = platformLeaderboardViewModel(), onFriends: () -> Unit = {}) {
+fun LeaderboardScreen(viewModel: LeaderboardViewModel = platformLeaderboardViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     CollectEffects(viewModel.effects) { effect ->
@@ -40,14 +38,9 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel = platformLeaderboardViewM
     LeaderboardContent(displayed, snackbar) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilledTonalButton(
-                onClick = onFriends,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.filledTonalButtonColors(containerColor = FriendsLavender, contentColor = FriendsPurple)
-            ) { Text("أصحابي") }
             FilterChip(!friendsOnly, { friendsOnly = false }, { Text("الكل") },
                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = FriendsGold, selectedLabelColor = FriendsPurple))
             FilterChip(friendsOnly, { friendsOnly = true }, { Text("أصحابي") },

@@ -133,7 +133,7 @@ fun NavigationGraph(
             }
         }
         composable("sebha") { SebhaScreen() }
-        composable("leaderboard") { LeaderboardScreen(onFriends = openFriends) }
+        composable("leaderboard") { LeaderboardScreen() }
         composable("quiz") { QuizScreen() }
         composable("dua") { AzkarAndDuaScreen() }
         composable("quran") { QuranScreen() }
