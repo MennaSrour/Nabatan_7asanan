@@ -54,8 +54,7 @@ internal fun SeasonalHomeBanner(mode: SeasonalMode, onCalendar: () -> Unit) {
             )
     ) {
         if (ramadan) {
-            SeasonalLottie(AppResources.raw.lights, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(88.dp))
-            SeasonalLottie(AppResources.raw.lantern_swing, Modifier.align(Alignment.TopEnd).size(84.dp))
+            SeasonalLottie(AppResources.raw.lantern_swing, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(92.dp))
             Row(
                 Modifier.fillMaxWidth().padding(start = 18.dp, end = 16.dp, top = 46.dp, bottom = 18.dp),
                 verticalAlignment = Alignment.CenterVertically

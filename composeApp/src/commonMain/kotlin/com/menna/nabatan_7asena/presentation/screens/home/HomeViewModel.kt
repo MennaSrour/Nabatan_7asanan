@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.core.audio.AudioPlayerManager
 import com.menna.nabatan_7asena.core.util.DateUtils
-import com.menna.nabatan_7asena.core.util.getCurrentHijriDate
 import com.menna.nabatan_7asena.core.util.PrayerSlot
 import com.menna.nabatan_7asena.core.util.PrayerTimeline
 import com.menna.nabatan_7asena.domain.LocationTracker
@@ -76,14 +75,9 @@ open class HomeViewModel constructor(
                     if (pending.isEmpty()) continue
                     while (true) {
                         try {
-                            if (withTimeoutOrNull(10_000) {
-                                    ramadanCalendar.backup(profileId, year, pending)
-                                    true
-                                } == true
-                            ) {
-                                synced[year] = completed
-                                break
-                            }
+                            ramadanCalendar.backup(profileId, year, pending)
+                            synced[year] = completed
+                            break
                         } catch (error: CancellationException) {
                             throw error
                         } catch (error: Exception) {

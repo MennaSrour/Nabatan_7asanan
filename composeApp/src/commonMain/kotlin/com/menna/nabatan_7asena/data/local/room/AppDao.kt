@@ -38,14 +38,12 @@ interface AppDao {
 
     @Transaction
     suspend fun completeRamadanDay(seasonKey: String, userId: String, day: Int, awardStars: Boolean) {
-        val stats = readUserStats() ?: error("A saved profile is required")
+        require(day in 1..30)
+        val stats = checkNotNull(readUserStats()) { "A saved profile is required" }
         check(stats.userId == userId)
         val rewardId = -100 - day
         if (getRecordStatus(seasonKey, rewardId) == true) return
-        if (awardStars) {
-            val stars = stats.totalStars + RAMADAN_CHALLENGE_STARS
-            updateUserStats(stats.copy(totalStars = stars, treeStage = treeStageFor(stars)))
-        }
+        if (awardStars) updateUserStats(stats.withBonus(RAMADAN_CHALLENGE_STARS))
         updateOrInsertRecord(DailyRecordEntity(seasonKey, rewardId, true))
     }
 
