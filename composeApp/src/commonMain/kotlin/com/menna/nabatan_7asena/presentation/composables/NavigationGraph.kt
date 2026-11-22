@@ -6,6 +6,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.savedstate.read
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.menna.nabatan_7asena.platform.platformHomeViewModel
@@ -33,11 +36,12 @@ fun NavigationGraph(
                 onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
                 onNavigateToBadges = { navController.navigate("progress") { launchSingleTop = true } },
                 onNavigateToGarden = { navController.navigate("garden") { launchSingleTop = true } },
-                onNavigateToQuran = {
-                    navController.navigate("quran") {
+                onNavigateToKhatmah = { navController.navigate("quran/khatmah") { launchSingleTop = true } },
+                onNavigateToQuran = { page ->
+                    navController.navigate(if (page == null) "quran" else "quran/wird/$page") {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState = page == null
                     }
                 },
                 onNavigateToSebha = {
@@ -77,5 +81,9 @@ fun NavigationGraph(
         composable("quiz") { QuizScreen() }
         composable("dua") { AzkarAndDuaScreen() }
         composable("quran") { QuranScreen() }
+        composable("quran/khatmah") { QuranScreen(openKhatmah = true) }
+        composable("quran/wird/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { entry ->
+            QuranScreen(initialWirdPage = entry.arguments?.read { getInt("page") })
+        }
     }
 }

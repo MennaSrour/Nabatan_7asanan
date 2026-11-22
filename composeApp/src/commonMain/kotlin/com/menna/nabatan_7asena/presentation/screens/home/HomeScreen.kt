@@ -15,7 +15,8 @@ import com.menna.nabatan_7asena.presentation.screens.home.composables.HomeConten
 @Composable
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToQuran: () -> Unit,
+    onNavigateToQuran: (Int?) -> Unit,
+    onNavigateToKhatmah: () -> Unit,
     onNavigateToSebha: () -> Unit,
     onNavigateToGarden: () -> Unit,
     onNavigateToPrayerGuide: () -> Unit,
@@ -31,9 +32,16 @@ fun HomeScreen(
         when (effect) {
             is HomeEffect.ShowMessage -> snackbar.showSnackbar(effect.message)
             HomeEffect.NavigateToGarden -> onNavigateToGarden()
-            HomeEffect.NavigateToQuran -> onNavigateToQuran()
+            is HomeEffect.NavigateToQuran -> onNavigateToQuran(effect.page)
+            HomeEffect.NavigateToKhatmah -> onNavigateToKhatmah()
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
     HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel())
+    if (state.showKhatmahCelebration) {
+        com.menna.nabatan_7asena.presentation.screens.quran.composables.KhatmahCelebrationDialog(
+            onDismiss = { viewModel.dismissKhatmahCelebration(false) },
+            onStartNew = { viewModel.dismissKhatmahCelebration(true) }
+        )
+    }
 }

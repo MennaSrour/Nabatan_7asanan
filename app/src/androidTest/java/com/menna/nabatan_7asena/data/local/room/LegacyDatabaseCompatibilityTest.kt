@@ -3,7 +3,11 @@ package com.menna.nabatan_7asena.data.local.room
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.menna.nabatan_7asena.domain.entity.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -27,7 +31,7 @@ class LegacyDatabaseCompatibilityTest {
             database.version = 5
         }
         val database = Room.databaseBuilder(context, AppDatabase::class.java, filename)
-            .addMigrations(MIGRATION_4_5).build()
+            .addMigrations(MIGRATION_4_5, ANDROID_MIGRATION_5_6).build()
         try {
             val user = database.appDao().getUserStats().first()!!
             assertEquals("existing-user", user.userId)
@@ -39,6 +43,23 @@ class LegacyDatabaseCompatibilityTest {
             assertEquals(false, user.prayerNotifications)
             assertEquals(true, user.azkarNotifications)
             assertEquals(false, user.quranNotifications)
+
+            val dao = database.appDao()
+            val date = LocalDate(2026, 11, 22)
+            val profileId = user.userId
+            dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
+            List(2) {
+                async { dao.completeQuranWird(profileId, date, Wird(601, 604), "22-11-2026") }
+            }.awaitAll()
+            assertEquals(true, dao.getRecordStatus("22-11-2026", DAILY_QURAN_TASK_ID))
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.completedKhatmahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS, dao.readUserStats()?.totalStars)
+
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.NOT_STARTED, 0, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.memorizedSurahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS + MEMORIZATION_BONUS_STARS, dao.readUserStats()?.totalStars)
         } finally {
             database.close()
             context.deleteDatabase(filename)
