@@ -1,6 +1,17 @@
 package com.menna.nabatan_7asena.presentation.composables
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.menna.nabatan_7asena.data.local.PrayerSettingsStore
+import androidx.lifecycle.repeatOnLifecycle
+import com.menna.nabatan_7asena.core.util.DateUtils
+import com.menna.nabatan_7asena.core.util.SeasonalThemeManager
+import com.menna.nabatan_7asena.presentation.screens.seasonal.RAMADAN_CALENDAR_ROUTE
+import com.menna.nabatan_7asena.presentation.screens.seasonal.RamadanCalendarScreen
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import com.menna.nabatan_7asena.platform.platformKidsRewardsViewModel
 import androidx.compose.runtime.remember
@@ -31,6 +42,17 @@ fun NavigationGraph(
     navController: NavHostController,
     openSettings: () -> Unit
 ) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val prayerSettings = PrayerSettingsStore.state.collectAsStateWithLifecycle()
+    val offset = prayerSettings.value.hijriDateOffset
+    val hijriDate = produceState(DateUtils.currentHijriParts(offset), lifecycle, offset) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = DateUtils.currentHijriParts(offset)
+                delay(30_000)
+            }
+        }
+    }
     val rewards = platformKidsRewardsViewModel()
     LaunchedEffect(rewards) { rewards.syncWhileOpen() }
     NavHost(
@@ -39,6 +61,10 @@ fun NavigationGraph(
     ) {
         composable("home") {
             HomeScreen(
+                seasonalMode = SeasonalThemeManager.mode(hijriDate.value),
+                onNavigateToRamadanCalendar = {
+                    navController.navigate(RAMADAN_CALENDAR_ROUTE) { launchSingleTop = true }
+                },
                 onNavigateToSettings = openSettings,
                 onNavigateToWheel = { navController.navigate(WheelRoute) { launchSingleTop = true } },
                 onNavigateToPrayerGuide = { navController.navigate("prayer-guide") { launchSingleTop = true } },
@@ -60,6 +86,16 @@ fun NavigationGraph(
                     }
                 }
             )
+        }
+        composable(RAMADAN_CALENDAR_ROUTE) { entry ->
+            val home = remember(entry) { navController.getBackStackEntry("home") }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides home) {
+                RamadanCalendarScreen(
+                    SeasonalThemeManager.ramadan(hijriDate.value),
+                    platformHomeViewModel(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
         composable("garden") { entry ->
             val home = remember(entry) { navController.getBackStackEntry("home") }

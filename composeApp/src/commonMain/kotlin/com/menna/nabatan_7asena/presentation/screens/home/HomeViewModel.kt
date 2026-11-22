@@ -59,13 +59,41 @@ open class HomeViewModel constructor(
     private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
     private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository,
     private val quranJourney: QuranJourneyRepository,
-    private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
+    private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository,
+    internal val ramadanCalendar: com.menna.nabatan_7asena.data.repository.RamadanCalendarRepository
 ) : ViewModel(), HomeActions {
 
     suspend fun awardPrayerGuideBonus(): Boolean {
         val user = getCurrentUserUseCase().first()
         check(user.id.isNotBlank() && user.id != "local")
         return dailyActivityRepository.awardPrayerGuideBonus(user.id)
+    }
+
+    internal val ramadanProfileIds = getCurrentUserUseCase().map { it.id }.distinctUntilChanged()
+
+    private fun syncRamadanCalendar() = viewModelScope.launch {
+        ramadanProfileIds.collectLatest { profileId ->
+            if (profileId.isBlank() || profileId == "local") return@collectLatest
+            val synced = mutableMapOf<Int, Set<Int>>()
+            ramadanCalendar.observeBackups(profileId).distinctUntilChanged().collectLatest { years ->
+                for ((year, completed) in years) {
+                    val pending = completed - synced[year].orEmpty()
+                    if (pending.isEmpty()) continue
+                    while (true) {
+                        try {
+                            ramadanCalendar.backup(profileId, year, pending)
+                            synced[year] = completed
+                            break
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (error: Exception) {
+                            // Room retains the completion for a later retry.
+                        }
+                        delay(30_000)
+                    }
+                }
+            }
+        }
     }
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -245,6 +273,7 @@ open class HomeViewModel constructor(
     init {
         observeCombined()
         observeQuranBookmark()
+        syncRamadanCalendar()
     }
 
     private fun prayerBoundaries(date: LocalDate, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?) = flow {

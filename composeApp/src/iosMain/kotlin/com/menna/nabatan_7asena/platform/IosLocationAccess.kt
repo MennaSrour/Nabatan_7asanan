@@ -12,11 +12,28 @@ import platform.Foundation.*
 import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
-internal object IosLocationAccess : NSObject(), CLLocationManagerDelegateProtocol, LocationTracker {
-    private val manager = CLLocationManager().apply { delegate = this@IosLocationAccess }
+internal object IosLocationAccess : LocationTracker {
     private val mutex = Mutex()
     private var authorization: CancellableContinuation<Unit>? = null
     private var position: CancellableContinuation<CLLocation?>? = null
+    private val locationDelegate = object : NSObject(), CLLocationManagerDelegateProtocol {
+        override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
+            if (didChangeAuthorizationStatus != kCLAuthorizationStatusNotDetermined) {
+                authorization?.takeIf { it.isActive }?.resume(Unit)
+                authorization = null
+            }
+        }
+        override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
+            position?.takeIf { it.isActive }?.resume(didUpdateLocations.lastOrNull() as? CLLocation)
+            position = null
+        }
+        override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
+            position?.takeIf { it.isActive }?.resume(null)
+            position = null
+        }
+    }
+    private val manager = CLLocationManager().apply { delegate = locationDelegate }
+
     fun granted(): Boolean = CLLocationManager.locationServicesEnabled() &&
         CLLocationManager.authorizationStatus() in listOf(kCLAuthorizationStatusAuthorizedAlways, kCLAuthorizationStatusAuthorizedWhenInUse)
     suspend fun requestAuthorization() {
@@ -26,20 +43,6 @@ internal object IosLocationAccess : NSObject(), CLLocationManagerDelegateProtoco
             continuation.invokeOnCancellation { authorization = null }
             manager.requestWhenInUseAuthorization()
         }
-    }
-    override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
-        if (didChangeAuthorizationStatus != kCLAuthorizationStatusNotDetermined) {
-            authorization?.takeIf { it.isActive }?.resume(Unit)
-            authorization = null
-        }
-    }
-    override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
-        position?.takeIf { it.isActive }?.resume(didUpdateLocations.lastOrNull() as? CLLocation)
-        position = null
-    }
-    override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
-        position?.takeIf { it.isActive }?.resume(null)
-        position = null
     }
     override suspend fun getCurrentLocation(): UserLocation? = withContext(Dispatchers.Main) {
         mutex.withLock {

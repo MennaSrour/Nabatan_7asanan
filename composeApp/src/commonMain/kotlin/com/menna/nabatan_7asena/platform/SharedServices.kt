@@ -42,6 +42,7 @@ class SharedServices(
         }
     }
     val firebase = FirebaseDataSource()
+    val ramadanCalendarRepository = RamadanCalendarRepository(dao, firebase)
     val gardenRepository: GardenRepository = GardenRepositoryImpl(earnedStars = { id ->
         dao.getUserStats().first()?.takeIf { it.userId == id }?.totalStars
     }, backup = firebase::backupGarden)
