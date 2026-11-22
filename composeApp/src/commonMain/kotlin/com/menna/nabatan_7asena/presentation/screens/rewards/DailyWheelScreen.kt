@@ -93,7 +93,7 @@ private fun DailyGiftWheel(
 
     RewardsPage("عجلة هدية النهارده", onBack = { viewModel.dismissSpin(); onBack() }) {
         RewardText("نباتًا حسنًا", size = 28, bold = true)
-        val settled = prize != null && (won == null || revealed)
+        val settled = won == null || revealed
         val spinning = preparing || (won != null && !revealed)
         BotanicalWheel(
             rotation = if (spinning || won != null) rotation.value else prizeAngle(prize),
