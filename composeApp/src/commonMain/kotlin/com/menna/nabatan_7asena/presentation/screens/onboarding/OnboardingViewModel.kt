@@ -32,6 +32,7 @@ open class OnboardingViewModel(
         else request(permission)
     }
     override fun onSkipClicked() {
+        permissionForPage(_uiState.value.currentPage)?.let(permissions::permissionSkipped)
         if (_uiState.value.currentPage < 3) updatePageIndex(3) else advance()
     }
     fun refreshPermissions() { viewModelScope.launch {

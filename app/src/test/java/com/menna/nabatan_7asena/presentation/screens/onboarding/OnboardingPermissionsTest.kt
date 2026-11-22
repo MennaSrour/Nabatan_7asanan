@@ -14,6 +14,8 @@ class OnboardingPermissionsTest {
     private val store = ViewModelStore()
     private class Permissions(override val supportsAndroidPermissions: Boolean = true) : PermissionPlatform {
         var granted = false
+        val skipped = mutableListOf<AppPermission>()
+        override fun permissionSkipped(permission: AppPermission) { skipped += permission }
         override fun locationGranted() = granted
         override fun notificationsGranted() = granted
         override fun exactAlarmsGranted() = granted
@@ -52,12 +54,14 @@ class OnboardingPermissionsTest {
     }
 
     @Test fun eachPermissionCanBeSkippedWithoutSkippingTheRemainingChoices() = runTest(dispatcher) {
-        val vm = model()
+        val permissions = Permissions()
+        val vm = model(permissions)
         vm.onSkipClicked()
         assertEquals(3, vm.uiState.value.currentPage)
         for (index in 3..5) { vm.onSkipClicked(); assertEquals(index + 1, vm.uiState.value.currentPage) }
         vm.onSkipClicked()
         assertEquals(OnboardingEffect.NavigateToLogin, vm.effects.first())
+        assertEquals(AppPermission.entries, permissions.skipped)
     }
 
     @Test fun locationNotificationAndExactAlarmDenialsCanAdvanceOnContinue() = runTest(dispatcher) {

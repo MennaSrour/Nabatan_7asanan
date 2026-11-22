@@ -69,6 +69,10 @@ fun createResourcePlayer(context: Context, resource: Int): MediaPlayer? {
 class AndroidPermissions : PermissionPlatform {
     override val supportsAndroidPermissions = true
     private val context get() = AndroidPlatform.context
+    override fun permissionSkipped(permission: AppPermission) {
+        if (permission == AppPermission.NOTIFICATIONS)
+            PlatformPreferences("app_prefs").putBoolean("notification_permission_skipped", true)
+    }
     override suspend fun refresh() {
         val current = "${locationGranted()}|${notificationsGranted()}|${exactAlarmsGranted()}|${batteryExempt()}"
         val prefs = PlatformPreferences("permission_requests")

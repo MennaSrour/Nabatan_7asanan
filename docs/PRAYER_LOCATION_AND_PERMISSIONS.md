@@ -44,7 +44,8 @@ Onboarding offers Location, Notifications, Exact Alarms (Android), then Battery
 exemption (Android). Every permission can be skipped independently. Settings shows
 live system statuses separately from the app's notification-category switches.
 Android requests fine/coarse location together; approximate access is accepted.
-Permanent runtime denials open app settings. Exact-alarm and battery access use
+Skipping notifications suppresses the separate returning-user notification prompt;
+Settings remains available for a later explicit request. Permanent runtime denials open app settings. Exact-alarm and battery access use
 system settings, with an app-settings fallback if an OEM omits the specialized UI.
 
 The requester records the outstanding permission across activity recreation and

@@ -33,9 +33,10 @@ actual object BroadcastNotificationManager {
     }
 
     fun requestPermissionForReturningUser(launch: (String) -> Unit) {
-        if (AndroidPermissions().notificationsGranted()) return
+        if (Build.VERSION.SDK_INT < 33 || AndroidPermissions().notificationsGranted()) return
         val preferences = preferences
         if (!preferences.getBoolean("is_onboarding_completed", false)) return
+        if (preferences.getBoolean("notification_permission_skipped", false)) return
         if (preferences.getBoolean(PERMISSION_REQUESTED, false)) return
         recordPermissionRequest()
         launch(Manifest.permission.POST_NOTIFICATIONS)
