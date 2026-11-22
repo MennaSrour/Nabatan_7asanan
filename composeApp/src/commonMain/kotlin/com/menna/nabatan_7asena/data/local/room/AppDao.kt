@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.first
 import com.menna.nabatan_7asena.domain.entity.PRAYER_GUIDE_BONUS_STARS
+import com.menna.nabatan_7asena.domain.entity.RAMADAN_CHALLENGE_STARS
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,6 +27,25 @@ interface AppDao {
         updateUserStats(stats.copy(totalStars = stars, treeStage = treeStageFor(stars)))
         updateOrInsertRecord(DailyRecordEntity(date, PRAYER_GUIDE_REWARD_ID, true))
         return true
+    }
+
+    @Query("SELECT -100 - itemId FROM daily_records WHERE date = :seasonKey AND itemId BETWEEN -130 AND -101 AND isCompleted = 1 AND EXISTS (SELECT 1 FROM user_stats WHERE userId = :profileId)")
+    fun observeRamadanDays(profileId: String, seasonKey: String): Flow<List<Int>>
+
+    @Query("SELECT * FROM daily_records WHERE date GLOB 'ramadan-[0-9]*' AND itemId BETWEEN -130 AND -101 AND isCompleted = 1 AND EXISTS (SELECT 1 FROM user_stats WHERE userId = :profileId)")
+    fun observeRamadanRecords(profileId: String): Flow<List<DailyRecordEntity>>
+
+    @Transaction
+    suspend fun completeRamadanDay(seasonKey: String, userId: String, day: Int, awardStars: Boolean) {
+        val stats = getUserStats().first() ?: error("A saved profile is required")
+        check(stats.userId == userId)
+        val rewardId = -100 - day
+        if (getRecordStatus(seasonKey, rewardId) == true) return
+        if (awardStars) {
+            val stars = stats.totalStars + RAMADAN_CHALLENGE_STARS
+            updateUserStats(stats.copy(totalStars = stars, treeStage = treeStageFor(stars)))
+        }
+        updateOrInsertRecord(DailyRecordEntity(seasonKey, rewardId, true))
     }
 
     @Transaction

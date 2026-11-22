@@ -1,6 +1,7 @@
 package com.menna.nabatan_7asena.presentation.screens.home
 
 import androidx.compose.material3.SnackbarHostState
+import com.menna.nabatan_7asena.core.util.SeasonalMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +21,8 @@ fun HomeScreen(
     onNavigateToGarden: () -> Unit,
     onNavigateToPrayerGuide: () -> Unit,
     onNavigateToBadges: () -> Unit,
+    seasonalMode: SeasonalMode = SeasonalMode.DEFAULT,
+    onNavigateToRamadanCalendar: () -> Unit = {},
     completedExternalTaskId: Int? = null,
     viewModel: HomeViewModel = platformHomeViewModel()
 ) {
@@ -35,5 +38,5 @@ fun HomeScreen(
             HomeEffect.NavigateToSebha -> onNavigateToSebha()
         }
     }
-    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel())
+    HomeContent(state, viewModel, snackbar, onNavigateToSettings, onNavigateToPrayerGuide, onNavigateToBadges, badges.badgeCountLabel(), seasonalMode, onNavigateToRamadanCalendar)
 }

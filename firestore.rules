@@ -62,6 +62,15 @@ service cloud.firestore {
         && request.resource.data.get('revision', 0) >= resource.data.get('revision', 0);
     }
 
+    match /ramadan_calendars/{uid}/profiles/{profileId}/days/{completionId} {
+      allow read, delete: if owns(uid);
+      allow create: if owns(uid)
+        && request.resource.data.keys().hasOnly(['year', 'day'])
+        && bounded(request.resource.data.year, 9999) && request.resource.data.year > 0
+        && bounded(request.resource.data.day, 30) && request.resource.data.day > 0;
+      allow update: if owns(uid) && request.resource.data == resource.data;
+    }
+
     function validAttempt(data, uid) {
       return data.keys().hasOnly(['userId', 'name', 'gender', 'avatarIndex', 'score', 'token', 'completed'])
         && data.userId == uid

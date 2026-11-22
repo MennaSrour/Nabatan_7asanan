@@ -65,6 +65,18 @@ class FirebaseDataSource constructor(
         firestore.collection("gardens").document(ownerUid()).collection("devices").document("${profileId}_$deviceId").set(progress)
     }
 
+    suspend fun backupRamadanDays(profileId: String, year: Int, completed: Set<Int>) {
+        val uid = ownerUid()
+        val store = firestore
+        val days = store.collection("ramadan_calendars").document(uid)
+            .collection("profiles").document(profileId).collection("days")
+        val batch = store.batch()
+        for (day in completed) {
+            batch.set(days.document("${year}_$day"), mapOf("year" to year, "day" to day))
+        }
+        batch.commit()
+    }
+
     suspend fun getUserRank(totalStars: Int): Long {
         val higherScores = firestore.collection("leaderboard")
             .where { "totalStars" greaterThan totalStars }

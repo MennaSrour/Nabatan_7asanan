@@ -10,16 +10,21 @@ import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import com.menna.nabatan_7asena.presentation.common.components.NoInternetState
 import com.menna.nabatan_7asena.presentation.common.genderedStringResource
+import com.menna.nabatan_7asena.core.util.SeasonalMode
 import com.menna.nabatan_7asena.presentation.screens.home.HomeActions
 import com.menna.nabatan_7asena.presentation.screens.home.HomeUiState
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
+import com.menna.nabatan_7asena.presentation.screens.seasonal.SeasonalHomeBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String) {
+fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String, seasonalMode: SeasonalMode, onRamadanCalendar: () -> Unit) {
     val tint = if (state.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
         item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme) }
+        if (seasonalMode != SeasonalMode.DEFAULT) {
+            item(key = "seasonal-home-banner") { SeasonalHomeBanner(seasonalMode, onRamadanCalendar) }
+        }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
             homeSummaryItems(state, actions, badgeCount, onPrayerGuide, onBadges)
             if (state.hasLoadError && state.tasks.isEmpty()) {
