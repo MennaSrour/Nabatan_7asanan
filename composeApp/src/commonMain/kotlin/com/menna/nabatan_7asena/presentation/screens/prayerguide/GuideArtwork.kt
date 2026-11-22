@@ -47,7 +47,7 @@ internal fun GuideArtwork(scene: GuideScene, modifier: Modifier = Modifier) {
 
 private fun pt(x: Int, y: Int) = Offset(x.toFloat(), y.toFloat())
 
-private fun DrawScope.line(color: Color, width: Float, vararg points: Offset) {
+private fun DrawScope.line(color: Color, width: Float, points: List<Offset>) {
     val path = Path().apply {
         moveTo(points.first().x, points.first().y)
         points.drop(1).forEach { lineTo(it.x, it.y) }
@@ -56,8 +56,8 @@ private fun DrawScope.line(color: Color, width: Float, vararg points: Offset) {
 }
 
 private fun DrawScope.sparkle(x: Int, y: Int, radius: Int, color: Color) {
-    line(color, 2f, pt(x - radius, y), pt(x + radius, y))
-    line(color, 2f, pt(x, y - radius), pt(x, y + radius))
+    line(color, 2f, listOf(pt(x - radius, y), pt(x + radius, y)))
+    line(color, 2f, listOf(pt(x, y - radius), pt(x, y + radius)))
 }
 
 private fun DrawScope.drop(x: Int, y: Int, scale: Float = 1f) {
@@ -75,9 +75,9 @@ private fun DrawScope.hand(x: Int, y: Int, inward: Int) {
     drawOval(SkinShadow, pt(x - 12, y - 1), Size(24f, 29f))
     drawOval(Skin, pt(x - 12, y - 4), Size(24f, 28f))
     for (finger in -1..1) {
-        line(Skin, 5f, pt(x + finger * 6, y + 1), pt(x + finger * 7, y - 12 + finger * inward))
+        line(Skin, 5f, listOf(pt(x + finger * 6, y + 1), pt(x + finger * 7, y - 12 + finger * inward)))
     }
-    line(Skin, 7f, pt(x + 8 * inward, y + 13), pt(x + 15 * inward, y + 4))
+    line(Skin, 7f, listOf(pt(x + 8 * inward, y + 13), pt(x + 15 * inward, y + 4)))
 }
 
 private fun DrawScope.frontFace(x: Int = 100, y: Int = 55) {
@@ -94,10 +94,10 @@ private fun DrawScope.profileFace() {
     drawOval(Skin, pt(68, 26), Size(59f, 64f))
     drawArc(Navy, 160f, 200f, true, pt(67, 21), Size(55f, 48f))
     drawCircle(Skin, 14f, pt(111, 52))
-    line(Skin, 8f, pt(120, 49), pt(133, 58), pt(123, 62))
+    line(Skin, 8f, listOf(pt(120, 49), pt(133, 58), pt(123, 62)))
     drawCircle(Navy, 3f, pt(116, 48))
     drawCircle(SkinShadow, 6f, pt(89, 60))
-    line(Navy, 3f, pt(119, 71), pt(126, 71))
+    line(Navy, 3f, listOf(pt(119, 71), pt(126, 71)))
 }
 
 private fun DrawScope.drawWudu(scene: GuideScene) {
@@ -116,8 +116,8 @@ private fun DrawScope.drawWudu(scene: GuideScene) {
             drop(144, 78)
         }
         GuideScene.WashHands -> {
-            line(Mint, 16f, pt(56, 96), pt(77, 75))
-            line(Lilac, 16f, pt(145, 92), pt(122, 72))
+            line(Mint, 16f, listOf(pt(56, 96), pt(77, 75)))
+            line(Lilac, 16f, listOf(pt(145, 92), pt(122, 72)))
             hand(82, 57, 1)
             hand(117, 54, -1)
             drop(98, 26)
@@ -131,7 +131,7 @@ private fun DrawScope.drawWudu(scene: GuideScene) {
             drawCircle(Water.copy(alpha = .45f), 10f, pt(130, level), style = Stroke(2f))
             drop(147, level + 2)
             drop(157, level + 14, .7f)
-            line(Water, 3f, pt(151, level + 10), pt(142, level + 6), pt(136, level))
+            line(Water, 3f, listOf(pt(151, level + 10), pt(142, level + 6), pt(136, level)))
         }
         GuideScene.WashFace -> {
             frontFace(y = 49)
@@ -143,9 +143,9 @@ private fun DrawScope.drawWudu(scene: GuideScene) {
             hand(137, 82, -1)
         }
         GuideScene.WashArms -> {
-            line(SkinShadow, 23f, pt(55, 78), pt(102, 79), pt(141, 51))
-            line(Skin, 18f, pt(55, 74), pt(101, 75), pt(138, 47))
-            line(Lilac, 25f, pt(49, 74), pt(66, 74))
+            line(SkinShadow, 23f, listOf(pt(55, 78), pt(102, 79), pt(141, 51)))
+            line(Skin, 18f, listOf(pt(55, 74), pt(101, 75), pt(138, 47)))
+            line(Lilac, 25f, listOf(pt(49, 74), pt(66, 74)))
             hand(140, 39, -1)
             drawCircle(Gold, 14f, pt(103, 76), style = Stroke(2.5f))
             drop(96, 44)
@@ -154,8 +154,8 @@ private fun DrawScope.drawWudu(scene: GuideScene) {
         }
         GuideScene.WipeHead -> {
             frontFace(y = 58)
-            line(Mint, 13f, pt(48, 81), pt(65, 61), pt(79, 42))
-            line(Mint, 13f, pt(152, 81), pt(135, 61), pt(121, 42))
+            line(Mint, 13f, listOf(pt(48, 81), pt(65, 61), pt(79, 42)))
+            line(Mint, 13f, listOf(pt(152, 81), pt(135, 61), pt(121, 42)))
             hand(80, 37, 1)
             hand(120, 37, -1)
             drawCircle(Water, 8f, pt(72, 60), style = Stroke(2f))
@@ -164,16 +164,16 @@ private fun DrawScope.drawWudu(scene: GuideScene) {
         }
         GuideScene.WashFeet -> {
             for (x in listOf(81, 119)) {
-                line(Lilac, 18f, pt(x - 4, 25), pt(x - 4, 53))
-                line(SkinShadow, 19f, pt(x - 4, 54), pt(x - 1, 76), pt(x + 12, 86))
-                line(Skin, 16f, pt(x - 4, 54), pt(x - 1, 74), pt(x + 12, 83))
+                line(Lilac, 18f, listOf(pt(x - 4, 25), pt(x - 4, 53)))
+                line(SkinShadow, 19f, listOf(pt(x - 4, 54), pt(x - 1, 76), pt(x + 12, 86)))
+                line(Skin, 16f, listOf(pt(x - 4, 54), pt(x - 1, 74), pt(x + 12, 83)))
                 drop(x - 17, 72, .8f)
             }
-            line(Water, 3f, pt(60, 100), pt(140, 100))
+            line(Water, 3f, listOf(pt(60, 100), pt(140, 100)))
         }
         GuideScene.Dua -> {
-            line(Lilac, 15f, pt(75, 101), pt(79, 69))
-            line(Lilac, 15f, pt(125, 101), pt(121, 69))
+            line(Lilac, 15f, listOf(pt(75, 101), pt(79, 69)))
+            line(Lilac, 15f, listOf(pt(125, 101), pt(121, 69)))
             hand(78, 52, 1)
             hand(122, 52, -1)
             sparkle(100, 32, 12, Gold)
@@ -209,7 +209,7 @@ private fun DrawScope.drawPrayer(scene: GuideScene) {
                 arm = listOf(pt(104, 78), pt(117, 83)),
                 faceDirection = if (scene == GuideScene.Taslim) -1 else 1
             )
-            if (scene == GuideScene.Tashahhud) line(Skin, 3f, pt(118, 83), pt(129, 78))
+            if (scene == GuideScene.Tashahhud) line(Skin, 3f, listOf(pt(118, 83), pt(129, 78)))
             if (scene == GuideScene.Taslim) {
                 arrow(73, 33, -1)
                 arrow(107, 33, 1)
@@ -226,7 +226,7 @@ private fun DrawScope.drawPrayer(scene: GuideScene) {
             body(pt(center, 77), shoulders, pt(center, 33), listOf(pt(center, 91), pt(center + 7, 96)), arm)
             when (scene) {
                 GuideScene.Takbir -> {
-                    line(Lilac, 8f, shoulders, pt(center - 20, 58), pt(center - 22, 39))
+                    line(Lilac, 8f, listOf(shoulders, pt(center - 20, 58), pt(center - 22, 39)))
                     drawCircle(Skin, 5f, pt(center - 22, 36))
                 }
                 GuideScene.Qibla -> {
@@ -236,15 +236,15 @@ private fun DrawScope.drawPrayer(scene: GuideScene) {
                     arrow(101, 66, 1)
                 }
                 GuideScene.Recitation -> {
-                    line(Lilac, 7f, shoulders, pt(center - 13, 65), pt(center + 3, 69))
+                    line(Lilac, 7f, listOf(shoulders, pt(center - 13, 65), pt(center + 3, 69)))
                     drawCircle(Skin, 4f, pt(center + 3, 69))
-                    for (n in 0..2) line(Gold, 2.5f, pt(123, 27 + n * 6), pt(141 - n * 3, 27 + n * 6))
+                    for (n in 0..2) line(Gold, 2.5f, listOf(pt(123, 27 + n * 6), pt(141 - n * 3, 27 + n * 6)))
                 }
                 GuideScene.Rise -> {
-                    line(Lilac, 8f, shoulders, pt(center - 13, 60), pt(center - 13, 74))
+                    line(Lilac, 8f, listOf(shoulders, pt(center - 13, 60), pt(center - 13, 74)))
                     drawCircle(Skin, 5f, pt(center - 13, 74))
-                    line(Gold, 3f, pt(130, 70), pt(130, 38), pt(124, 45))
-                    line(Gold, 3f, pt(130, 38), pt(136, 45))
+                    line(Gold, 3f, listOf(pt(130, 70), pt(130, 38), pt(124, 45)))
+                    line(Gold, 3f, listOf(pt(130, 38), pt(136, 45)))
                 }
                 else -> Unit
             }
@@ -257,9 +257,9 @@ private fun DrawScope.body(
     hip: Offset, shoulder: Offset, head: Offset, legs: List<Offset>, arm: List<Offset>,
     faceDirection: Int = 1
 ) {
-    line(Navy, 11f, hip, *legs.toTypedArray())
-    line(Lilac, 20f, hip, shoulder)
-    line(Lilac, 9f, shoulder, *arm.toTypedArray())
+    line(Navy, 11f, listOf(hip) + legs)
+    line(Lilac, 20f, listOf(hip, shoulder))
+    line(Lilac, 9f, listOf(shoulder) + arm)
     drawCircle(Skin, 5f, arm.last())
     drawCircle(Skin, 12f, head)
     drawArc(Navy, 180f, 180f, true, head - Offset(12f, 13f), Size(24f, 17f))
@@ -269,6 +269,6 @@ private fun DrawScope.body(
 
 private fun DrawScope.arrow(x: Int, y: Int, direction: Int) {
     val tip = x + 11 * direction
-    line(Gold, 2.5f, pt(x, y), pt(tip, y), pt(tip - 5 * direction, y - 4))
-    line(Gold, 2.5f, pt(tip, y), pt(tip - 5 * direction, y + 4))
+    line(Gold, 2.5f, listOf(pt(x, y), pt(tip, y), pt(tip - 5 * direction, y - 4)))
+    line(Gold, 2.5f, listOf(pt(tip, y), pt(tip - 5 * direction, y + 4)))
 }
