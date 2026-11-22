@@ -3,14 +3,12 @@ package com.menna.nabatan_7asena.data.repository
 import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.data.local.room.DailyRewardEntity
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
-import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import com.menna.nabatan_7asena.data.remote.dto.WheelClaimDto
 import com.menna.nabatan_7asena.domain.entity.*
 import com.menna.nabatan_7asena.domain.repository.GardenRepository
 import com.menna.nabatan_7asena.domain.repository.KidsRewardsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
 import com.menna.nabatan_7asena.domain.Resource
 import kotlinx.coroutines.sync.Mutex
@@ -82,7 +80,7 @@ class KidsRewardsRepositoryImpl(
         val payout = stars.coerceIn(0, MAX_GAME_STARS)
         if (payout == 0) return 0
         if (day != AppClock.today()) return 0
-        val record = DailyRewardEntity(profileId, day.toString(), game.name, "", payout, profileId == LOCAL)
+        val record = DailyRewardEntity(profileId, day.toString(), game.name, "", payout, synced = true)
         return if (dao.claimDailyGiftGame(record, AppClock.dateString(day))) payout else 0
     }
 
@@ -100,15 +98,6 @@ class KidsRewardsRepositoryImpl(
                 if (record.kind == WHEEL) {
                     remote.claimWheel(profileId, record.day, WheelClaimDto(record.prize, record.claimId))
                     if ((decodePrize(record.prize)?.water ?: 0) > 0) check(garden.sync(profileId))
-                }
-                if (record.stars > 0) {
-                    val stats = dao.getUserStats().first()?.takeIf { it.userId == profileId }
-                    if (stats != null) {
-                        remote.uploadUserScore(UserRankDto(
-                            stats.userId, stats.name, stats.gender.lowercase(), stats.totalStars,
-                            stats.quranPartsFinished, stats.avatarIndex
-                        ))
-                    }
                 }
                 true
             } == true

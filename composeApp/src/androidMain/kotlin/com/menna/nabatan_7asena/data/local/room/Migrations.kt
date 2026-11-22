@@ -17,7 +17,12 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 }
 
 val ANDROID_MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) = db.execSQL(CREATE_QURAN_JOURNEY_TABLE)
+}
+
+val ANDROID_MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(CREATE_QURAN_JOURNEY_TABLE)
         db.execSQL(CREATE_DAILY_REWARDS)
     }
 }

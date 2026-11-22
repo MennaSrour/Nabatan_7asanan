@@ -5,11 +5,11 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.menna.nabatan_7asena.data.local.GardenStorage
 import com.menna.nabatan_7asena.data.repository.GardenRepositoryImpl
-import com.menna.nabatan_7asena.domain.entity.GardenDecoration
-import com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars
+import com.menna.nabatan_7asena.domain.entity.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,7 +35,7 @@ class LegacyDatabaseCompatibilityTest {
             database.version = 5
         }
         val database = Room.databaseBuilder(context, AppDatabase::class.java, filename)
-            .addMigrations(MIGRATION_4_5, ANDROID_MIGRATION_5_6).build()
+            .addMigrations(ANDROID_MIGRATION_5_6, ANDROID_MIGRATION_6_7).build()
         try {
             val user = database.appDao().getUserStats().first()!!
             assertEquals("existing-user", user.userId)
@@ -47,11 +47,27 @@ class LegacyDatabaseCompatibilityTest {
             assertEquals(false, user.prayerNotifications)
             assertEquals(true, user.azkarNotifications)
             assertEquals(false, user.quranNotifications)
+
             val dao = database.appDao()
+            val date = LocalDate(2026, 11, 22)
+            val profileId = user.userId
+            dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
+            List(2) {
+                async { dao.completeQuranWird(profileId, date, Wird(601, 604), "22-11-2026") }
+            }.awaitAll()
+            assertEquals(true, dao.getRecordStatus("22-11-2026", DAILY_QURAN_TASK_ID))
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.completedKhatmahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS, dao.readUserStats()?.totalStars)
+
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.NOT_STARTED, 0, 6)
+            dao.recordSurahMemorization(profileId, 114, MemorizationStatus.MEMORIZED, 6, 6)
+            assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.memorizedSurahs)
+            assertEquals(123 + 10 + KHATMAH_BONUS_STARS + MEMORIZATION_BONUS_STARS, dao.readUserStats()?.totalStars)
             val reward = DailyRewardEntity(user.userId, "2026-11-21", "wheel", "STARS_20", 20, false)
             assertEquals(true, dao.claimReward(reward))
             assertEquals(false, dao.claimReward(reward.copy(stars = 50)))
-            assertEquals(user.copy(totalStars = 143), dao.getUserStats().first())
+            assertEquals(143 + 10 + KHATMAH_BONUS_STARS + MEMORIZATION_BONUS_STARS, dao.readUserStats()?.totalStars)
             assertEquals(listOf(reward), dao.pendingRewards(user.userId))
         } finally {
             database.close()
@@ -167,6 +183,59 @@ class LegacyDatabaseCompatibilityTest {
             assertEquals(10, dao.getUserStats().first()?.totalStars)
         } finally {
             database.close()
+        }
+    }
+    @Test
+    fun versionSixRewardDatabaseKeepsTheSpinAndAddsQuranJourney() = runBlocking {
+        verifyVersionSixUpgrade(hasRewardTable = true)
+    }
+
+    @Test
+    fun versionSixQuranDatabaseKeepsTheJourneyAndAddsDailyRewards() = runBlocking {
+        verifyVersionSixUpgrade(hasRewardTable = false)
+    }
+
+    private suspend fun verifyVersionSixUpgrade(hasRewardTable: Boolean) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val filename = "version-six-merge-$hasRewardTable.db"
+        val profileId = "saved"
+        val reward = DailyRewardEntity(profileId, "2026-11-21", "wheel", "STARS_20", 20, false)
+        context.deleteDatabase(filename)
+        try {
+            val original = Room.databaseBuilder(context, AppDatabase::class.java, filename).build()
+            try {
+                val dao = original.appDao()
+                dao.insertUserStats(UserStatsEntity(userId = profileId))
+                if (hasRewardTable) {
+                    assertTrue(dao.claimReward(reward))
+                } else {
+                    dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
+                }
+            } finally {
+                original.close()
+            }
+            SQLiteDatabase.openDatabase(context.getDatabasePath(filename).path, null, SQLiteDatabase.OPEN_READWRITE)
+                .use { database ->
+                    database.execSQL(if (hasRewardTable) "DROP TABLE quran_journey" else "DROP TABLE daily_rewards")
+                    database.version = 6
+                }
+            val upgraded = Room.databaseBuilder(context, AppDatabase::class.java, filename)
+                .addMigrations(ANDROID_MIGRATION_6_7).build()
+            try {
+                val dao = upgraded.appDao()
+                if (hasRewardTable) {
+                    assertEquals(reward, dao.wheelReward(profileId, reward.day))
+                    assertEquals(20, dao.readUserStats()?.totalStars)
+                    assertEquals(null, dao.readQuranJourney(profileId))
+                } else {
+                    assertEquals(Khatmah(WirdGoal.QUARTER, 600), dao.readQuranJourney(profileId)?.toJourney()?.activeKhatmah)
+                    assertTrue(dao.claimReward(reward))
+                }
+            } finally {
+                upgraded.close()
+            }
+        } finally {
+            context.deleteDatabase(filename)
         }
     }
 }

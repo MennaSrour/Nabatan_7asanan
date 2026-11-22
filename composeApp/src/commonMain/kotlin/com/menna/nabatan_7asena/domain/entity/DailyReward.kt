@@ -1,6 +1,6 @@
 package com.menna.nabatan_7asena.domain.entity
 
-internal val dailyGiftRequiredTaskIds = (100..104).toSet() + setOf(300, 400)
+internal val dailyGiftRequiredTaskIds = (100..104).toSet() + setOf(DAILY_QURAN_TASK_ID, 400)
 
 internal fun missingDailyGiftTasks(extraTaskIds: Iterable<Int>, completedTaskIds: Set<Int>): Int =
     ((dailyGiftRequiredTaskIds + extraTaskIds) - completedTaskIds).size

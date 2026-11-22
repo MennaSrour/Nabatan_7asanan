@@ -16,12 +16,12 @@ import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp) {
+fun HomeTaskFeed(state: HomeUiState, actions: HomeActions, onSettings: () -> Unit, onAddTask: () -> Unit, bottomPadding: androidx.compose.ui.unit.Dp, onPrayerGuide: () -> Unit, onBadges: () -> Unit, badgeCount: String) {
     val tint = if (state.isNightTheme) SummerTheme.colors.white else SummerTheme.colors.sectionTitleDark
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 90.dp)) {
         item { ColorfulHeader(state.user, state.hijriDate, onSettings, actions::playWelcomeSound, state.isNightTheme) }
         if (state.isLoading) item { HomeLoadingIndicator() } else {
-            homeSummaryItems(state, actions)
+            homeSummaryItems(state, actions, badgeCount, onPrayerGuide, onBadges)
             if (state.hasLoadError && state.tasks.isEmpty()) {
                 item { NoInternetState(title = genderedStringResource(GenderedStrings.homeLoadError), onRetry = actions::retryLoadingData) }
             } else {

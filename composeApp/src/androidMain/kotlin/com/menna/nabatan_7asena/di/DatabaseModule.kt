@@ -6,6 +6,7 @@ import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.data.local.room.AppDatabase
 import com.menna.nabatan_7asena.data.local.room.ANDROID_MIGRATION_5_6
 import com.menna.nabatan_7asena.data.local.room.MIGRATION_4_5
+import com.menna.nabatan_7asena.data.local.room.ANDROID_MIGRATION_6_7
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,7 +26,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "nabata_db"
         )
-            .addMigrations(MIGRATION_4_5, ANDROID_MIGRATION_5_6)
+            .addMigrations(MIGRATION_4_5, ANDROID_MIGRATION_5_6, ANDROID_MIGRATION_6_7)
             .fallbackToDestructiveMigration()
             .build()
     }

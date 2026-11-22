@@ -6,6 +6,7 @@ import com.menna.nabatan_7asena.domain.entity.ExtraTasks
 import kotlinx.coroutines.flow.Flow
 
 interface DailyActivityRepository {
+    suspend fun awardPrayerGuideBonus(userId: String): Boolean
     fun getDailyActivities(date: String, city: String,country:String): Flow<List<Activity>>
     suspend fun completeDailyActivity(activity: Activity)
     suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean)

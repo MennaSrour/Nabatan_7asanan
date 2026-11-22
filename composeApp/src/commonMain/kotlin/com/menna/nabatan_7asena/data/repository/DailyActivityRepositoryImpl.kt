@@ -3,9 +3,7 @@ package com.menna.nabatan_7asena.data.repository
 import com.menna.nabatan_7asena.platform.Log
 import com.menna.nabatan_7asena.data.local.QuranBookmarkStore
 import com.menna.nabatan_7asena.data.local.room.AppDao
-import com.menna.nabatan_7asena.data.local.room.DailyRecordEntity
 import com.menna.nabatan_7asena.data.local.room.ExtraTaskEntity
-import com.menna.nabatan_7asena.data.local.room.UserStatsEntity
 import com.menna.nabatan_7asena.data.mappers.toDomain
 import com.menna.nabatan_7asena.data.mappers.toEntity
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
@@ -23,6 +21,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlin.random.Random
 import com.menna.nabatan_7asena.platform.AppClock
+import com.menna.nabatan_7asena.domain.entity.DAILY_QURAN_TASK_ID
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 class DailyActivityRepositoryImpl constructor(
     private val appDao: AppDao,
@@ -90,8 +91,8 @@ class DailyActivityRepositoryImpl constructor(
 
             activities.add(
                 Activity.Task(
-                    id = 300,
-                    isCompleted = statusMap[300] ?: false,
+                    id = DAILY_QURAN_TASK_ID,
+                    isCompleted = statusMap[DAILY_QURAN_TASK_ID] ?: false,
                     title = buildQuranWerdTitle(),
                     category = TaskCategory.QURAN
                 )
@@ -165,8 +166,8 @@ class DailyActivityRepositoryImpl constructor(
     }
 
     override suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean) {
-        appDao.updateOrInsertRecord(DailyRecordEntity(date, activityId, isCompleted))
-        updateUserStats(isCompleted)
+        val today = AppClock.today()
+        appDao.saveActivity(date, activityId, isCompleted, today, today.minus(1, DateTimeUnit.DAY))
     }
 
     override suspend fun getSuggestedExtraTasks(): ExtraTasks {
@@ -193,39 +194,6 @@ class DailyActivityRepositoryImpl constructor(
         )
     }
 
-    private suspend fun updateUserStats(isCompleted: Boolean) {
-        val currentStats = appDao.getUserStats().firstOrNull() ?: UserStatsEntity().also { appDao.ensureStats(it) }
-        val todayDate = getTodayDate()
-
-        val starChange = if (isCompleted) 10 else -10
-        var newStreak = currentStats.currentStreak
-        var lastDate = currentStats.lastActiveDate
-
-        if (isCompleted && currentStats.lastActiveDate != todayDate) {
-            newStreak = if (isYesterday(currentStats.lastActiveDate)) newStreak + 1 else 1
-            lastDate = todayDate
-        }
-
-        if (appDao.applyTaskProgress(currentStats.userId, starChange, if (isCompleted) 1 else -1, newStreak, lastDate) == 0) return
-        val updatedStats = appDao.getUserStats().firstOrNull()?.takeIf { it.userId == currentStats.userId } ?: return
-
-        try {
-            if (updatedStats.userId.isNotEmpty()) {
-                val userRankDto = com.menna.nabatan_7asena.data.remote.dto.UserRankDto(
-                    userId = updatedStats.userId,
-                    name = updatedStats.name,
-                    gender = updatedStats.gender,
-                    totalStars = updatedStats.totalStars,
-                    quranPartsFinished = updatedStats.quranPartsFinished,
-                    avatarIndex = updatedStats.avatarIndex
-                )
-                firebaseDataSource.uploadUserScore(userRankDto)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to upload user score", e)
-        }
-    }
-
     private fun buildQuranWerdTitle(): String {
         val bookmark = quranBookmarkStore.getBookmark() ?: return "إكمال من سورة الفاتحة"
         val surahName = QuranConstants.surahs.getOrNull(bookmark.surahId - 1)?.name
@@ -236,7 +204,7 @@ class DailyActivityRepositoryImpl constructor(
     private fun getDayOfYear(): Int = AppClock.dayOfYear()
     private fun getTodayDate(): String = AppClock.dateString()
 
-    private fun isYesterday(dateString: String): Boolean = AppClock.isYesterday(dateString)
+    override suspend fun awardPrayerGuideBonus(userId: String) = appDao.awardPrayerGuideBonus(getTodayDate(), userId)
 
     companion object {
         private const val TAG = "DailyActivityRepo"

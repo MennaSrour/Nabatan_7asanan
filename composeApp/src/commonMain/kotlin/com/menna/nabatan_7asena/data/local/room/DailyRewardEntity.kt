@@ -18,8 +18,9 @@ data class DailyRewardEntity(
     val claimId: String = ""
 )
 
-val MIGRATION_5_6 = object : Migration(5, 6) {
+val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(CREATE_QURAN_JOURNEY_TABLE)
         connection.execSQL(CREATE_DAILY_REWARDS)
     }
 }
