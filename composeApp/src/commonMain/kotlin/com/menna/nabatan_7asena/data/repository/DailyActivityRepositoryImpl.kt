@@ -3,9 +3,7 @@ package com.menna.nabatan_7asena.data.repository
 import com.menna.nabatan_7asena.platform.Log
 import com.menna.nabatan_7asena.data.local.QuranBookmarkStore
 import com.menna.nabatan_7asena.data.local.room.AppDao
-import com.menna.nabatan_7asena.data.local.room.DailyRecordEntity
 import com.menna.nabatan_7asena.data.local.room.ExtraTaskEntity
-import com.menna.nabatan_7asena.data.local.room.UserStatsEntity
 import com.menna.nabatan_7asena.data.mappers.toDomain
 import com.menna.nabatan_7asena.data.mappers.toEntity
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
@@ -23,6 +21,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlin.random.Random
 import com.menna.nabatan_7asena.platform.AppClock
+import com.menna.nabatan_7asena.domain.entity.DAILY_QURAN_TASK_ID
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 class DailyActivityRepositoryImpl constructor(
     private val appDao: AppDao,
@@ -33,20 +34,20 @@ class DailyActivityRepositoryImpl constructor(
 
     private val dailyPlanCache = mutableMapOf<Int, DailyContent>()
 
-    override fun getDailyActivities(
-        date: String,
-        city: String,
-        country: String
-    ): Flow<List<Activity>> {
+    override fun getDailyActivities(date: String, city: String, country: String): Flow<List<Activity>> =
+        getDailyActivities(date, com.menna.nabatan_7asena.data.local.PrayerSettingsStore.state.value.request)
+
+    override fun getDailyActivities(date: String, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?): Flow<List<Activity>> {
         val recordsFlow = appDao.getRecordsForDate(date)
         val extraTasksFlow = appDao.getExtraTasksForDate(date)
 
         return combine(recordsFlow, extraTasksFlow) { records, extraTasks ->
             val statusMap = records.associate { it.itemId to it.isCompleted }
             val prayers = try {
-                getPrayerTimesUseCase(city, country, date)
+                getPrayerTimesUseCase.at(request, date)
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to fetch prayer times for city=$city, country=$country, date=$date", e)
+                Log.e(TAG, "Failed to fetch prayer times for date=$date", e)
                 null
             }
             val activities = mutableListOf<Activity>()
@@ -90,8 +91,8 @@ class DailyActivityRepositoryImpl constructor(
 
             activities.add(
                 Activity.Task(
-                    id = 300,
-                    isCompleted = statusMap[300] ?: false,
+                    id = DAILY_QURAN_TASK_ID,
+                    isCompleted = statusMap[DAILY_QURAN_TASK_ID] ?: false,
                     title = buildQuranWerdTitle(),
                     category = TaskCategory.QURAN
                 )
@@ -165,8 +166,8 @@ class DailyActivityRepositoryImpl constructor(
     }
 
     override suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean) {
-        appDao.updateOrInsertRecord(DailyRecordEntity(date, activityId, isCompleted))
-        updateUserStats(isCompleted)
+        val today = AppClock.today()
+        appDao.saveActivity(date, activityId, isCompleted, today, today.minus(1, DateTimeUnit.DAY))
     }
 
     override suspend fun getSuggestedExtraTasks(): ExtraTasks {
@@ -193,54 +194,6 @@ class DailyActivityRepositoryImpl constructor(
         )
     }
 
-    private suspend fun updateUserStats(isCompleted: Boolean) {
-        val currentStats = appDao.getUserStats().firstOrNull() ?: UserStatsEntity()
-        val todayDate = getTodayDate()
-
-        val starChange = if (isCompleted) 10 else -10
-        val newTotalStars = (currentStats.totalStars + starChange).coerceAtLeast(0)
-        val newTotalTasks =
-            if (isCompleted) currentStats.tasksCompletedTotal + 1 else currentStats.tasksCompletedTotal
-
-        val newTreeStage = when {
-            newTotalStars < 50 -> 1
-            newTotalStars < 200 -> 2
-            else -> 3
-        }
-
-        var newStreak = currentStats.currentStreak
-        var lastDate = currentStats.lastActiveDate
-
-        if (isCompleted && currentStats.lastActiveDate != todayDate) {
-            newStreak = if (isYesterday(currentStats.lastActiveDate)) newStreak + 1 else 1
-            lastDate = todayDate
-        }
-
-        val updatedStats = currentStats.copy(
-            totalStars = newTotalStars,
-            tasksCompletedTotal = newTotalTasks,
-            treeStage = newTreeStage,
-            currentStreak = newStreak,
-            lastActiveDate = lastDate
-        )
-
-        appDao.insertUserStats(updatedStats)
-
-        try {
-            if (updatedStats.userId.isNotEmpty()) {
-                val userRankDto = com.menna.nabatan_7asena.data.remote.dto.UserRankDto(
-                    userId = updatedStats.userId,
-                    name = updatedStats.name,
-                    gender = updatedStats.gender,
-                    totalStars = updatedStats.totalStars
-                )
-                firebaseDataSource.uploadUserScore(userRankDto)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to upload user score", e)
-        }
-    }
-
     private fun buildQuranWerdTitle(): String {
         val bookmark = quranBookmarkStore.getBookmark() ?: return "إكمال من سورة الفاتحة"
         val surahName = QuranConstants.surahs.getOrNull(bookmark.surahId - 1)?.name
@@ -251,7 +204,7 @@ class DailyActivityRepositoryImpl constructor(
     private fun getDayOfYear(): Int = AppClock.dayOfYear()
     private fun getTodayDate(): String = AppClock.dateString()
 
-    private fun isYesterday(dateString: String): Boolean = AppClock.isYesterday(dateString)
+    override suspend fun awardPrayerGuideBonus(userId: String) = appDao.awardPrayerGuideBonus(getTodayDate(), userId)
 
     companion object {
         private const val TAG = "DailyActivityRepo"

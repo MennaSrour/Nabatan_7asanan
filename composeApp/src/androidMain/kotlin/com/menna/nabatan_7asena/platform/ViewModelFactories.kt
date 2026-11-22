@@ -1,4 +1,5 @@
 package com.menna.nabatan_7asena.platform
+import com.menna.nabatan_7asena.presentation.screens.rewards.KidsRewardsViewModel
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,7 +56,7 @@ class AndroidLeaderboardViewModel @Inject constructor(services: SharedServices) 
 actual fun platformLeaderboardViewModel(): LeaderboardViewModel = hiltViewModel<AndroidLeaderboardViewModel>()
 
 @HiltViewModel
-class AndroidQuranViewModel @Inject constructor(services: SharedServices) : QuranViewModel(services.saveQuranProgressUseCase, services.getQuranProgressUseCase, services.quranRepository, services.quranAudio, services.downloads, services.bookmarks, services.quranLibrary)
+class AndroidQuranViewModel @Inject constructor(services: SharedServices) : QuranViewModel(services.saveQuranProgressUseCase, services.getQuranProgressUseCase, services.quranRepository, services.quranAudio, services.downloads, services.bookmarks, services.quranLibrary, services.quranJourney)
 
 @Composable
 actual fun platformQuranViewModel(): QuranViewModel = hiltViewModel<AndroidQuranViewModel>()
@@ -79,7 +80,7 @@ class AndroidStartViewModel @Inject constructor(services: SharedServices) : Star
 actual fun platformStartViewModel(): StartViewModel = hiltViewModel<AndroidStartViewModel>()
 
 @HiltViewModel
-class AndroidBadgesViewModel @Inject constructor(services: SharedServices) : BadgesViewModel(services.getCurrentUserUseCase)
+class AndroidBadgesViewModel @Inject constructor(services: SharedServices) : BadgesViewModel(services.getCurrentUserUseCase, services.gardenRepository, services.achievementProgress)
 
 @Composable
 actual fun platformBadgesViewModel(): BadgesViewModel = hiltViewModel<AndroidBadgesViewModel>()
@@ -91,8 +92,23 @@ class AndroidLoginViewModel @Inject constructor(services: SharedServices) : Logi
 actual fun platformLoginViewModel(): LoginViewModel = hiltViewModel<AndroidLoginViewModel>()
 
 @HiltViewModel
-class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeViewModel(services.getDailyActivitiesUseCase, services.getCurrentUserUseCase, services.toggleActivityStatusUseCase, services.addExtraTaskUseCase, services.getSuggestedTasksUseCase, services.incrementQuranPartUseCase, services.decrementQuranPartUseCase, services.location, services.audio, services.quranRepository, services.getPrayerTimesUseCase, services.gardenRepository)
+class AndroidHomeViewModel @Inject constructor(services: SharedServices) : HomeViewModel(services.getDailyActivitiesUseCase, services.getCurrentUserUseCase, services.toggleActivityStatusUseCase, services.addExtraTaskUseCase, services.getSuggestedTasksUseCase, services.incrementQuranPartUseCase, services.decrementQuranPartUseCase, services.location, services.audio, services.quranRepository, services.getPrayerTimesUseCase, services.gardenRepository, services.quranJourney, services.dailyRepository, services.ramadanCalendarRepository)
 
 @Composable
 actual fun platformHomeViewModel(): HomeViewModel = hiltViewModel<AndroidHomeViewModel>()
 
+
+@HiltViewModel
+class AndroidFriendsViewModel @Inject constructor(services: SharedServices) :
+    com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel(services)
+
+@Composable
+internal actual fun platformFriendsViewModel(): com.menna.nabatan_7asena.presentation.screens.friends.FriendsViewModel =
+    hiltViewModel<AndroidFriendsViewModel>()
+
+@HiltViewModel
+class AndroidKidsRewardsViewModel @Inject constructor(services: SharedServices) :
+    KidsRewardsViewModel(services.userRepository, services.kidsRewardsRepository)
+
+@Composable
+actual fun platformKidsRewardsViewModel(): KidsRewardsViewModel = hiltViewModel<AndroidKidsRewardsViewModel>()

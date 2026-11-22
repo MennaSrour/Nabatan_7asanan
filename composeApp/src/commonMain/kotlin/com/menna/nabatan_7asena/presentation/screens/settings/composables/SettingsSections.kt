@@ -42,6 +42,8 @@ fun SettingsSections(state: SettingsUiState, actions: SettingsActions, padding: 
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        PrayerSettingsSection(state, actions)
+        PermissionsSettingsSection(state, actions)
         SummerSectionTitle(genderedStringResource(GenderedStrings.settingsNotifications))
 
         NotificationSetting(GenderedStrings.settingsPrayerTimes, GenderedStrings.settingsPrayerHint, SummerTheme.colors.wisdomAccent, state.prayerNotifications) { actions.toggleNotification("prayer", it) }

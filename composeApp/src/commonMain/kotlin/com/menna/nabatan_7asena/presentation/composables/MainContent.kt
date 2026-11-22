@@ -12,15 +12,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.menna.nabatan_7asena.presentation.screens.update.UpdateDialog
+import com.menna.nabatan_7asena.presentation.screens.seasonal.RAMADAN_CALENDAR_ROUTE
 
 @Composable
-fun MainContent(navController: NavHostController, openSettings: () -> Unit) {
+fun MainContent(navController: NavHostController, openSettings: () -> Unit, openFriends: () -> Unit = {}) {
     val entry by navController.currentBackStackEntryAsState()
     Box(Modifier.fillMaxSize()) {
-        NavigationGraph(navController, openSettings)
-        when (entry?.destination?.route) {
-            "garden", KIDS_SHORTS_ROUTE -> Unit
-            else -> FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
+        NavigationGraph(navController, openSettings, openFriends)
+        if (entry?.destination?.route !in setOf("garden", "prayer-guide", "progress", RAMADAN_CALENDAR_ROUTE, WheelRoute, KIDS_SHORTS_ROUTE)) {
+            FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         }
         UpdateDialog()
     }

@@ -25,6 +25,22 @@ internal fun DrawScope.drawShopDecoration(item: GardenDecoration, center: Offset
                     Color(0xFFBDD8EE), Color(0xFFD3BDE9))[index].copy(if (night) 0.55f else 0.85f),
                     180f, 180f, false, Offset(-52f + inset, -22f + inset), Size(104f - inset * 2, 92f - inset * 2), style = Stroke(6f))
             }
+            GardenDecoration.BENCH -> {
+                repeat(3) { row -> drawRoundRect(Color(0xFFB38A60), Offset(-34f, -15f + row * 9f), Size(68f, 6f), CornerRadius(2f)) }
+                drawLine(Color(0xFF70563E), Offset(-25f, 6f), Offset(-25f, 28f), 5f, StrokeCap.Round)
+                drawLine(Color(0xFF70563E), Offset(25f, 6f), Offset(25f, 28f), 5f, StrokeCap.Round)
+            }
+            GardenDecoration.FOUNTAIN -> {
+                drawOval(Color(0xFF92B9C4), Offset(-37f, 8f), Size(74f, 25f))
+                drawOval(Color(0xFFBFE8EC), Offset(-29f, 10f), Size(58f, 14f))
+                drawRoundRect(Color(0xFF88ACB9), Offset(-6f, -9f), Size(12f, 29f), CornerRadius(4f))
+                repeat(5) { jet ->
+                    val x = (jet - 2) * 13f
+                    drawPath(Path().apply { moveTo(0f, 2f); quadraticTo(x * 0.8f, -48f, x, 10f) }, Color(0xFF9CDBE8), style = Stroke(2.5f))
+                    val t = (phase * 5f + jet * 0.2f) % 1f
+                    drawCircle(Color(0xFFDCF4F6), 2f, Offset(x * t, -30f * kotlin.math.sin(t * kotlin.math.PI.toFloat()) + 8f))
+                }
+            }
             GardenDecoration.SPARKLES -> repeat(5) { index ->
                 drawShopStar(Offset(cos(index * 2.4f) * 28f, sin(index * 2.4f) * 22f),
                     7f + index % 2 * 3f, listOf(Color(0xFFFFDC85), Color(0xFFD6B9F4), Color(0xFFB7E2EE))[index % 3]
@@ -77,37 +93,4 @@ internal fun DrawScope.drawShopStar(center: Offset, radius: Float, color: Color)
         close()
     }
     drawPath(star, color)
-}
-
-internal fun DrawScope.drawEquippedGarden(frame: GardenFrame, background: Boolean) {
-    val t = frame.phase * 2f * PI.toFloat()
-    if (background) {
-        if (GardenDecoration.RAINBOW.id in frame.equipped) drawShopDecoration(GardenDecoration.RAINBOW, Offset(500f, 230f), 4.4f, frame.phase, frame.night)
-        return
-    }
-    if (GardenDecoration.FLOWERS.id in frame.equipped) repeat(6) {
-        drawShopDecoration(GardenDecoration.FLOWERS, Offset(130f + it * 145f, 567f + sin(it.toFloat()) * 12), 1f, frame.phase, frame.night)
-    }
-    if (GardenDecoration.BUTTERFLIES.id in frame.equipped) repeat(3) {
-        drawShopDecoration(GardenDecoration.BUTTERFLIES, Offset(500f + cos(t + it * 2f) * 240f, 330f + sin(t * 2 + it) * 95f), 1.1f, frame.phase + it, frame.night)
-    }
-    if (GardenDecoration.BIRDS.id in frame.equipped) {
-        drawShopDecoration(GardenDecoration.BIRDS, Offset(-100f + frame.phase * 1200f, 170f + sin(t * 2) * 30f), 1.4f, frame.phase, frame.night)
-        drawShopDecoration(GardenDecoration.BIRDS, Offset(590f, if (frame.stage >= 3) 450f - frame.stage * 38f else 505f), 1.2f, frame.phase, frame.night)
-    }
-    if (GardenDecoration.LANTERN.id in frame.equipped) {
-        val top = if (frame.stage >= 3) 558f - (100f + (frame.stage - 1) * 68f) + 115f else 460f
-        if (frame.stage < 3) {
-            drawLine(Color(0xFF84674D), Offset(680f, 550f), Offset(680f, top - 55f), 5f, StrokeCap.Round)
-            drawLine(Color(0xFF84674D), Offset(680f, top - 55f), Offset(650f, top - 55f), 5f, StrokeCap.Round)
-        } else drawPath(Path().apply { moveTo(535f, top - 25f); quadraticTo(600f, top - 25f, 650f, top - 55f) },
-            Color(0xFF84674D), style = Stroke(6f, cap = StrokeCap.Round))
-        drawLine(Color(0xFF84674D), Offset(650f, top - 55f), Offset(650f, top - 38f), 2f)
-        drawShopDecoration(GardenDecoration.LANTERN, Offset(650f, top), 1.5f, frame.phase, frame.night)
-    }
-    if (GardenDecoration.SPARKLES.id in frame.equipped) repeat(12) {
-        val p = (frame.phase * 2 + it / 12f) % 1f
-        drawShopStar(Offset(180f + it * 61f, 550f - p * 380f), 5f + it % 3 * 3,
-            listOf(Color(0xFFFFDC85), Color(0xFFD6B9F4), Color(0xFFB7E2EE))[it % 3].copy(sin(p * PI.toFloat()).coerceIn(0f, 1f)))
-    }
 }

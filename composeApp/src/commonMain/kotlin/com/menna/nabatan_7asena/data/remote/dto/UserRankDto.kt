@@ -8,5 +8,7 @@ data class UserRankDto(
     val gender: String = "BOY",
     val totalStars: Int = 0,
     val quranPartsFinished: Int = 0,
-    val avatarIndex: Int = 0
+    val avatarIndex: Int = 0,
+    val completedKhatmahs: Int = 0,
+    val memorizedSurahs: Int = 0
 )

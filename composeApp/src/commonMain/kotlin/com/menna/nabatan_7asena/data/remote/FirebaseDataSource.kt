@@ -5,9 +5,16 @@ import com.menna.nabatan_7asena.data.remote.dto.KidsShortDto
 import com.menna.nabatan_7asena.domain.entity.KidsShort
 import kotlinx.coroutines.CancellationException
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.auth.auth
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.Direction
+import dev.gitlive.firebase.firestore.Source
+import com.menna.nabatan_7asena.data.remote.dto.SpeedQuestionDto
+import com.menna.nabatan_7asena.data.remote.dto.VerseBuilderDto
+import com.menna.nabatan_7asena.data.remote.dto.WheelClaimDto
 import com.menna.nabatan_7asena.data.remote.dto.DailyPlanDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizQuestionDto
 import com.menna.nabatan_7asena.data.remote.dto.QuizScoreDto
@@ -20,6 +27,21 @@ class FirebaseDataSource constructor(
         check(FirebaseAvailability.isConfigured) { "Firebase is not configured for this host" }
         return firestoreProvider()
     }
+    private val authMutex = Mutex()
+
+    internal suspend fun ownerUid(): String = authMutex.withLock {
+        check(FirebaseAvailability.isConfigured) { "Firebase is not configured for this host" }
+        val auth = Firebase.auth
+        auth.currentUser?.uid ?: checkNotNull(auth.signInAnonymously().user).uid
+    }
+
+    internal suspend fun renewAnonymousOwner(expectedUid: String): String = authMutex.withLock {
+        val auth = Firebase.auth
+        val current = auth.currentUser
+        if (current?.uid == expectedUid) auth.signOut()
+        auth.currentUser?.uid ?: checkNotNull(auth.signInAnonymously().user).uid
+    }
+
     internal suspend fun getKidsShorts(): List<KidsShort> =
         firestore.collection("kids_shorts")
             .where { "isActive" equalTo true }
@@ -71,8 +93,48 @@ class FirebaseDataSource constructor(
         }
     }
 
+    suspend fun getVerseBuilderItems(): List<VerseBuilderDto> =
+        firestore.collection("verse_builder_items").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<VerseBuilderDto>() }.getOrNull() }
+
+    suspend fun getSpeedChallengeQuestions(): List<SpeedQuestionDto> =
+        firestore.collection("speed_challenge_questions").limit(100).get().documents
+            .mapNotNull { runCatching { it.data<SpeedQuestionDto>() }.getOrNull() }
+
+    private suspend fun wheelClaim(profileId: String, day: String) =
+        firestore.collection("users").document(ownerUid()).collection("daily_reward_profiles")
+            .document(profileId).collection("spins").document(day)
+
+    suspend fun getWheelClaim(profileId: String, day: String): WheelClaimDto? {
+        val snapshot = wheelClaim(profileId, day).get(Source.SERVER)
+        return if (snapshot.exists) snapshot.data<WheelClaimDto>() else null
+    }
+
+    suspend fun claimWheel(profileId: String, day: String, claim: WheelClaimDto): WheelClaimDto {
+        val document = wheelClaim(profileId, day)
+        return firestore.runTransaction {
+            val existing = get(document)
+            if (existing.exists) existing.data<WheelClaimDto>() else {
+                set(document, claim)
+                claim
+            }
+        }
+    }
+
     suspend fun backupGarden(profileId: String, deviceId: String, progress: com.menna.nabatan_7asena.domain.entity.GardenProgress) {
-        firestore.collection("gardens").document(profileId).collection("devices").document(deviceId).set(progress)
+        firestore.collection("gardens").document(ownerUid()).collection("devices").document("${profileId}_$deviceId").set(progress)
+    }
+
+    suspend fun backupRamadanDays(profileId: String, year: Int, completed: Set<Int>) {
+        val uid = ownerUid()
+        val store = firestore
+        val days = store.collection("ramadan_calendars").document(uid)
+            .collection("profiles").document(profileId).collection("days")
+        val batch = store.batch()
+        for (day in completed) {
+            batch.set(days.document("${year}_$day"), mapOf("year" to year, "day" to day))
+        }
+        batch.commit()
     }
 
     suspend fun getUserRank(totalStars: Int): Long {
@@ -83,15 +145,18 @@ class FirebaseDataSource constructor(
         return higherScores + 1
     }
 
-    suspend fun uploadUserScore(dto: UserRankDto) {
-        try {
-            firestore.collection("leaderboard")
-                .document(dto.userId)
-                .set(dto)
-        } catch (e: Exception) {
-            Log.e("FirebaseDataSource", "حدث خطأ في رفع نتيجة المستخدم ${dto.userId}", e)
-            throw e
-        }
+    private suspend fun quranSummaryDocument(profileId: String) =
+        firestore.collection("users").document(ownerUid()).collection("quran_journeys").document(profileId)
+
+    suspend fun backupQuranSummary(profileId: String, completedKhatmahs: Int, memorizedSurahs: Int) {
+        quranSummaryDocument(profileId).set(mapOf(
+            "completedKhatmahs" to completedKhatmahs,
+            "memorizedSurahs" to memorizedSurahs
+        ))
+    }
+
+    suspend fun deleteQuranSummary(profileId: String) {
+        quranSummaryDocument(profileId).delete()
     }
 
     suspend fun getFuturePlans(startDayId: Int, limit: Int = 7): List<DailyPlanDto> {
@@ -114,15 +179,6 @@ class FirebaseDataSource constructor(
         }
     }
 
-    suspend fun deleteUserScore(userId: String) {
-        try {
-            firestore.collection("leaderboard").document(userId).delete()
-        } catch (e: Exception) {
-            Log.e("FirebaseDataSource", "حدث خطأ في حذف نتيجة المستخدم $userId", e)
-            throw e
-        }
-    }
-
     // ─────────────────────────────────────────────────────────
     // مسابقة المعلومات الدينية الأسبوعية
     // ─────────────────────────────────────────────────────────
@@ -140,53 +196,43 @@ class FirebaseDataSource constructor(
         }
     }
 
-    /** رفع نتيجة طفل لمسابقة أسبوع معيّن — set (مش add) عشان لو حاول يرسل تاني يستبدل مش يتكرر */
+    private fun attempts(weekId: String) =
+        firestore.collection("quiz_attempts").document(weekId).collection("entries")
+
     override suspend fun getOfficialQuizAttempt(weekId: String, userId: String): QuizScoreDto? {
-        val scores = firestore.collection("quiz_scores").document(weekId).collection("entries").document(userId)
-        val score = scores.get(dev.gitlive.firebase.firestore.Source.SERVER)
-        if (score.exists) return score.data<QuizScoreDto>()
-        val attempt = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(userId)
+        val snapshot = attempts(weekId).document(ownerUid())
             .get(dev.gitlive.firebase.firestore.Source.SERVER)
-        return if (attempt.exists) attempt.data<QuizScoreDto>() else null
+        return if (snapshot.exists) snapshot.data<QuizScoreDto>().copy(userId = userId) else null
     }
 
     override suspend fun reserveOfficialQuizAttempt(weekId: String, dto: QuizScoreDto): Pair<QuizScoreDto, Boolean> {
-        val reservation = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(dto.userId)
-        val score = firestore.collection("quiz_scores").document(weekId).collection("entries").document(dto.userId)
-        return firestore.runTransaction {
-            val savedScore = get(score)
-            val savedAttempt = get(reservation)
-            when {
-                savedScore.exists -> savedScore.data<QuizScoreDto>() to false
-                savedAttempt.exists -> savedAttempt.data<QuizScoreDto>() to false
-                else -> { set(reservation, dto); dto to true }
+        val uid = ownerUid()
+        val reservation = attempts(weekId).document(uid)
+        val result = firestore.runTransaction {
+            val saved = get(reservation)
+            if (saved.exists) saved.data<QuizScoreDto>() to false
+            else {
+                set(reservation, dto.copy(userId = uid))
+                dto to true
             }
         }
+        return result.first.copy(userId = dto.userId) to result.second
     }
 
     override suspend fun finishOfficialQuizAttempt(weekId: String, userId: String, token: String, score: Int): QuizScoreDto {
-        val reservation = firestore.collection("quiz_attempts").document(weekId).collection("entries").document(userId)
-        val result = firestore.collection("quiz_scores").document(weekId).collection("entries").document(userId)
+        val reservation = attempts(weekId).document(ownerUid())
         return firestore.runTransaction {
-            val existing = get(result)
-            val started = get(reservation)
-            if (existing.exists) existing.data<QuizScoreDto>()
-            else {
-                check(started.exists) { "Official attempt was not reserved" }
-                val saved = started.data<QuizScoreDto>()
-                check(saved.token == token && token.isNotBlank()) { "Official attempt does not match" }
-                val finished = saved.copy(score = score, completed = true)
-                set(result, finished)
-                set(reservation, finished)
-                finished
-            }
-        }
+            val saved = get(reservation).data<QuizScoreDto>()
+            check(saved.token == token && token.isNotBlank()) { "Official attempt does not match" }
+            if (saved.completed) saved
+            else saved.copy(score = score, completed = true).also { set(reservation, it) }
+        }.copy(userId = userId)
     }
 
     /** أعلى 3 أطفال في أسبوع معيّن — دول اللي بيظهروا في البوديوم */
     suspend fun getQuizWeekWinners(weekId: String): List<QuizScoreDto> {
         try {
-            val snapshot = firestore.collection("quiz_scores")
+            val snapshot = firestore.collection("quiz_podium")
                 .document(weekId)
                 .collection("entries")
                 .orderBy("score", Direction.DESCENDING)

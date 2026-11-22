@@ -117,7 +117,8 @@ fun ColorfulHeader(
     hijriDate: String,
     onSettingsClick: () -> Unit,
     onAvatarClick: () -> Unit,
-    isNight: Boolean = false
+    isNight: Boolean = false,
+    onFriends: () -> Unit = {}
 ) {
     val headerTextColor = if (isNight) SummerTheme.colors.white else SummerTheme.colors.headerTextDark
     val settingsIconTint = if (isNight) SummerTheme.colors.white else SummerTheme.colors.settingsIconDark
@@ -156,6 +157,7 @@ fun ColorfulHeader(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -219,6 +221,7 @@ fun ColorfulHeader(
                     }
                 }
             }
+            com.menna.nabatan_7asena.presentation.screens.friends.FriendsShortcut(onFriends)
             Surface(
                 onClick = onSettingsClick,
                 shape = CircleShape,

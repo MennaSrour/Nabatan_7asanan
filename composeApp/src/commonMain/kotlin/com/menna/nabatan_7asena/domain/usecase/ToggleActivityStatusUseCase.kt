@@ -2,33 +2,15 @@ package com.menna.nabatan_7asena.domain.usecase
 
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
-import com.menna.nabatan_7asena.domain.repository.UserRepository
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 
-class ToggleActivityStatusUseCase constructor(
-    private val dailyRepository: DailyActivityRepository,
-    private val userRepository: UserRepository 
-) {
-    suspend operator fun invoke(date: String, activityId: Int, isCompleted: Boolean): Resource<Unit> {
-        return try {
-            
-            dailyRepository.updateActivityStatus(date, activityId, isCompleted)
-
-            
-            try {
-                
-                val updatedUser = userRepository.getCurrentUser().first()
-
-                
-                userRepository.syncUserScore(updatedUser)
-            } catch (e: Exception) {
-                
-                e.printStackTrace()
-            }
-
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error(e)
-        }
+class ToggleActivityStatusUseCase(private val dailyRepository: DailyActivityRepository) {
+    suspend operator fun invoke(date: String, activityId: Int, isCompleted: Boolean): Resource<Unit> = try {
+        dailyRepository.updateActivityStatus(date, activityId, isCompleted)
+        Resource.Success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Resource.Error(e)
     }
 }

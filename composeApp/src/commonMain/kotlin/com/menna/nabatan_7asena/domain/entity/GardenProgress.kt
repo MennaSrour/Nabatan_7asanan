@@ -16,9 +16,15 @@ data class GardenProgress(
     val lastWateredDate: String? = null,
     val revision: Long = 0,
     val syncedRevision: Long = 0,
+    val wheelRewardDays: Set<String> = emptySet(),
     val spentStars: Int = 0,
     val ownedItems: Set<String> = emptySet(),
-    val equippedItems: Set<String> = emptySet()
+    val equippedItems: Set<String> = emptySet(),
+    val worldFormat: Int = 0,
+    val trees: List<GardenTree> = emptyList(),
+    val quantities: Map<String, Int> = emptyMap(),
+    val placements: List<GardenPlacement> = emptyList(),
+    val expansions: Int = 0
 ) {
     val stage: Int get() = GardenStageThresholds.indexOfLast { xp >= it }
     val growthFraction: Float get() {
@@ -33,6 +39,22 @@ data class GardenProgress(
         require(rewardedTaskIds.isEmpty() || rewardDate != null)
         rewardDate?.let { LocalDate.parse(it) }
         lastWateredDate?.let { LocalDate.parse(it) }
+        wheelRewardDays.forEach { LocalDate.parse(it) }
+        require(worldFormat in 0..1)
+        if (worldFormat == 1) {
+            require(expansions in 0..GARDEN_MAX_EXPANSIONS && trees.isNotEmpty())
+            require(trees.map { it.id }.distinct().size == trees.size && trees.all { it.id.isNotBlank() && it.xp >= 0 })
+            require(trees.sumOf { it.xp.toLong() } == xp.toLong())
+            val planted = trees.mapNotNull { it.plotIndex }
+            require(planted.distinct().size == planted.size && planted.all { it in 0 until plotCount })
+            trees.forEach { tree -> tree.lastWateredDate?.let { LocalDate.parse(it) } }
+            require(quantities.all { it.key.isNotBlank() && it.value > 0 } && ownedItems == quantities.keys)
+            require(placements.map { it.id }.distinct().size == placements.size)
+            require(placements.all { it.id.isNotBlank() && it.plotIndex in 0 until plotCount && it.slot in 0 until GARDEN_DECORATION_SLOTS })
+            require(placements.map { it.plotIndex to it.slot }.distinct().size == placements.size)
+            require(placements.groupingBy { it.itemId }.eachCount().all { it.value <= quantities.getOrElse(it.key) { 0 } })
+            require(equippedItems == placements.filter { it.visible }.map { it.itemId }.toSet())
+        }
     }
 }
 
@@ -47,9 +69,15 @@ fun awardGardenTasks(current: GardenProgress, date: LocalDate, completedIds: Set
         rewardedTaskIds = credited + newIds, revision = current.revision + 1)
 }
 
-fun waterGarden(current: GardenProgress, date: LocalDate): GardenProgress {
+fun waterGarden(current: GardenProgress, date: LocalDate, treeId: String? = null): GardenProgress {
     if (current.waterDrops == 0) return current
-    check(current.xp < Int.MAX_VALUE && current.revision < Long.MAX_VALUE)
-    return current.copy(xp = current.xp + 1, waterDrops = current.waterDrops - 1,
-        lastWateredDate = maxOf(current.lastWateredDate ?: "", date.toString()), revision = current.revision + 1)
+    val world = current.asWorld()
+    val tree = if (treeId == null) world.trees.firstOrNull { it.plotIndex != null && it.visible }
+        else world.trees.firstOrNull { it.id == treeId && it.plotIndex != null && it.visible }
+    if (tree == null) throw GardenPlacementUnavailable()
+    check(world.xp < Int.MAX_VALUE && world.revision < Long.MAX_VALUE)
+    return world.copy(xp = world.xp + 1, waterDrops = world.waterDrops - 1,
+        lastWateredDate = maxOf(world.lastWateredDate ?: "", date.toString()),
+        trees = world.trees.map { if (it.id == tree.id) it.copy(xp = it.xp + 1, lastWateredDate = maxOf(it.lastWateredDate ?: "", date.toString())) else it },
+        revision = world.revision + 1)
 }

@@ -5,6 +5,6 @@ import androidx.navigation.compose.rememberNavController
 import com.menna.nabatan_7asena.presentation.composables.MainContent
 
 @Composable
-fun MainScreenHolder(openSettings: () -> Unit) {
-    MainContent(rememberNavController(), openSettings)
+fun MainScreenHolder(openFriends: () -> Unit = {}, openSettings: () -> Unit) {
+    MainContent(rememberNavController(), openSettings, openFriends)
 }

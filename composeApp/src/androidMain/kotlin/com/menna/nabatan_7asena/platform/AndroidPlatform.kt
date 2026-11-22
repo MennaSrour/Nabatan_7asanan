@@ -69,8 +69,21 @@ fun createResourcePlayer(context: Context, resource: Int): MediaPlayer? {
 class AndroidPermissions : PermissionPlatform {
     override val supportsAndroidPermissions = true
     private val context get() = AndroidPlatform.context
-    override fun locationGranted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    override fun notificationsGranted() = Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    override fun permissionSkipped(permission: AppPermission) {
+        if (permission == AppPermission.NOTIFICATIONS)
+            PlatformPreferences("app_prefs").putBoolean("notification_permission_skipped", true)
+    }
+    override suspend fun refresh() {
+        val current = "${locationGranted()}|${notificationsGranted()}|${exactAlarmsGranted()}|${batteryExempt()}"
+        val prefs = PlatformPreferences("permission_requests")
+        if (prefs.getString("status", null) != current) {
+            prefs.putString("status", current)
+            AndroidScheduling().scheduleImmediately()
+        }
+    }
+    override fun locationGranted() = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+    override fun notificationsGranted() = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+    override fun exactAlarmsGranted() = Build.VERSION.SDK_INT < 31 || context.getSystemService(android.app.AlarmManager::class.java).canScheduleExactAlarms()
     override fun batteryExempt() = context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true
 }
 

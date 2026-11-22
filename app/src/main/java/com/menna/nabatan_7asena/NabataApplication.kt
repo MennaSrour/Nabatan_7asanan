@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.menna.nabatan_7asena.platform.AndroidPlatform
 import com.google.firebase.FirebaseApp
+import com.menna.nabatan_7asena.platform.BroadcastNotificationManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -18,6 +19,7 @@ class NabataApplication : Application(), Configuration.Provider {
 
         AndroidPlatform.initialize(this)
         FirebaseApp.initializeApp(this)
+        BroadcastNotificationManager.initialize()
     }
 
     override val workManagerConfiguration: Configuration

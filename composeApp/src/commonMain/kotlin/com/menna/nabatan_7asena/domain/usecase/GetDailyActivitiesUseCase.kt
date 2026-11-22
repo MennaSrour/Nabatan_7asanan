@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 class GetDailyActivitiesUseCase constructor(
     private val repository: DailyActivityRepository
 ) {
+    operator fun invoke(date: String, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?): Flow<List<Activity>> =
+        repository.getDailyActivities(date, request)
+
     operator fun invoke(date: String, city: String,country:String): Flow<List<Activity>> {
         return repository.getDailyActivities(date, city,country)
     }

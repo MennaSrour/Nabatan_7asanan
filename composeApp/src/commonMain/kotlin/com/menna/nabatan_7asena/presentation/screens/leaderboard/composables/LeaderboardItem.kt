@@ -20,7 +20,7 @@ fun LeaderboardItem(user: LeaderboardEntry, rank: Int, isCurrentUser: Boolean) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             LeaderboardRankBadge(rank.toString())
             LeaderboardMemberDetails(user.name, user.gender, user.avatarIndex, user.totalStars,
-                user.quranPartsFinished, isCurrentUser, Modifier.weight(1f))
+                user.completedKhatmahs, isCurrentUser, Modifier.weight(1f))
         }
     }
 }

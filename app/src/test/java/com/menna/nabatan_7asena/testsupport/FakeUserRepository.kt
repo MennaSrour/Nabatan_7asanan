@@ -26,7 +26,6 @@ class FakeUserRepository : UserRepository {
         rankRequests += totalStars
         return fetchRank(totalStars)
     }
-    override suspend fun syncUserScore(user: User) = Unit
     override suspend fun updateUserName(newName: String) { user.value = user.value.copy(name = newName) }
     override suspend fun resetAllProgress() = Unit
     override suspend fun setNotificationsEnabled(enabled: Boolean) = Unit
