@@ -52,8 +52,15 @@ open class HomeViewModel constructor(
     private val quranRepository: QuranRepository,
     private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
     private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository,
-    private val quranJourney: QuranJourneyRepository
+    private val quranJourney: QuranJourneyRepository,
+    private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository
 ) : ViewModel(), HomeActions {
+
+    suspend fun awardPrayerGuideBonus(): Boolean {
+        val user = getCurrentUserUseCase().first()
+        check(user.id.isNotBlank() && user.id != "local")
+        return dailyActivityRepository.awardPrayerGuideBonus(user.id)
+    }
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -256,6 +263,7 @@ open class HomeViewModel constructor(
                         isGardenUnavailable = state.isGardenUnavailable,
                         gardenNeedsWater = state.gardenNeedsWater,
                         isWateringGarden = currentState.gardenProfileId == state.gardenProfileId && currentState.isWateringGarden,
+                        gardenWateredTreeId = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenWateredTreeId else null,
                         gardenWateringSequence = if (currentState.gardenProfileId == state.gardenProfileId) currentState.gardenWateringSequence else 0,
                         gardenSaveFailed = currentState.gardenProfileId == state.gardenProfileId && currentState.gardenSaveFailed,
                         prayerDate = state.prayerDate,
@@ -282,41 +290,55 @@ open class HomeViewModel constructor(
         catch (e: Exception) { Resource.Error(e) }
     }
 
-    override fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration) = updateGardenShop(item, null)
-    override fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean) = updateGardenShop(item, equipped)
+    override fun buyGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration) =
+        buyGardenProduct(com.menna.nabatan_7asena.domain.entity.GardenProduct.entries.first { it.id == item.id })
+    override fun equipGardenItem(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.equip(owner, item, equipped); false }
+    override fun buyGardenProduct(product: com.menna.nabatan_7asena.domain.entity.GardenProduct) =
+        updateGardenWorld { owner -> gardenRepository.buyProduct(owner, product).purchased }
+    override fun plantGardenTree(treeId: String, plot: Int?) =
+        updateGardenWorld { owner -> gardenRepository.plantTree(owner, treeId, plot); false }
+    override fun showGardenTree(treeId: String, visible: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.showTree(owner, treeId, visible); false }
+    override fun placeGardenDecoration(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, plot: Int) =
+        updateGardenWorld { owner -> gardenRepository.placeDecoration(owner, item, plot); false }
+    override fun manageGardenPlacement(id: String, plot: Int?, visible: Boolean?, remove: Boolean) =
+        updateGardenWorld { owner -> gardenRepository.managePlacement(owner, id, plot, visible, remove); false }
 
-    private fun updateGardenShop(item: com.menna.nabatan_7asena.domain.entity.GardenDecoration, equipped: Boolean?) {
+    private fun updateGardenWorld(operation: suspend (String) -> Boolean) {
         val owner = _uiState.value.gardenProfileId
         if (owner.isBlank() || _uiState.value.isGardenShopBusy || _uiState.value.isGardenUnavailable) return
         _uiState.update { it.copy(isGardenShopBusy = true, gardenShopError = null) }
         viewModelScope.launch {
             try {
-                val purchase = if (equipped == null) gardenRepository.buy(owner, item) else null
-                if (purchase == null) gardenRepository.equip(owner, item, requireNotNull(equipped))
+                val bought = operation(owner)
                 _uiState.update { if (it.gardenProfileId != owner) it else it.copy(
-                    gardenPurchaseSequence = it.gardenPurchaseSequence + if (purchase?.purchased == true) 1 else 0) }
+                    gardenPurchaseSequence = it.gardenPurchaseSequence + if (bought) 1 else 0) }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
-                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(gardenShopError =
-                    if (e is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars)
-                        com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
-                    else com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed) }
+                val error = when (e) {
+                    is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
+                    is com.menna.nabatan_7asena.domain.entity.GardenLandLimit -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenLandLimit
+                    is com.menna.nabatan_7asena.domain.entity.GardenPlacementUnavailable -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenPlacementUnavailable
+                    else -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed
+                }
+                _uiState.update { if (it.gardenProfileId != owner) it else it.copy(gardenShopError = error) }
             } finally { _uiState.update { if (it.gardenProfileId == owner) it.copy(isGardenShopBusy = false) else it } }
         }
     }
 
     override fun openGarden() { _uiMessage.trySend(HomeEffect.NavigateToGarden) }
 
-    override fun waterGarden() {
+    override fun waterGarden(treeId: String?) {
         val current = _uiState.value
         if (current.isWateringGarden || current.gardenProfileId.isBlank() || (current.garden?.waterDrops ?: 0) <= 0) return
         _uiState.update { it.copy(isWateringGarden = true, gardenSaveFailed = false) }
         viewModelScope.launch {
             try {
-                val next = gardenRepository.water(current.gardenProfileId, AppClock.today())
+                val next = gardenRepository.water(current.gardenProfileId, AppClock.today(), treeId)
                 _uiState.update {
                     if (it.gardenProfileId != current.gardenProfileId) it
-                    else it.copy(isWateringGarden = false, garden = next.progress, gardenWateringSequence = it.gardenWateringSequence + if (next.applied) 1 else 0)
+                    else it.copy(isWateringGarden = false, gardenWateredTreeId = if (next.applied) treeId ?: next.progress.trees.firstOrNull { tree -> tree.plotIndex != null }?.id else it.gardenWateredTreeId, gardenWateringSequence = it.gardenWateringSequence + if (next.applied) 1 else 0)
                 }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {

@@ -16,3 +16,5 @@ data class User(
 ) {
     enum class Gender { BOY, GIRL }
 }
+
+const val PRAYER_GUIDE_BONUS_STARS = 5

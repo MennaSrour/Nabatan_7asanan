@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import kotlin.math.*
+import com.menna.nabatan_7asena.domain.entity.GardenSpecies
 
 internal fun DrawScope.drawGardenTree(frame: GardenFrame) {
     val stage = frame.stage
@@ -17,10 +18,14 @@ internal fun DrawScope.drawGardenTree(frame: GardenFrame) {
         val top = 558f - height
         drawTrunk(stage, top)
         if (stage < 3f) drawGrowingLeaves(stage, top, frame.phase)
-        if (stage > 1.2f) drawTreeBranches(stage, top)
-        if (stage > 2.1f) drawCanopy(stage, top, frame.phase)
-        if (stage > 3.1f) drawTreeBlossoms(stage, top)
-        if (stage > 4.1f) drawTreeFruit(stage, top, frame.phase)
+        if (stage > 1.2f && frame.species != GardenSpecies.PALM) drawTreeBranches(stage, top)
+        if (stage > 2.1f) {
+            if (frame.species == GardenSpecies.PALM) drawPalm(stage, top, frame.phase)
+            else drawCanopy(stage, top, frame.phase, frame.species)
+        }
+        if (stage > 3.1f && frame.species != GardenSpecies.PALM && frame.species != GardenSpecies.OLIVE) drawTreeBlossoms(stage, top)
+        if (stage > 4.1f && frame.species == GardenSpecies.BLOSSOM) drawTreeBlossoms(stage, top - 20f)
+        else if (stage > 4.1f && frame.species != GardenSpecies.PALM) drawTreeFruit(stage, top, frame.phase, frame.species)
     }
 }
 
@@ -65,16 +70,18 @@ internal fun DrawScope.drawGardenLeaf(start: Offset, end: Offset, width: Float, 
     drawLine(Color.White.copy(0.25f), start, end, 1.5f)
 }
 
-private fun DrawScope.drawCanopy(stage: Float, top: Float, phase: Float) {
+private fun DrawScope.drawCanopy(stage: Float, top: Float, phase: Float, species: GardenSpecies) {
     val alpha = ((stage - 2.1f) / 0.9f).coerceIn(0f, 1f)
     val radius = 74f + stage * 7f
+    val dark = when (species) { GardenSpecies.OLIVE -> Color(0xFF547868); GardenSpecies.BLOSSOM -> Color(0xFFAB719E); else -> Color(0xFF2F7252) }
+    val light = when (species) { GardenSpecies.OLIVE -> Color(0xFFA5BA9B); GardenSpecies.BLOSSOM -> Color(0xFFE8B1C9); else -> Color(0xFF82BE73) }
     repeat(11) { index ->
         val angle = index * 2.4f
         val x = 500f + cos(angle) * (if (index < 7) 100f else 55f)
         val y = top + 35f + sin(angle) * 58f
         val shift = sin(phase * 18f + index) * 3f
-        drawCircle((if (index % 3 == 0) Color(0xFF2F7252) else Color(0xFF438F60)).copy(alpha), radius, Offset(x, y))
-        drawCircle((if (index % 2 == 0) Color(0xFF82BE73) else Color(0xFF64A767)).copy(alpha), radius * 0.72f, Offset(x - 17f + shift, y - 23f))
+        drawCircle(dark.copy(alpha), radius, Offset(x, y))
+        drawCircle(light.copy(alpha), radius * 0.72f, Offset(x - 17f + shift, y - 23f))
     }
 }
 
@@ -94,13 +101,34 @@ internal fun DrawScope.drawGardenFlower(center: Offset, radius: Float, color: Co
     drawCircle(Color(0xFFFFCE63).copy(color.alpha), radius * 0.38f, center)
 }
 
-private fun DrawScope.drawTreeFruit(stage: Float, top: Float, phase: Float) {
+private fun DrawScope.drawTreeFruit(stage: Float, top: Float, phase: Float, species: GardenSpecies) {
     val alpha = ((stage - 4.1f) / 0.9f).coerceIn(0f, 1f)
     repeat(8) { index ->
         val center = Offset(500f + cos(index * 2.7f) * 135f, top + 55f + sin(index * 2.7f) * 63f)
         drawCircle(Brush.radialGradient(listOf(Color(0xFFFFDE79).copy(alpha * (0.25f + 0.15f * sin(phase * 18f + index))), Color.Transparent), center, 30f), 30f, center)
-        drawCircle((if (index % 2 == 0) Color(0xFFFFCC65) else Color(0xFFEA9474)).copy(alpha), 14f, center)
+        if (species == GardenSpecies.OLIVE) drawOval(Color(0xFF45484F).copy(alpha), center - Offset(6f, 10f), Size(12f, 20f))
+        else drawCircle(Color(0xFFE98E79).copy(alpha), 14f, center)
         drawCircle(Color.White.copy(alpha * 0.6f), 4f, center + Offset(-4f, -4f))
         drawGardenLeaf(center + Offset(0f, -14f), center + Offset(16f, -22f), 5f, Color(0xFF326F4E).copy(alpha))
+    }
+}
+
+private fun DrawScope.drawPalm(stage: Float, top: Float, phase: Float) {
+    val alpha = ((stage - 2.1f) / 0.9f).coerceIn(0f, 1f)
+    repeat(8) { index ->
+        val side = if (index % 2 == 0) -1 else 1
+        val reach = 115f + index / 2 * 13f
+        val end = Offset(500f + side * reach, top + 20f + index / 2 * 27f + sin(phase * 18 + index) * 4)
+        val branch = Path().apply { moveTo(500f, top + 25f); quadraticTo(500f + side * reach * 0.6f, top - 80f + index * 3f, end.x, end.y) }
+        drawPath(branch, Color(0xFF4E9363).copy(alpha), style = Stroke(12f, cap = StrokeCap.Round))
+        repeat(6) { leaf ->
+            val t = (leaf + 1) / 7f
+            val x = 500f + (end.x - 500f) * t
+            val y = (1 - t) * (1 - t) * (top + 25) + 2 * (1 - t) * t * (top - 80f + index * 3) + t * t * end.y
+            drawLine(Color(0xFF77AF73).copy(alpha), Offset(x, y), Offset(x + side * 18f, y + 25f), 4f, StrokeCap.Round)
+        }
+    }
+    if (stage > 4f) repeat(10) { index ->
+        drawOval(Color(0xFFE3A55F).copy((stage - 4).coerceIn(0f, 1f)), Offset(476f + index % 5 * 10f, top + 47f + index / 5 * 13f), Size(8f, 13f))
     }
 }

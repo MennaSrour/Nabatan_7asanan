@@ -7,7 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.presentation.screens.badges.composables.BadgesContent
 
 @Composable
-fun BadgesScreen(viewModel: BadgesViewModel = platformBadgesViewModel()) {
+fun BadgesScreen(onBack: () -> Unit, viewModel: BadgesViewModel = platformBadgesViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    BadgesContent(state)
+    BadgesContent(state, onBack)
 }

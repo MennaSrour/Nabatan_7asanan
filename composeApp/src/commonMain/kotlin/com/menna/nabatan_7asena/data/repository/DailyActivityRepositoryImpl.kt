@@ -166,8 +166,8 @@ class DailyActivityRepositoryImpl constructor(
     }
 
     override suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean) {
-        val yesterday = AppClock.dateString(AppClock.today().minus(1, DateTimeUnit.DAY))
-        appDao.recordDailyActivity(date, activityId, isCompleted, yesterday)
+        val today = AppClock.today()
+        appDao.saveActivity(date, activityId, isCompleted, today, today.minus(1, DateTimeUnit.DAY))
     }
 
     override suspend fun getSuggestedExtraTasks(): ExtraTasks {
@@ -204,6 +204,7 @@ class DailyActivityRepositoryImpl constructor(
     private fun getDayOfYear(): Int = AppClock.dayOfYear()
     private fun getTodayDate(): String = AppClock.dateString()
 
+    override suspend fun awardPrayerGuideBonus(userId: String) = appDao.awardPrayerGuideBonus(getTodayDate(), userId)
 
     companion object {
         private const val TAG = "DailyActivityRepo"

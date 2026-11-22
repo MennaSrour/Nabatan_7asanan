@@ -7,10 +7,52 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.menna.nabatan_7asena.domain.entity.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.serialization.encodeToString
 
 @Dao
 interface AppDao {
+    @Query("SELECT COUNT(*) FROM daily_records WHERE itemId = :itemId AND isCompleted = 1")
+    fun observeCompletedDays(itemId: Int): Flow<Int>
+
+    @Query("SELECT isCompleted FROM daily_records WHERE date = :date AND itemId = :itemId")
+    suspend fun getRecordStatus(date: String, itemId: Int): Boolean?
+
+    @Transaction
+    suspend fun awardPrayerGuideBonus(date: String, userId: String): Boolean {
+        val stats = checkNotNull(readUserStats()) { "A saved profile is required" }
+        check(stats.userId == userId)
+        if (getRecordStatus(date, PRAYER_GUIDE_REWARD_ID) == true) return false
+        updateUserStats(stats.withBonus(PRAYER_GUIDE_BONUS_STARS))
+        updateOrInsertRecord(DailyRecordEntity(date, PRAYER_GUIDE_REWARD_ID, true))
+        return true
+    }
+
+    @Transaction
+    suspend fun saveActivity(date: String, itemId: Int, completed: Boolean, today: LocalDate, yesterday: LocalDate) {
+        if ((getRecordStatus(date, itemId) ?: false) == completed) return
+        updateOrInsertRecord(DailyRecordEntity(date, itemId, completed))
+        val stats = readUserStats() ?: UserStatsEntity()
+        insertUserStats(stats.withDailyActivity(completed, today, yesterday))
+    }
+
+
+    @Transaction
+    suspend fun replaceProfile(stats: UserStatsEntity) {
+        clearAllRecords()
+        insertUserStats(stats)
+    }
+
+    @Query("UPDATE user_stats SET name = :name WHERE id = 1")
+    suspend fun updateName(name: String)
+
+    @Query("UPDATE user_stats SET prayerNotifications = :enabled, azkarNotifications = :enabled, quranNotifications = :enabled WHERE id = 1")
+    suspend fun updateAllNotifications(enabled: Boolean)
+
+    @Query("UPDATE user_stats SET quranPartsFinished = quranPartsFinished + :change WHERE id = 1 AND quranPartsFinished + :change >= 0")
+    suspend fun changeQuranParts(change: Int): Int
 
     @Query("SELECT * FROM daily_records WHERE date = :date")
     fun getRecordsForDate(date: String): Flow<List<DailyRecordEntity>>
@@ -71,19 +113,6 @@ interface AppDao {
     @Query("SELECT * FROM user_stats WHERE id = 1")
     suspend fun readUserStats(): UserStatsEntity?
 
-    @Query("SELECT isCompleted FROM daily_records WHERE date = :date AND itemId = :activityId")
-    suspend fun readActivityStatus(date: String, activityId: Int): Boolean?
-
-    @Transaction
-    suspend fun recordDailyActivity(date: String, activityId: Int, completed: Boolean, yesterday: String): UserStatsEntity? {
-        if ((readActivityStatus(date, activityId) == true) == completed) return null
-        val user = readUserStats() ?: UserStatsEntity()
-        updateOrInsertRecord(DailyRecordEntity(date, activityId, completed))
-        val updated = user.withDailyActivity(completed, date, yesterday)
-        insertUserStats(updated)
-        return updated
-    }
-
     @Query("SELECT * FROM quran_journey WHERE profileId = :profileId")
     fun observeQuranJourney(profileId: String): Flow<QuranJourneyEntity?>
 
@@ -106,10 +135,11 @@ interface AppDao {
     @Transaction
     suspend fun clearProfileProgress(): String? {
         val profileId = readUserStats()?.userId
+        val syncedProfileId = profileId?.takeIf { readQuranJourney(it)?.syncVersion?.let { version -> version > 0 } == true }
         if (profileId != null) clearQuranJourney(profileId)
         clearAllRecords()
         clearUserStats()
-        return profileId
+        return syncedProfileId
     }
 
     @Transaction
@@ -123,8 +153,8 @@ interface AppDao {
     }
 
     @Transaction
-    suspend fun completeQuranWird(profileId: String, date: kotlinx.datetime.LocalDate, expected: Wird,
-                                  taskDate: String, yesterday: String) {
+    suspend fun completeQuranWird(profileId: String, date: LocalDate, expected: Wird,
+                                  taskDate: String) {
         val user = requireActiveProfile(profileId)
         val stored = readQuranJourney(profileId) ?: return
         val previous = stored.toJourney()
@@ -132,9 +162,9 @@ interface AppDao {
         if (previous == next) return
         persistJourney(profileId, stored, previous, next)
         var updated = user
-        if (readActivityStatus(taskDate, DAILY_QURAN_TASK_ID) != true) {
+        if (getRecordStatus(taskDate, DAILY_QURAN_TASK_ID) != true) {
             updateOrInsertRecord(DailyRecordEntity(taskDate, DAILY_QURAN_TASK_ID, true))
-            updated = user.withDailyActivity(true, taskDate, yesterday)
+            updated = user.withDailyActivity(true, date, date.minus(1, DateTimeUnit.DAY))
         }
         if (next.completedKhatmahs > previous.completedKhatmahs) {
             updated = updated.withBonus(KHATMAH_BONUS_STARS)
@@ -163,19 +193,14 @@ interface AppDao {
         profileId: String, stored: QuranJourneyEntity?, previous: QuranJourney, next: QuranJourney
     ) {
         val syncNeeded = previous.completedKhatmahs != next.completedKhatmahs ||
-            previous.memorizedSurahs != next.memorizedSurahs || previous.lastWirdDate != next.lastWirdDate
+            previous.memorizedSurahs != next.memorizedSurahs
         writeQuranJourney(QuranJourneyEntity(
             profileId, QuranJourneyEntity.json.encodeToString(next),
             (stored?.syncVersion ?: 0) + if (syncNeeded) 1 else 0,
             stored?.syncedVersion ?: 0
         ))
     }
-    @Query("UPDATE user_stats SET name = :name WHERE userId = :profileId AND id = 1")
-    suspend fun updateUserName(profileId: String, name: String)
-
-    @Query("UPDATE user_stats SET quranPartsFinished = quranPartsFinished + :delta WHERE id = 1 AND userId = :profileId AND quranPartsFinished + :delta >= 0")
-    suspend fun changeQuranParts(profileId: String, delta: Int): Int
-
-    @Query("UPDATE user_stats SET prayerNotifications = :enabled, azkarNotifications = :enabled, quranNotifications = :enabled WHERE id = 1 AND userId = :profileId")
-    suspend fun updateAllNotifications(profileId: String, enabled: Boolean)
 }
+
+// Daily activity IDs are positive.
+private const val PRAYER_GUIDE_REWARD_ID = -1

@@ -4,7 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -18,11 +17,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
@@ -45,12 +39,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -187,74 +179,6 @@ fun Modifier.popIn(delayMillis: Int = 0): Modifier = composed {
         scaleY = s
         alpha = progress.value.coerceIn(0f, 1f)
         translationY = (1f - progress.value) * 40f
-    }
-}
-
-/**
-* زرار "بلاستيك سميك": وش ملوّن + حتة غامقة تحته (depth). لما تدوسي،
-* الوش بينزل فوق الحتة دي كأنك ضغطتي زرار حقيقي.
-* الوش بياخد عرض الأب كله — حددي العرض من برّه (fillMaxWidth/width).
-*/
-@Composable
-fun ChunkyButton(
-    onClick: () -> Unit,
-    color: Color,
-    edgeColor: Color,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(22.dp),
-    depth: Dp = 6.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-    onClickLabel: String? = null,
-    content: @Composable BoxScope.() -> Unit
-) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val sink by animateDpAsState(
-        targetValue = if (pressed) depth else 0.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = 1200f),
-        label = "chunky_sink"
-    )
-
-    Box(
-        modifier = modifier
-            .clickable(
-            interactionSource = interaction,
-            indication = null,
-            enabled = enabled,
-            onClickLabel = onClickLabel,
-            onClick = onClick
-        )
-            .padding(bottom = depth)
-    ) {
-        // الحتة الغامقة اللي تحت
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .offset(y = depth)
-                .clip(shape)
-                .background(edgeColor)
-        )
-        // الوش
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = sink)
-                .clip(shape)
-                .background(color)
-                .drawBehind {
-                // لمعة صغيرة فوق الزرار، تدّي إحساس "بلاستيك لامع"
-                drawRoundRect(
-                    color = Color.White.copy(alpha = 0.28f),
-                    topLeft = Offset(size.width * 0.08f, 5.dp.toPx()),
-                    size = Size(size.width * 0.84f, 4.dp.toPx()),
-                    cornerRadius = CornerRadius(2.dp.toPx())
-                )
-            }
-                .padding(contentPadding),
-            contentAlignment = Alignment.Center,
-            content = content
-        )
     }
 }
 

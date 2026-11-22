@@ -746,6 +746,46 @@ object AppResources {
         const val update_required_male: Int = -743870644
         const val update_version_female: Int = -255135273
         const val update_version_male: Int = -1044004342
+        const val world_apple: Int = -577329848
+        const val world_available_quantity: Int = -461746265
+        const val world_bench: Int = -1839163853
+        const val world_blossom: Int = -8423012
+        const val world_decoration: Int = -814128419
+        const val world_decoration_inventory: Int = -1580654494
+        const val world_empty_plot: Int = -1936519195
+        const val world_entry_stats: Int = -968859957
+        const val world_expand: Int = -495475559
+        const val world_expansion_hint: Int = -327765083
+        const val world_fountain: Int = -1324167179
+        const val world_hidden: Int = -638043261
+        const val world_hide: Int = -1571539313
+        const val world_in_inventory: Int = -207143992
+        const val world_inventory: Int = -186007261
+        const val world_inventory_empty: Int = -1247552620
+        const val world_land_limit_female: Int = -996535202
+        const val world_land_limit_male: Int = -992533577
+        const val world_max_land: Int = -1499387201
+        const val world_move_here: Int = -88657863
+        const val world_no_placed: Int = -1484478731
+        const val world_olive: Int = -608988890
+        const val world_owned_quantity: Int = -359484247
+        const val world_palm: Int = -1566083
+        const val world_place_error_female: Int = -303812207
+        const val world_place_error_male: Int = -1732876277
+        const val world_place_here: Int = -1280112624
+        const val world_place_manage: Int = -1498662798
+        const val world_placed_inventory: Int = -21601555
+        const val world_plant_here: Int = -1695631118
+        const val world_plot_capacity: Int = -1901038614
+        const val world_plot_chip: Int = -2008440322
+        const val world_return_inventory: Int = -474470638
+        const val world_scene_description: Int = -1079425858
+        const val world_selected_plot: Int = -1595978414
+        const val world_shop_hint: Int = -1326420419
+        const val world_show: Int = -1262279515
+        const val world_tree_inventory: Int = -1079458660
+        const val world_tree_xp: Int = -1430391634
+        const val world_visible: Int = -1635414212
     }
 }
 
@@ -1421,6 +1461,46 @@ object ResourceCatalog {
         AppResources.string.update_required_male to Res.string.update_required_male,
         AppResources.string.update_version_female to Res.string.update_version_female,
         AppResources.string.update_version_male to Res.string.update_version_male,
+        AppResources.string.world_apple to Res.string.world_apple,
+        AppResources.string.world_available_quantity to Res.string.world_available_quantity,
+        AppResources.string.world_bench to Res.string.world_bench,
+        AppResources.string.world_blossom to Res.string.world_blossom,
+        AppResources.string.world_decoration to Res.string.world_decoration,
+        AppResources.string.world_decoration_inventory to Res.string.world_decoration_inventory,
+        AppResources.string.world_empty_plot to Res.string.world_empty_plot,
+        AppResources.string.world_entry_stats to Res.string.world_entry_stats,
+        AppResources.string.world_expand to Res.string.world_expand,
+        AppResources.string.world_expansion_hint to Res.string.world_expansion_hint,
+        AppResources.string.world_fountain to Res.string.world_fountain,
+        AppResources.string.world_hidden to Res.string.world_hidden,
+        AppResources.string.world_hide to Res.string.world_hide,
+        AppResources.string.world_in_inventory to Res.string.world_in_inventory,
+        AppResources.string.world_inventory to Res.string.world_inventory,
+        AppResources.string.world_inventory_empty to Res.string.world_inventory_empty,
+        AppResources.string.world_land_limit_female to Res.string.world_land_limit_female,
+        AppResources.string.world_land_limit_male to Res.string.world_land_limit_male,
+        AppResources.string.world_max_land to Res.string.world_max_land,
+        AppResources.string.world_move_here to Res.string.world_move_here,
+        AppResources.string.world_no_placed to Res.string.world_no_placed,
+        AppResources.string.world_olive to Res.string.world_olive,
+        AppResources.string.world_owned_quantity to Res.string.world_owned_quantity,
+        AppResources.string.world_palm to Res.string.world_palm,
+        AppResources.string.world_place_error_female to Res.string.world_place_error_female,
+        AppResources.string.world_place_error_male to Res.string.world_place_error_male,
+        AppResources.string.world_place_here to Res.string.world_place_here,
+        AppResources.string.world_place_manage to Res.string.world_place_manage,
+        AppResources.string.world_placed_inventory to Res.string.world_placed_inventory,
+        AppResources.string.world_plant_here to Res.string.world_plant_here,
+        AppResources.string.world_plot_capacity to Res.string.world_plot_capacity,
+        AppResources.string.world_plot_chip to Res.string.world_plot_chip,
+        AppResources.string.world_return_inventory to Res.string.world_return_inventory,
+        AppResources.string.world_scene_description to Res.string.world_scene_description,
+        AppResources.string.world_selected_plot to Res.string.world_selected_plot,
+        AppResources.string.world_shop_hint to Res.string.world_shop_hint,
+        AppResources.string.world_show to Res.string.world_show,
+        AppResources.string.world_tree_inventory to Res.string.world_tree_inventory,
+        AppResources.string.world_tree_xp to Res.string.world_tree_xp,
+        AppResources.string.world_visible to Res.string.world_visible,
     )
     val rawPaths = mapOf(
         AppResources.raw.adam to "files/adam.mp3",

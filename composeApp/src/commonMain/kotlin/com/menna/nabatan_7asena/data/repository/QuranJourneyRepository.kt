@@ -5,9 +5,7 @@ import com.menna.nabatan_7asena.domain.entity.*
 import com.menna.nabatan_7asena.platform.AppClock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.minus
 
 class QuranJourneyRepository(private val dao: AppDao) {
     val profileId = dao.getUserStats().map { it?.userId?.takeIf(String::isNotBlank) }.distinctUntilChanged()
@@ -27,8 +25,7 @@ class QuranJourneyRepository(private val dao: AppDao) {
 
     suspend fun complete(profileId: String, date: LocalDate, wird: Wird) {
         if (date != AppClock.today()) return
-        dao.completeQuranWird(profileId, date, wird, AppClock.dateString(date),
-            AppClock.dateString(date.minus(1, DateTimeUnit.DAY)))
+        dao.completeQuranWird(profileId, date, wird, AppClock.dateString(date))
     }
 
     suspend fun dismissCelebration(profileId: String) = dao.changeQuranJourney(profileId) {

@@ -8,10 +8,12 @@
         B10000000000000000000002 = {isa = PBXBuildFile; productRef = B20000000000000000000002; };
         B10000000000000000000003 = {isa = PBXBuildFile; productRef = B20000000000000000000003; };
         B10000000000000000000004 = {isa = PBXBuildFile; productRef = B20000000000000000000004; };
+        B10000000000000000000005 = {isa = PBXBuildFile; productRef = B20000000000000000000005; };
         B20000000000000000000001 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseCore; };
         B20000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseFirestore; };
         B20000000000000000000003 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseRemoteConfig; };
         B20000000000000000000004 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseMessaging; };
+        B20000000000000000000005 = {isa = XCSwiftPackageProductDependency; package = B30000000000000000000001; productName = FirebaseAuth; };
         B30000000000000000000001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/firebase/firebase-ios-sdk"; requirement = {kind = upToNextMajorVersion; minimumVersion = 11.1.0; }; };
         B40000000000000000000001 = {
             isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647;
@@ -37,7 +39,7 @@
             buildRules = ();
             dependencies = ();
             name = iosApp;
-            packageProductDependencies = (B20000000000000000000001, B20000000000000000000002, B20000000000000000000003, B20000000000000000000004);
+            packageProductDependencies = (B20000000000000000000001, B20000000000000000000002, B20000000000000000000003, B20000000000000000000004, B20000000000000000000005);
             productName = iosApp;
             productReference = A20000000000000000000004;
             productType = "com.apple.product-type.application";
@@ -55,7 +57,7 @@
             shellScript = "set -eu\nif [ \"${OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED:-NO}\" = \"YES\" ]; then exit 0; fi\nif [ -z \"${JAVA_HOME:-}\" ]; then export JAVA_HOME=\"$(/usr/libexec/java_home -v 21)\"; fi\ncd \"$SRCROOT/..\"\n./gradlew -Dorg.gradle.java.home=\"$JAVA_HOME\" :composeApp:embedAndSignAppleFrameworkForXcode\n";
         };
         A50000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002); runOnlyForDeploymentPostprocessing = 0; };
-        A50000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004); runOnlyForDeploymentPostprocessing = 0; };
+        A50000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004, B10000000000000000000005); runOnlyForDeploymentPostprocessing = 0; };
         A50000000000000000000004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
         A60000000000000000000001 = {
             isa = PBXProject;

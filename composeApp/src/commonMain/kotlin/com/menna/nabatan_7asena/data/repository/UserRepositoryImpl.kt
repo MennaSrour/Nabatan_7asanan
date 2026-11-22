@@ -6,7 +6,6 @@ import com.menna.nabatan_7asena.data.local.room.AppDao
 import com.menna.nabatan_7asena.data.local.room.UserStatsEntity
 import com.menna.nabatan_7asena.data.mappers.toDomain
 import com.menna.nabatan_7asena.data.remote.FirebaseDataSource
-import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import com.menna.nabatan_7asena.platform.SchedulingPlatform
 import com.menna.nabatan_7asena.domain.Resource
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
@@ -60,12 +59,8 @@ class UserRepositoryImpl constructor(
             quranPartsFinished = user.quranPartsFinished,
             avatarIndex = user.avatarIndex
         )
-        dao.clearUserStats()
-        dao.clearAllRecords()
-        dao.insertUserStats(entity)
+        dao.replaceProfile(entity)
 
-
-        syncUserScore(user)
     }
 
     override fun getLeaderboardResource(): Flow<Resource<List<LeaderboardEntry>>> =
@@ -127,35 +122,12 @@ class UserRepositoryImpl constructor(
         }
     }
 
-    override suspend fun syncUserScore(user: User) {
-        try {
-            withTimeoutOrNull(7_000) { publishScore(user.id) }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("UserRepositoryImpl", "failed to sync user score", e)
-        }
-    }
-
-    suspend fun publishScore(profileId: String) = scoreSync.withLock {
-        if (profileId.isBlank() || profileId == "local") return@withLock
+    suspend fun syncQuranSummary(profileId: String) = scoreSync.withLock {
         val (profile, stored) = dao.readQuranProfile(profileId)
-        val user = profile ?: return@withLock
-        val journey = stored?.toJourney()
-        val pending = stored != null && stored.syncVersion != stored.syncedVersion
-        firebaseDataSource.uploadUserScore(
-            UserRankDto(
-                userId = user.userId,
-                name = user.name,
-                gender = user.gender.lowercase(),
-                totalStars = user.totalStars,
-                quranPartsFinished = user.quranPartsFinished,
-                avatarIndex = user.avatarIndex,
-                completedKhatmahs = journey?.completedKhatmahs ?: 0,
-                memorizedSurahs = journey?.memorizedSurahs ?: 0
-            ), includeQuranSummary = pending
-        )
-        if (stored != null && pending) dao.markQuranJourneySynced(profileId, stored.syncVersion)
+        if (profile == null || stored == null || stored.syncVersion == stored.syncedVersion) return@withLock
+        val journey = stored.toJourney()
+        firebaseDataSource.backupQuranSummary(profileId, journey.completedKhatmahs, journey.memorizedSurahs)
+        dao.markQuranJourneySynced(profileId, stored.syncVersion)
     }
 
     override suspend fun updateProfileImage(userId: String, gender: User.Gender, avatarIndex: Int) {
@@ -165,9 +137,7 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun updateUserName(newName: String) {
-        val user = dao.readUserStats() ?: return
-        dao.updateUserName(user.userId, newName)
-        syncUserScore(user.toDomain())
+        dao.updateName(newName)
     }
 
     override suspend fun resetAllProgress() {
@@ -176,11 +146,11 @@ class UserRepositoryImpl constructor(
                 val profileId = dao.clearProfileProgress()
                 if (!profileId.isNullOrBlank()) {
                     try {
-                        withTimeoutOrNull(7_000) { firebaseDataSource.deleteUserScore(profileId) }
+                        withTimeoutOrNull(7_000) { firebaseDataSource.deleteQuranSummary(profileId) }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Log.e("UserRepositoryImpl", "failed to delete user score from firebase", e)
+                        Log.e("UserRepositoryImpl", "failed to delete Quran summary from Firebase", e)
                     }
                 }
             }
@@ -194,10 +164,7 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun setNotificationsEnabled(enabled: Boolean) {
-        val stats = dao.getUserStats().firstOrNull()
-        stats?.let {
-            dao.updateAllNotifications(it.userId, enabled)
-        }
+        dao.updateAllNotifications(enabled)
 
         if (enabled) scheduling.enableDailyAutoScheduling(replace = true) else {
             scheduling.cancelDailyAutoScheduling()
@@ -209,14 +176,13 @@ class UserRepositoryImpl constructor(
 
     override suspend fun decrementQuranPart(): Resource<Unit> = changeQuranParts(-1)
 
-    private suspend fun changeQuranParts(delta: Int): Resource<Unit> = try {
-        val user = checkNotNull(dao.readUserStats())
-        check(dao.changeQuranParts(user.userId, delta) == 1)
-        syncUserScore(user.toDomain())
-        Resource.Success(Unit)
+    private suspend fun changeQuranParts(change: Int): Resource<Unit> = try {
+        if (dao.changeQuranParts(change) == 1) Resource.Success(Unit)
+        else Resource.Error(IllegalStateException("No saved Quran progress to update"))
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
+        Log.e("UserRepositoryImpl", "Failed to update Quran progress", e)
         Resource.Error(e)
     }
 }

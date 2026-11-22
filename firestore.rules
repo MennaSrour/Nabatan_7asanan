@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function bounded(value, maximum) {
+      return value is int && value >= 0 && value <= maximum;
+    }
+
+    function dateOrNull(value) {
+      return value == null || (value is string && value.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'));
+    }
+
+    function validProfile(data) {
+      return data.keys().hasOnly(['name', 'gender', 'avatarIndex', 'prayerNotifications',
+        'azkarNotifications', 'quranNotifications', 'lastQuranPage'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.gender in ['BOY', 'GIRL']
+        && bounded(data.get('avatarIndex', 0), 31)
+        && data.get('prayerNotifications', true) is bool
+        && data.get('azkarNotifications', true) is bool
+        && data.get('quranNotifications', true) is bool
+        && bounded(data.get('lastQuranPage', 0), 604);
+    }
+
+    match /users/{uid} {
+      allow get, delete: if owns(uid);
+      allow create, update: if owns(uid) && validProfile(request.resource.data);
+    }
+
+    match /users/{uid}/quran_journeys/{profileId} {
+      allow get, delete: if owns(uid);
+      allow create, update: if owns(uid)
+        && request.resource.data.keys().hasOnly(['completedKhatmahs', 'memorizedSurahs'])
+        && bounded(request.resource.data.completedKhatmahs, 1000000)
+        && bounded(request.resource.data.memorizedSurahs, 114);
+    }
+
+    function validGardenShop(data) {
+      let owned = data.get('ownedItems', []);
+      let equipped = data.get('equippedItems', []);
+      return bounded(data.get('spentStars', 0), 1000000)
+        && owned is list && equipped is list
+        && owned.size() == owned.toSet().size()
+        && equipped.size() == equipped.toSet().size()
+        && owned.hasOnly(['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles', 'bench', 'fountain'])
+        && owned.hasAll(equipped);
+    }
+
+    function validGarden(data) {
+      return data.keys().hasOnly(['xp', 'waterDrops', 'rewardDate', 'rewardedTaskIds',
+        'lastWateredDate', 'revision', 'syncedRevision', 'spentStars', 'ownedItems', 'equippedItems',
+        'worldFormat', 'trees', 'quantities', 'placements', 'expansions'])
+        && bounded(data.get('worldFormat', 0), 1)
+        && bounded(data.get('expansions', 0), 4)
+        && data.get('trees', []) is list && data.get('trees', []).size() <= 100000
+        && data.get('quantities', {}) is map && data.get('quantities', {}).keys().hasOnly(
+          ['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles', 'bench', 'fountain'])
+        && data.get('placements', []) is list && data.get('placements', []).size() <= 48
+        && validGardenShop(data)
+        && bounded(data.get('xp', 0), 1000000)
+        && bounded(data.get('waterDrops', 0), 1000000)
+        && dateOrNull(data.get('rewardDate', null))
+        && dateOrNull(data.get('lastWateredDate', null))
+        && data.get('rewardedTaskIds', []) is list && data.get('rewardedTaskIds', []).size() <= 500
+        && (data.get('rewardedTaskIds', []).size() == 0 || data.get('rewardDate', null) != null)
+        && bounded(data.get('revision', 0), 1000000000)
+        && bounded(data.get('syncedRevision', 0), data.get('revision', 0));
+    }
+
+    match /gardens/{uid}/devices/{deviceId} {
+      allow read, delete: if owns(uid);
+      allow create: if owns(uid) && validGarden(request.resource.data);
+      allow update: if owns(uid) && validGarden(request.resource.data)
+        && request.resource.data.get('revision', 0) >= resource.data.get('revision', 0);
+    }
+
+    function validAttempt(data, uid) {
+      return data.keys().hasOnly(['userId', 'name', 'gender', 'avatarIndex', 'score', 'token', 'completed'])
+        && data.userId == uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.get('gender', 'BOY') in ['BOY', 'GIRL']
+        && bounded(data.get('avatarIndex', 0), 31)
+        && bounded(data.get('score', 0), 5)
+        && data.token is string && data.token.size() == 36
+        && data.get('completed', true) is bool;
+    }
+
+    match /quiz_attempts/{weekId}/entries/{uid} {
+      allow get: if owns(uid);
+      allow create: if owns(uid) && dateOrNull(weekId)
+        && validAttempt(request.resource.data, uid)
+        && request.resource.data.completed == false && request.resource.data.get('score', 0) == 0;
+      allow update: if owns(uid) && validAttempt(request.resource.data, uid)
+        && resource.data.completed == false && request.resource.data.get('completed', true) == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'completed']);
+    }
+
+    // The app opens before any Firebase sign-in. Only publish curated public content here.
+    match /leaderboard/{entryId} { allow read: if true; }
+    match /quiz_podium/{weekId}/entries/{entryId} { allow read: if true; }
+    match /daily_plans/{dayId} { allow read: if true; }
+    match /quiz_questions/{questionId} { allow read: if true; }
+    match /verse_builder_items/{itemId} { allow read: if true; }
+    match /speed_challenge_questions/{questionId} { allow read: if true; }
+    match /kids_shorts/{shortId} { allow read: if true; }
+  }
+}

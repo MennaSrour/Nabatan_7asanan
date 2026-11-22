@@ -49,9 +49,9 @@ class LegacyDatabaseCompatibilityTest {
             val profileId = user.userId
             dao.changeQuranJourney(profileId) { it.copy(activeKhatmah = Khatmah(WirdGoal.QUARTER, 600)) }
             List(2) {
-                async { dao.completeQuranWird(profileId, date, Wird(601, 604), "22-11-2026", "21-11-2026") }
+                async { dao.completeQuranWird(profileId, date, Wird(601, 604), "22-11-2026") }
             }.awaitAll()
-            assertEquals(true, dao.readActivityStatus("22-11-2026", DAILY_QURAN_TASK_ID))
+            assertEquals(true, dao.getRecordStatus("22-11-2026", DAILY_QURAN_TASK_ID))
             assertEquals(1, dao.readQuranJourney(profileId)?.toJourney()?.completedKhatmahs)
             assertEquals(123 + 10 + KHATMAH_BONUS_STARS, dao.readUserStats()?.totalStars)
 

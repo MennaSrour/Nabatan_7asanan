@@ -50,7 +50,7 @@ class SharedServices(
                 if (pending == null) return@collectLatest
                 while (isActive && com.menna.nabatan_7asena.data.remote.FirebaseAvailability.isConfigured) {
                     try {
-                        if (withTimeoutOrNull(7_000) { userRepository.publishScore(pending.first); true } == true) break
+                        if (withTimeoutOrNull(7_000) { userRepository.syncQuranSummary(pending.first); true } == true) break
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
@@ -64,7 +64,9 @@ class SharedServices(
     val getCurrentUserUseCase = GetCurrentUserUseCase(userRepository)
     val dailyRepository: DailyActivityRepository = DailyActivityRepositoryImpl(dao, firebase, getPrayerTimesUseCase, bookmarks)
     val quranRepository: QuranRepository = QuranRepositoryImpl(dao, bookmarks)
-    val officialQuizRepository: OfficialQuizRepository = OfficialQuizRepositoryImpl(firebase, { getCurrentUserUseCase().first() })
+    private val officialAttemptStore = OfficialAttemptStore()
+    val achievementProgress = LocalAchievementProgress(dao, officialAttemptStore)
+    val officialQuizRepository: OfficialQuizRepository = OfficialQuizRepositoryImpl(firebase, { getCurrentUserUseCase().first() }, officialAttemptStore)
     val quizRepository: QuizRepository = QuizRepositoryImpl(firebase, officialQuizRepository)
     val updateRepository: UpdateRepository = UpdateRepositoryImpl(UpdateRemoteDataSource())
     val addExtraTaskUseCase = AddExtraTaskUseCase(dailyRepository)
@@ -84,7 +86,7 @@ class SharedServices(
     val resetAppUseCase = ResetAppUseCase(userRepository, firstLaunch)
     val saveQuranProgressUseCase = SaveQuranProgressUseCase(quranRepository)
     val submitCompetitionScoreUseCase = SubmitCompetitionScoreUseCase(quizRepository)
-    val toggleActivityStatusUseCase = ToggleActivityStatusUseCase(dailyRepository, userRepository)
+    val toggleActivityStatusUseCase = ToggleActivityStatusUseCase(dailyRepository)
     val toggleNotificationsUseCase = ToggleNotificationsUseCase(userRepository)
     val updateProfileImageUseCase = UpdateProfileImageUseCase(userRepository)
     val updateUserNameUseCase = UpdateUserNameUseCase(userRepository)
