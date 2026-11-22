@@ -1,134 +1,54 @@
 package com.menna.nabatan_7asena.data.repository
 
-import com.menna.nabatan_7asena.platform.Log
-import com.menna.nabatan_7asena.platform.PlatformPreferences
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.menna.nabatan_7asena.core.util.PrayerTimeline
+import com.menna.nabatan_7asena.data.PrayerApiResponse
 import com.menna.nabatan_7asena.data.PrayerTimesApi
 import com.menna.nabatan_7asena.data.toEntity
 import com.menna.nabatan_7asena.domain.PrayerTimesRepository
+import com.menna.nabatan_7asena.domain.entity.PrayerCalculationMethod
+import com.menna.nabatan_7asena.domain.entity.PrayerRequest
 import com.menna.nabatan_7asena.domain.entity.PrayerTimes
+import com.menna.nabatan_7asena.platform.PlatformPreferences
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
-/**
- * بيجيب مواقيت الصلاة من النت مرة واحدة بس لكل (يوم + مدينة)،
- * وبعد كده بيرجّع نفس النتيجة من الكاش المحلي طول اليوم من غير أي Request جديد.
- *
- * لو يوم جديد بدأ والنت مقطوع وقت المحاولة، بدل ما نرجّع فشل (وتختفي الصلوات
- * من الهوم بالكامل)، بنرجع آخر مواقيت اتحفظت لنفس المدينة والدولة حتى لو
- * كانت بتاعة يوم سابق — الفرق في المواقيت بين يوم وتاني عادة دقايق قليلة بس،
- * فده أفضل بكتير من إننا منعرضش حاجة خالص.
- */
-class PrayerTimesRepositoryImpl constructor(
-    private val api: PrayerTimesApi
-) : PrayerTimesRepository {
-
-    private val prefs = PlatformPreferences(PREFS_NAME)
+class PrayerTimesRepositoryImpl(private val api: PrayerTimesApi) : PrayerTimesRepository {
+    private val prefs = PlatformPreferences("prayer_times_cache")
     private val json = Json { ignoreUnknownKeys = true }
+    private val cacheMutex = Mutex()
 
-    private val exactCacheMutex = Mutex()
+    override suspend fun getPrayerTimes(city: String, country: String, date: String): PrayerTimes =
+        getExactPrayerTimes(city, country, date)
 
-    /** Date-specific cache; a failed forecast must never reuse another day's timings. */
-    override suspend fun getExactPrayerTimes(city: String, country: String, date: String): PrayerTimes {
-        val signature = "$date|$city|$country"
-        readExactCache(signature)?.let { return it }
-        exactCacheMutex.withLock { readCountdownCache()[signature] }?.let { return it }
-        val fresh = api.getPrayerTimesByCity(city = city, country = country, date = date).toEntity()
-        exactCacheMutex.withLock {
-            val entries = readCountdownCache().toMutableMap().apply { put(signature, fresh) }.entries.toList().takeLast(4)
-            prefs.putString(KEY_COUNTDOWN_CACHE, json.encodeToString(entries.associate { it.key to it.value }))
+    override suspend fun getExactPrayerTimes(city: String, country: String, date: String): PrayerTimes =
+        cached("$date|$city|$country|${PrayerCalculationMethod.forCountry(country).apiId}") {
+            api.getPrayerTimesByCity(date = date, city = city, country = country)
+        }
+
+    override suspend fun getPrayerTimes(request: PrayerRequest, date: String): PrayerTimes =
+        cached("$date|${request.signature}") { api.getPrayerTimes(request, date) }
+
+    /** Never substitute another date, coordinate, method or timezone after a network failure. */
+    private suspend fun cached(key: String, load: suspend () -> PrayerApiResponse): PrayerTimes {
+        cacheMutex.withLock { readCache()[key] }?.let { return it }
+        val response = load()
+        check(response.code == 200) { "Prayer service unavailable" }
+        val fresh = response.toEntity()
+        require(listOf(fresh.fajr, fresh.dhuhr, fresh.asr, fresh.maghrib, fresh.isha).all {
+            PrayerTimeline.parseMinutes(it) != null
+        }) { "Invalid prayer times" }
+        cacheMutex.withLock {
+            val entries = readCache().toMutableMap().apply { put(key, fresh) }.entries.toList().takeLast(12)
+            prefs.putString("countdown_exact_dates", json.encodeToString(entries.associate { it.key to it.value }))
         }
         return fresh
     }
 
-    private fun readCountdownCache(): Map<String, PrayerTimes> = try {
-        json.decodeFromString(prefs.getString(KEY_COUNTDOWN_CACHE, null) ?: "{}")
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        emptyMap()
-    }
-
-    override suspend fun getPrayerTimes(
-        city: String,
-        country: String,
-        date: String
-    ): PrayerTimes {
-        // بصمة الكاش الدقيقة: مرتبطة باليوم والمكان، لو أي منهم اتغير محتاجين نسخة جديدة
-        val cacheSignature = "$date|$city|$country"
-        // بصمة المكان بس، بنستخدمها للـ fallback لو النت وقع وقت يوم جديد
-        val locationKey = "$city|$country"
-
-        // 1) فيه كاش مطابق تمامًا لليوم والمكان؟ استخدمه على طول
-        readExactCache(cacheSignature)?.let { return it }
-
-        // 2) مفيش كاش صالح لليوم ده → نحاول نجيب نسخة جديدة من النت
-        return try {
-            val fresh = api.getPrayerTimesByCity(
-                city = city,
-                country = country,
-                date = date
-            ).toEntity()
-
-            saveToCache(cacheSignature, locationKey, fresh)
-            fresh
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("PrayerTimesRepo", "Failed to fetch fresh prayer times: ${e.message}")
-
-            // 3) مفيش نت؟ نرجع آخر نسخة معروفة لنفس المدينة/الدولة حتى لو قديمة شوية،
-            // أفضل بكتير من إننا نرجع فشل ونخلي الصلوات تختفي من الهوم
-            readStaleCacheForLocation(locationKey)?.also {
-                Log.w("PrayerTimesRepo", "No internet — falling back to last known prayer times for $locationKey")
-            } ?: throw e // مفيش أي كاش خالص من قبل (أول مرة أوفلاين) → نرمي الخطأ زي ما هو
-        }
-    }
-
-    private fun readExactCache(cacheSignature: String): PrayerTimes? {
-        val savedSignature = prefs.getString(KEY_CACHE_SIGNATURE, null)
-        val savedJson = prefs.getString(KEY_CACHE_DATA, null)
-
-        if (savedSignature != cacheSignature || savedJson == null) return null
-        return parseCache(savedJson)
-    }
-
-    private fun readStaleCacheForLocation(locationKey: String): PrayerTimes? {
-        val savedLocation = prefs.getString(KEY_CACHE_LOCATION, null)
-        val savedJson = prefs.getString(KEY_CACHE_DATA, null)
-
-        // مهم: منرجعش مواقيت مدينة تانية بالغلط — لازم المكان يتطابق حتى لو التاريخ مختلف
-        if (savedLocation != locationKey || savedJson == null) return null
-        return parseCache(savedJson)
-    }
-
-    private fun parseCache(json: String): PrayerTimes? {
-        return try {
-            this.json.decodeFromString<PrayerTimes>(json)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            // لو الكاش المحفوظ اتبعثر لأي سبب (تحديث للتطبيق غيّر شكل الكلاس مثلاً)
-            // نتجاهله ونكمل بدل ما نكسر التطبيق
-            Log.e("PrayerTimesCache", "Corrupted cache, ignoring: ${e.message}")
-            null
-        }
-    }
-
-    private fun saveToCache(cacheSignature: String, locationKey: String, data: PrayerTimes) {
-        prefs.putString(KEY_CACHE_SIGNATURE, cacheSignature)
-        prefs.putString(KEY_CACHE_LOCATION, locationKey)
-        prefs.putString(KEY_CACHE_DATA, json.encodeToString(data))
-    }
-
-    companion object {
-        private const val KEY_COUNTDOWN_CACHE = "countdown_exact_dates"
-        private const val PREFS_NAME = "prayer_times_cache"
-        private const val KEY_CACHE_SIGNATURE = "cache_signature"
-        private const val KEY_CACHE_LOCATION = "cache_location"
-        private const val KEY_CACHE_DATA = "cache_data"
-    }
+    private fun readCache(): Map<String, PrayerTimes> = try {
+        json.decodeFromString(prefs.getString("countdown_exact_dates", null) ?: "{}")
+    } catch (e: CancellationException) { throw e }
+    catch (_: Exception) { emptyMap() }
 }

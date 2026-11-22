@@ -20,6 +20,27 @@ class ExactPrayerTimesTest {
         }
     }
 
+    @Test fun missingLocationNeverRequestsAConvenientDefaultCity() = runTest {
+        assertNull(GetPrayerTimesUseCase(repository).at(null, "22-11-2026"))
+        assertTrue(requests.isEmpty())
+    }
+
+    @Test fun coordinateRequestRetainsItsMethodTimezoneAndDate() = runTest {
+        val request = com.menna.nabatan_7asena.domain.entity.PrayerRequest(
+            com.menna.nabatan_7asena.domain.entity.PrayerPlace("مكة", "SA", 21.4225, 39.8262, "Asia/Riyadh"),
+            com.menna.nabatan_7asena.domain.entity.PrayerCalculationMethod.UMM_AL_QURA)
+        val coordinateRepository = object : PrayerTimesRepository {
+            override suspend fun getPrayerTimes(requested: com.menna.nabatan_7asena.domain.entity.PrayerRequest, date: String): PrayerTimes {
+                assertEquals(request, requested)
+                assertEquals("22-11-2026", date)
+                return times
+            }
+            override suspend fun getPrayerTimes(city: String, country: String, date: String): PrayerTimes = error("Must use coordinates")
+            override suspend fun getExactPrayerTimes(city: String, country: String, date: String): PrayerTimes = error("Must use coordinates")
+        }
+        assertEquals(times, GetPrayerTimesUseCase(coordinateRepository).at(request, "22-11-2026"))
+    }
+
     @Test fun requestsTheExactDayAndLocationThroughTheExistingRepository() = runTest {
         assertEquals(times, GetPrayerTimesUseCase(repository).exact("Cairo", "Egypt", "22-11-2026"))
         assertEquals(listOf(listOf("Cairo", "Egypt", "22-11-2026")), requests)

@@ -25,6 +25,10 @@ fun HomeScreen(
     completedExternalTaskId: Int? = null,
     viewModel: HomeViewModel = platformHomeViewModel()
 ) {
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        viewModel.refreshPrayerLocation()
+        onPauseOrDispose { viewModel.stopPrayerLocationUpdates() }
+    }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val badges by platformBadgesViewModel().uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }

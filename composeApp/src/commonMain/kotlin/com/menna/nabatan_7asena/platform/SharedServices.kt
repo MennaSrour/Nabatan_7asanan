@@ -26,6 +26,21 @@ class SharedServices(
     val scheduling: SchedulingPlatform,
     val newScreenAudio: () -> ScreenAudioPlayer
 ) {
+    private val prayerSettingsScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+    init {
+        prayerSettingsScope.launch {
+            val initialRequest = PrayerSettingsStore.state.value.request
+            if (initialRequest == null) {
+                alarms.cancelPrayerAlarms(); alarms.cancelAzkarAlarms(); alarms.cancelQuranAlarms()
+            } else scheduling.scheduleImmediately()
+            PrayerSettingsStore.state.map { it.request }.distinctUntilChanged().drop(1).collect {
+                alarms.cancelPrayerAlarms()
+                alarms.cancelAzkarAlarms()
+                alarms.cancelQuranAlarms()
+                if (it != null) scheduling.scheduleImmediately()
+            }
+        }
+    }
     val firebase = FirebaseDataSource()
     val gardenRepository: GardenRepository = GardenRepositoryImpl(earnedStars = { id ->
         dao.getUserStats().first()?.takeIf { it.userId == id }?.totalStars

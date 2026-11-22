@@ -34,20 +34,20 @@ class DailyActivityRepositoryImpl constructor(
 
     private val dailyPlanCache = mutableMapOf<Int, DailyContent>()
 
-    override fun getDailyActivities(
-        date: String,
-        city: String,
-        country: String
-    ): Flow<List<Activity>> {
+    override fun getDailyActivities(date: String, city: String, country: String): Flow<List<Activity>> =
+        getDailyActivities(date, com.menna.nabatan_7asena.data.local.PrayerSettingsStore.state.value.request)
+
+    override fun getDailyActivities(date: String, request: com.menna.nabatan_7asena.domain.entity.PrayerRequest?): Flow<List<Activity>> {
         val recordsFlow = appDao.getRecordsForDate(date)
         val extraTasksFlow = appDao.getExtraTasksForDate(date)
 
         return combine(recordsFlow, extraTasksFlow) { records, extraTasks ->
             val statusMap = records.associate { it.itemId to it.isCompleted }
             val prayers = try {
-                getPrayerTimesUseCase(city, country, date)
+                getPrayerTimesUseCase.at(request, date)
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to fetch prayer times for city=$city, country=$country, date=$date", e)
+                Log.e(TAG, "Failed to fetch prayer times for date=$date", e)
                 null
             }
             val activities = mutableListOf<Activity>()

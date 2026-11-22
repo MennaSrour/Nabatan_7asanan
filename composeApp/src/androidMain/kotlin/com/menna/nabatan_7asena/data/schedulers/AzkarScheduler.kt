@@ -19,7 +19,7 @@ class AzkarScheduler @Inject constructor(
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    suspend fun scheduleFixedAzkar(fajrTimeStr: String) {
+    suspend fun scheduleFixedAzkar(fajrTimeStr: String, timeZoneId: String) {
         val stats = appDao.getUserStats().firstOrNull()
         if (stats?.azkarNotifications == false) return // المستخدم قافل التنبيه، منجدولش حاجة
 
@@ -36,10 +36,11 @@ class AzkarScheduler @Inject constructor(
         )
 
         slots.forEach { item ->
-            val cal = Calendar.getInstance().apply {
+            val cal = prayerCalendar(timeZoneId).apply {
                 set(Calendar.HOUR_OF_DAY, item.hour)
                 set(Calendar.MINUTE, item.minute)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
             if (cal.timeInMillis > now) {
                 scheduleOne(cal.timeInMillis, item.title, item.msg, item.id, item.soundRes)
@@ -48,10 +49,11 @@ class AzkarScheduler @Inject constructor(
 
         try {
             val parts = fajrTimeStr.trim().split(" ")[0].split(":")
-            val fajrCal = Calendar.getInstance().apply {
+            val fajrCal = prayerCalendar(timeZoneId).apply {
                 set(Calendar.HOUR_OF_DAY, parts[0].toInt())
                 set(Calendar.MINUTE, parts[1].toInt())
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
                 add(Calendar.MINUTE, 60)
             }
             if (fajrCal.timeInMillis > now) {
@@ -80,7 +82,7 @@ class AzkarScheduler @Inject constructor(
             context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         try {
-            alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
+            alarmManager?.scheduleReminder(time, pendingIntent)
         } catch (e: Exception) {
             e.printStackTrace()
         }
