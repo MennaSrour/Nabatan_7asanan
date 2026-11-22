@@ -30,6 +30,14 @@ service cloud.firestore {
       allow create, update: if owns(uid) && validProfile(request.resource.data);
     }
 
+    match /users/{uid}/quran_journeys/{profileId} {
+      allow get, delete: if owns(uid);
+      allow create, update: if owns(uid)
+        && request.resource.data.keys().hasOnly(['completedKhatmahs', 'memorizedSurahs'])
+        && bounded(request.resource.data.completedKhatmahs, 1000000)
+        && bounded(request.resource.data.memorizedSurahs, 114);
+    }
+
     function validGardenShop(data) {
       let owned = data.get('ownedItems', []);
       let equipped = data.get('equippedItems', []);
@@ -37,13 +45,20 @@ service cloud.firestore {
         && owned is list && equipped is list
         && owned.size() == owned.toSet().size()
         && equipped.size() == equipped.toSet().size()
-        && owned.hasOnly(['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles'])
+        && owned.hasOnly(['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles', 'bench', 'fountain'])
         && owned.hasAll(equipped);
     }
 
     function validGarden(data) {
       return data.keys().hasOnly(['xp', 'waterDrops', 'rewardDate', 'rewardedTaskIds',
-        'lastWateredDate', 'revision', 'syncedRevision', 'spentStars', 'ownedItems', 'equippedItems'])
+        'lastWateredDate', 'revision', 'syncedRevision', 'spentStars', 'ownedItems', 'equippedItems',
+        'worldFormat', 'trees', 'quantities', 'placements', 'expansions'])
+        && bounded(data.get('worldFormat', 0), 1)
+        && bounded(data.get('expansions', 0), 4)
+        && data.get('trees', []) is list && data.get('trees', []).size() <= 100000
+        && data.get('quantities', {}) is map && data.get('quantities', {}).keys().hasOnly(
+          ['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles', 'bench', 'fountain'])
+        && data.get('placements', []) is list && data.get('placements', []).size() <= 48
         && validGardenShop(data)
         && bounded(data.get('xp', 0), 1000000)
         && bounded(data.get('waterDrops', 0), 1000000)

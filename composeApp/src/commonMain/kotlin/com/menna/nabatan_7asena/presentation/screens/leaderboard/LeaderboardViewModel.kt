@@ -23,9 +23,13 @@ open class LeaderboardViewModel(
     val uiState: StateFlow<LeaderboardUiState> = combine(
         getLeaderboardUseCase(), getCurrentUserUseCase()
     ) { leaderboard, user -> leaderboard to user }.transformLatest { (leaderboard, user) ->
-        val currentUser = user.takeUnless { it.id.isBlank() || it.id == "local" }
+        val entries = (leaderboard as? Resource.Success)?.data.orEmpty().distinctBy { it.userId }
+        val currentUser = user.takeUnless { it.id.isBlank() || it.id == "local" }?.let { profile ->
+            val syncedCount = entries.firstOrNull { it.userId == profile.id }?.completedKhatmahs ?: 0
+            profile.copy(completedKhatmahs = maxOf(profile.completedKhatmahs, syncedCount))
+        }
         val state = LeaderboardUiState(
-            list = (leaderboard as? Resource.Success)?.data.orEmpty().distinctBy { it.userId },
+            list = entries,
             currentUserId = user.id, currentUser = currentUser,
             isLoading = leaderboard is Resource.Loading, isRankLoading = currentUser != null
         )

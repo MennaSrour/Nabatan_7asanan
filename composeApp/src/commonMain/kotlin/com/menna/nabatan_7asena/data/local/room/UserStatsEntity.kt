@@ -2,6 +2,8 @@ package com.menna.nabatan_7asena.data.local.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.menna.nabatan_7asena.platform.AppClock
+import kotlinx.datetime.LocalDate
 
 @Entity(tableName = "user_stats")
 data class UserStatsEntity(
@@ -22,3 +24,22 @@ data class UserStatsEntity(
     val azkarNotifications: Boolean = true,
     val quranNotifications: Boolean = true,
 )
+internal fun UserStatsEntity.withBonus(stars: Int): UserStatsEntity {
+    val newStars = (totalStars + stars).coerceAtLeast(0)
+    return copy(totalStars = newStars, treeStage = when {
+        newStars < 50 -> 1
+        newStars < 200 -> 2
+        else -> 3
+    })
+}
+
+internal fun UserStatsEntity.withDailyActivity(completed: Boolean, date: LocalDate, yesterday: LocalDate): UserStatsEntity {
+    val scored = withBonus(if (completed) 10 else -10)
+    if (!completed) return scored
+    if (lastActiveDate == date.toString() || lastActiveDate == AppClock.dateString(date)) return scored.copy(tasksCompletedTotal = tasksCompletedTotal + 1)
+    return scored.copy(
+        tasksCompletedTotal = tasksCompletedTotal + 1,
+        currentStreak = if (lastActiveDate == yesterday.toString() || lastActiveDate == AppClock.dateString(yesterday)) currentStreak + 1 else 1,
+        lastActiveDate = date.toString()
+    )
+}

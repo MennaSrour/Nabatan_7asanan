@@ -85,6 +85,20 @@ class FirebaseDataSource constructor(
         return higherScores + 1
     }
 
+    private suspend fun quranSummaryDocument(profileId: String) =
+        firestore.collection("users").document(ownerUid()).collection("quran_journeys").document(profileId)
+
+    suspend fun backupQuranSummary(profileId: String, completedKhatmahs: Int, memorizedSurahs: Int) {
+        quranSummaryDocument(profileId).set(mapOf(
+            "completedKhatmahs" to completedKhatmahs,
+            "memorizedSurahs" to memorizedSurahs
+        ))
+    }
+
+    suspend fun deleteQuranSummary(profileId: String) {
+        quranSummaryDocument(profileId).delete()
+    }
+
     suspend fun getFuturePlans(startDayId: Int, limit: Int = 7): List<DailyPlanDto> {
         try {
             val plans = mutableListOf<DailyPlanDto>()

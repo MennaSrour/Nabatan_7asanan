@@ -12,6 +12,7 @@ data class User(
     val prayerNotifications: Boolean = true,
     val azkarNotifications: Boolean = true,
     val quranNotifications: Boolean = true,
+    val completedKhatmahs: Int = 0,
 ) {
     enum class Gender { BOY, GIRL }
 }

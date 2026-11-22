@@ -1,5 +1,6 @@
 package com.menna.nabatan_7asena.presentation.screens.home
 
+import com.menna.nabatan_7asena.data.repository.QuranJourneyRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menna.nabatan_7asena.core.audio.AudioPlayerManager
@@ -52,6 +53,7 @@ open class HomeViewModel constructor(
     private val quranRepository: QuranRepository,
     private val getPrayerTimesUseCase: com.menna.nabatan_7asena.domain.GetPrayerTimesUseCase,
     private val gardenRepository: com.menna.nabatan_7asena.domain.repository.GardenRepository,
+    private val quranJourney: QuranJourneyRepository,
     private val dailyActivityRepository: com.menna.nabatan_7asena.domain.repository.DailyActivityRepository,
     internal val ramadanCalendar: com.menna.nabatan_7asena.data.repository.RamadanCalendarRepository
 ) : ViewModel(), HomeActions {
@@ -113,7 +115,7 @@ open class HomeViewModel constructor(
 
     override fun onTaskClicked(item: HomeUiState.UiTaskItem) {
         when (item.category) {
-            TaskCategory.QURAN -> _uiMessage.trySend(HomeEffect.NavigateToQuran)
+            TaskCategory.QURAN -> _uiMessage.trySend(HomeEffect.NavigateToQuran(item.wird?.firstPage))
             TaskCategory.AZKAR -> _uiMessage.trySend(HomeEffect.NavigateToSebha)
             else -> onTaskChecked(item)
         }
@@ -177,7 +179,8 @@ open class HomeViewModel constructor(
             .flatMapLatest { (user, dailyContent, flowPair) ->
             val (activitiesFlow, currentPlayingId) = flowPair
 
-            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker, gardenRepository.observe(user.id)) { activitiesAndBounds, tempStatusMap, _, observedGarden ->
+            combine(activitiesFlow, tempCompletedTaskIds, minuteTicker, gardenRepository.observe(user.id),
+                quranJourney.observe(user.id)) { activitiesAndBounds, tempStatusMap, _, observedGarden, journey ->
                 val (domainActivities, bounds) = activitiesAndBounds
                 val gardenResult = creditGarden(user.id, date, domainActivities, observedGarden)
                 val garden = (gardenResult as? Resource.Success)?.data
@@ -189,7 +192,15 @@ open class HomeViewModel constructor(
                     val tempStatus = tempStatusMap[uiModel.id]
                     val isDone = tempStatus ?: uiModel.isCompleted
 
-                    uiModel.copy(
+                    val wird = if (uiModel.category == TaskCategory.QURAN) journey.wirdFor(date) else null
+                    if (wird != null) {
+                        uiModel.copy(
+                            title = "ورد الختمة اليوم",
+                            subtitle = "صفحة ${wird.firstPage} – ${wird.lastPage}",
+                            isCompleted = journey.lastWirdDate == date,
+                            wird = wird
+                        )
+                    } else uiModel.copy(
                         isCompleted = isDone,
                         isPlaying = uiModel.id == currentPlayingId
                     )
@@ -214,6 +225,7 @@ open class HomeViewModel constructor(
                     user = user.toUiUser(),
                     dailyWisdom = dailyContent?.wisdom ?: "نور اليوم: المؤمن للمؤمن كالبنيان يشد بعضه بعضاً",
                     tasks = uiTasks,
+                    showKhatmahCelebration = journey.celebrationPending,
                     gardenProfileId = user.id,
                     gardenEarnedStars = user.totalStars,
                     garden = garden,
@@ -276,6 +288,7 @@ open class HomeViewModel constructor(
                         user = state.user,
                         dailyWisdom = state.dailyWisdom,
                         tasks = state.tasks,
+                        showKhatmahCelebration = state.showKhatmahCelebration,
                         gardenProfileId = state.gardenProfileId,
                         gardenEarnedStars = state.gardenEarnedStars,
                         isGardenShopBusy = currentState.gardenProfileId == state.gardenProfileId && currentState.isGardenShopBusy,
@@ -391,13 +404,16 @@ open class HomeViewModel constructor(
 
     fun markTaskCompletedExternally(taskId: Int) {
         viewModelScope.launch {
-            val alreadyDone = _uiState.value.tasks.firstOrNull { it.id == taskId }?.isCompleted == true
-            if (alreadyDone) return@launch
+            val task = _uiState.value.tasks.firstOrNull { it.id == taskId }
+            if (task?.isCompleted == true) return@launch
+            if (task?.wird != null) {
+                completeKhatmahTask(task)
+                return@launch
+            }
 
             tempCompletedTaskIds.update { it + (taskId to true) }
             val res = toggleActivityStatusUseCase(currentDate(), taskId, true)
             if (res is Resource.Success) {
-                val task = _uiState.value.tasks.firstOrNull { it.id == taskId }
                 if (task?.category == TaskCategory.QURAN) {
                     incrementQuranPartUseCase()
                 }
@@ -407,6 +423,10 @@ open class HomeViewModel constructor(
     }
 
     override fun onTaskChecked(item: HomeUiState.UiTaskItem) {
+        if (item.wird != null) {
+            if (!item.isCompleted) completeKhatmahTask(item)
+            return
+        }
         viewModelScope.launch {
             if (item.category == TaskCategory.PRAYER) {
                 val prayerTime = item.subtitle
@@ -430,6 +450,35 @@ open class HomeViewModel constructor(
                     }
                 }
                 tempCompletedTaskIds.update { it - item.id }
+            }
+        }
+    }
+
+    private fun completeKhatmahTask(item: HomeUiState.UiTaskItem) {
+        val wird = item.wird ?: return
+        val date = _uiState.value.prayerDate ?: return
+        val id = _uiState.value.gardenProfileId
+        viewModelScope.launch {
+            try {
+                quranJourney.complete(id, date, wird)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                sendMessage("تعذّر حفظ ورد اليوم. حاوِل مرة أخرى.")
+            }
+        }
+    }
+
+    fun dismissKhatmahCelebration(startNew: Boolean) {
+        val id = _uiState.value.gardenProfileId
+        viewModelScope.launch {
+            try {
+                quranJourney.dismissCelebration(id)
+                if (startNew) _uiMessage.send(HomeEffect.NavigateToKhatmah)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                sendMessage("تعذّر حفظ التغيير. حاوِل مرة أخرى.")
             }
         }
     }

@@ -81,5 +81,6 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.room.runtime)
+    androidTestImplementation(libs.datetime)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

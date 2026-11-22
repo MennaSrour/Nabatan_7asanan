@@ -28,6 +28,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import com.menna.nabatan_7asena.data.local.QuranLibraryStore
+import com.menna.nabatan_7asena.data.repository.QuranJourneyRepository
+import com.menna.nabatan_7asena.domain.entity.*
+import com.menna.nabatan_7asena.platform.AppClock
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.LocalDate
 
 open class QuranViewModel constructor(
     private val saveUseCase: SaveQuranProgressUseCase,
@@ -36,7 +43,8 @@ open class QuranViewModel constructor(
     private val audioPlayer: QuranAudioPlayer,
     private val downloadManager: QuranAudioDownloadManager,
     private val bookmarkStore: QuranBookmarkStore,
-    private val library: QuranLibraryStore
+    private val library: QuranLibraryStore,
+    private val journeyRepository: QuranJourneyRepository
 ) : ViewModel(), QuranActions {
 
     private val lastSavedPage = getUseCase.getLastPage()
@@ -76,14 +84,71 @@ open class QuranViewModel constructor(
     private val pages = MutableStateFlow<Map<Int, List<AyahModel>>>(emptyMap())
     private val readerReady = MutableStateFlow(false)
     private val editingPlaylist = MutableStateFlow<String?>(null)
-    val uiState = combine(baseUiState, library.state, pages, readerReady, editingPlaylist) { ui, saved, content, ready, editing ->
+    private val _requestedWirdPage = MutableStateFlow<Int?>(null)
+    val requestedWirdPage = _requestedWirdPage.asStateFlow()
+    private val temporaryMushafMode = MutableStateFlow(false)
+    private val selectedMode = combine(library.state, temporaryMushafMode) { saved, useMushaf ->
+        saved.copy(viewMode = if (useMushaf) "MUSHAF" else saved.viewMode)
+    }
+    private val day = flow {
+        while (true) {
+            emit(AppClock.today())
+            delay(60_000L - AppClock.nowMillis() % 60_000L)
+        }
+    }.distinctUntilChanged()
+    val journey = combine(journeyRepository.activeProfile, day) { profile, date ->
+        profile?.let { QuranJourneyUiState(it.first, it.second, date) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val uiState = combine(baseUiState, selectedMode, pages, readerReady, editingPlaylist) { ui, saved, content, ready, editing ->
         ui.copy(viewMode = QuranViewMode.entries.firstOrNull { it.name == saved.viewMode } ?: QuranViewMode.CARDS,
             playlists = saved.playlists, mushafPages = content, isReaderReady = ready, editingPlaylistId = editing)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), QuranUiState())
 
     override fun toggleViewMode() = saveLibrary {
-        library.setMode(if (library.state.value.viewMode == "MUSHAF") "CARDS" else "MUSHAF")
+        val useCards = temporaryMushafMode.value || library.state.value.viewMode == "MUSHAF"
+        library.setMode(if (useCards) "CARDS" else "MUSHAF")
+        temporaryMushafMode.value = false
+        _requestedWirdPage.value = null
     }
+    fun openWirdPage(page: Int) {
+        require(page in 1..MUSHAF_PAGE_COUNT)
+        navigationRequest?.cancel()
+        temporaryMushafMode.value = true
+        _requestedWirdPage.value = page
+    }
+
+    fun readerPage(): Int = _position.value.page
+
+    fun onWirdPageOpened(page: Int) {
+        onMushafPageChanged(page)
+        _requestedWirdPage.compareAndSet(page, null)
+    }
+
+    fun startKhatmah(goal: WirdGoal) = updateJourney { journeyRepository.start(it.profileId, goal) }
+
+    fun completeWird(date: LocalDate, wird: Wird) = updateJourney {
+        journeyRepository.complete(it.profileId, date, wird)
+    }
+
+    fun dismissKhatmahCelebration() = updateJourney { journeyRepository.dismissCelebration(it.profileId) }
+
+    fun updateMemorization(surahId: Int, status: MemorizationStatus, ayahs: Int, total: Int) =
+        updateJourney { journeyRepository.updateSurah(it.profileId, surahId, status, ayahs, total) }
+
+    private fun updateJourney(change: suspend (QuranJourneyUiState) -> Unit) {
+        val current = journey.value ?: return
+        viewModelScope.launch {
+            try {
+                change(current)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effects.send(QuranEffect.JourneySaveFailed)
+            }
+        }
+    }
+
     override fun selectSurah(surahId: Int) = navigateToAyah(surahId, 1)
     override fun createPlaylist(name: String) = saveLibrary { editingPlaylist.value = library.create(name) }
     override fun renamePlaylist(id: String, name: String) = saveLibrary { library.rename(id, name) }
