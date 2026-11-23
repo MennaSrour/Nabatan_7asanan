@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.menna.nabatan_7asena.domain.entity.WheelPrize
 import com.menna.nabatan_7asena.ui.theme.KidsFontFamily
 import kotlin.math.PI
-import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -49,6 +50,7 @@ private data class SeedParticle(val angle: Float, val distance: Float, val size:
 internal fun BotanicalWheel(
     rotation: Float,
     celebration: Float,
+    winner: WheelPrize?,
     spinning: Boolean,
     enabled: Boolean,
     onSpin: () -> Unit
@@ -92,13 +94,24 @@ internal fun BotanicalWheel(
             drawCircle(Pollen, radius * 1.025f, style = Stroke(2.dp.toPx()))
 
             val active = (-rotation / wheelSlice).roundToInt()
-            val tick = (1f - abs(rotation / wheelSlice + active) * 2f).coerceIn(0f, 1f)
+            val segment = rotation / wheelSlice + .5f
+            val tickPhase = segment - floor(segment)
+            val bounce = (1f - tickPhase / .36f).coerceIn(0f, 1f)
+            val pulse = (1f - celebration) * .28f
             labels.forEachIndexed { index, label ->
                 val angle = -90f + index * wheelSlice + rotation
                 val isUnderPointer = ((active % labels.size) + labels.size) % labels.size == index
                 drawArc(WedgeColors[index], angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2))
-                if (isUnderPointer) {
-                    drawArc(Cream.copy(alpha = if (spinning) .15f + .28f * tick else .2f),
+                if (WheelPrize.segments[index] == winner) {
+                    drawArc(
+                        Brush.radialGradient(listOf(Cream.copy(alpha = .34f), Pollen.copy(alpha = .74f + pulse * .5f)),
+                            center, radius),
+                        angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2)
+                    )
+                    drawArc(Cream, angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2),
+                        style = Stroke(2.5.dp.toPx()))
+                } else if (spinning && isUnderPointer) {
+                    drawArc(Cream.copy(alpha = .13f + .12f * bounce),
                         angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2))
                 }
                 val anchor = center + direction(angle) * (radius * .69f)
@@ -125,9 +138,12 @@ internal fun BotanicalWheel(
                 Brush.radialGradient(listOf(Cream, Pollen.copy(alpha = .65f), Color.Transparent), center, radius * .44f),
                 radius * .44f
             )
-            val pointer = center + Offset(0f, -radius * (1.24f - if (spinning) tick * .036f else 0f))
-            drawLeaf(pointer, 90f, radius * .34f, Pollen, Emerald)
-            drawCircle(Cream, radius * .022f, pointer + Offset(0f, radius * .09f))
+            val tickLift = if (spinning) bounce * bounce else 0f
+            val pointer = center + Offset(0f, -radius * (1.24f + tickLift * .024f))
+            rotate(-10f * tickLift, pointer) {
+                drawLeaf(pointer, 90f, radius * .34f, Pollen, Emerald)
+                drawCircle(Cream, radius * .022f, pointer + Offset(0f, radius * .09f))
+            }
 
             if (celebration < 1f) {
                 val fade = (1f - celebration)
@@ -140,9 +156,14 @@ internal fun BotanicalWheel(
                     } else {
                         val dot = if (index % 3 == 1) Pollen else Petal
                         val flare = scale * .048f
-                        drawLine(dot.copy(alpha = fade), point - Offset(flare, 0f), point + Offset(flare, 0f), 1.8.dp.toPx())
-                        drawLine(dot.copy(alpha = fade), point - Offset(0f, flare), point + Offset(0f, flare), 1.8.dp.toPx())
-                        drawCircle(Cream.copy(alpha = fade), scale * .013f, point)
+                        drawPath(Path().apply {
+                            repeat(10) { spike ->
+                                val tip = point + direction(spike * 36f + celebration * 120f) *
+                                    (flare * if (spike % 2 == 0) 1.4f else .57f)
+                                if (spike == 0) moveTo(tip.x, tip.y) else lineTo(tip.x, tip.y)
+                            }
+                            close()
+                        }, dot.copy(alpha = fade))
                     }
                 }
             }

@@ -161,7 +161,7 @@ class LegacyDatabaseCompatibilityTest {
                 "saved", "2026-11-21", "wheel", "MEMORY", 0,
                 synced = false, settled = false, claimId = "daily-gift"
             )
-            val memory = reservation.copy(kind = "MEMORY", stars = 10, settled = true)
+            val memory = reservation.copy(kind = "MEMORY", synced = true, claimId = "")
             dao.insertUserStats(UserStatsEntity(userId = "saved"))
             dao.insertExtraTask(ExtraTaskEntity(501, taskDate, "مهمة إضافية"))
             for (id in listOf(100, 101, 102, 103, 104, 300, 400)) {
@@ -178,9 +178,14 @@ class LegacyDatabaseCompatibilityTest {
             dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, false))
             assertFalse(dao.claimDailyGiftGame(memory, taskDate))
             dao.updateOrInsertRecord(DailyRecordEntity(taskDate, 501, true))
+            assertEquals(0, dao.finishDailyGiftGame("saved", memory.day, "MEMORY", 10))
             assertTrue(dao.claimDailyGiftGame(memory, taskDate))
             assertFalse(dao.claimDailyGiftGame(memory, taskDate))
+            assertEquals(0, dao.getUserStats().first()?.totalStars)
+            assertEquals(10, dao.finishDailyGiftGame("saved", memory.day, "MEMORY", 10))
+            assertEquals(10, dao.finishDailyGiftGame("saved", memory.day, "MEMORY", 5))
             assertEquals(10, dao.getUserStats().first()?.totalStars)
+            assertFalse(dao.claimDailyGiftGame(memory, taskDate))
         } finally {
             database.close()
         }

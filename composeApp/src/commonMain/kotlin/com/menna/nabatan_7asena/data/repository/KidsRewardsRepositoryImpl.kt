@@ -17,6 +17,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDate
 import com.menna.nabatan_7asena.platform.AppClock
+import com.menna.nabatan_7asena.data.remote.dto.SpeedQuestionDto
+import com.menna.nabatan_7asena.data.remote.dto.VerseBuilderDto
+import com.menna.nabatan_7asena.platform.PlatformPreferences
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -35,7 +41,7 @@ class KidsRewardsRepositoryImpl(
             val wheel = today.firstOrNull { it.kind == WHEEL }
             DailyRewardStatus(
                 prize = wheel?.takeIf { it.settled }?.let { decodePrize(it.prize) },
-                rewardedGames = KidsGame.entries.filter { game -> today.any { it.kind == game.name } }.toSet(),
+                usedRounds = KidsGame.entries.filter { game -> today.any { it.kind == game.name } }.toSet(),
                 earnedHere = wheel?.earnedHere == true,
                 waterDelivered = (progress as? Resource.Success)?.data?.wheelRewardDays?.contains(wheel?.day) == true,
                 spinPending = wheel?.settled == false,
@@ -76,12 +82,16 @@ class KidsRewardsRepositoryImpl(
         }
     }
 
+    override suspend fun startRound(profileId: String, day: LocalDate, game: KidsGame): Boolean {
+        if (day != AppClock.today()) return false
+        val round = DailyRewardEntity(profileId, day.toString(), game.name, "", 0, synced = true, settled = false)
+        return dao.claimDailyGiftGame(round, AppClock.dateString(day))
+    }
+
     override suspend fun rewardGame(profileId: String, day: LocalDate, game: KidsGame, stars: Int): Int {
         val payout = stars.coerceIn(0, MAX_GAME_STARS)
-        if (payout == 0) return 0
         if (day != AppClock.today()) return 0
-        val record = DailyRewardEntity(profileId, day.toString(), game.name, "", payout, synced = true)
-        return if (dao.claimDailyGiftGame(record, AppClock.dateString(day))) payout else 0
+        return dao.finishDailyGiftGame(profileId, day.toString(), game.name, payout)
     }
 
     override suspend fun sync(profileId: String, day: LocalDate) = syncLock.withLock {
@@ -123,40 +133,80 @@ class KidsRewardsRepositoryImpl(
         if (profileId == LOCAL) null else fetch { remote.getWheelClaim(profileId, day.toString()) }
             ?.let { decodePrize(it.prize) }
 
-    override suspend fun verses(): List<VerseBuilderItem> {
-        val items = fetch { remote.getVerseBuilderItems() }.orEmpty().mapNotNull { item ->
-            val words = item.words.map(String::trim)
-            if (item.reference.isNotBlank() && words.size in 3..12 &&
-                words.none(String::isBlank) && words.distinct().size > 1) {
-                VerseBuilderItem(item.reference, words)
-            } else null
-        }
-        val remoteItems = items.distinctBy { it.words }
-        if (remoteItems.isEmpty()) return localVerses
-        return (remoteItems + localVerses.shuffled()).distinctBy { it.words }.take(maxOf(5, remoteItems.size))
+    private val questionCache by lazy { PlatformPreferences("kids_game_content") }
+    private val contentJson = Json { ignoreUnknownKeys = true }
+
+    override suspend fun verses(): List<VerseBuilderItem> = loadContent(
+        key = "verse",
+        serializer = VerseBuilderDto.serializer(),
+        remoteItems = remote::getGameVerses,
+        legacyItems = remote::getVerseBuilderItems,
+        fallback = localVerses,
+        identity = { it.words }
+    ) { item ->
+        val words = item.words.map(String::trim)
+        if (item.reference.isNotBlank() && words.size in 3..12 &&
+            words.none(String::isBlank) && words.distinct().size > 1) {
+            VerseBuilderItem(item.reference.trim(), words)
+        } else null
     }
 
-    override suspend fun questions(): List<SpeedQuestion> {
-        val questions = fetch { remote.getSpeedChallengeQuestions() }.orEmpty().mapNotNull { item ->
+    override suspend fun questions(game: KidsGame): List<SpeedQuestion> {
+        require(game == KidsGame.TRIVIA || game == KidsGame.RIDDLE)
+        val key = game.name.lowercase()
+        return loadContent(
+            key = key,
+            serializer = SpeedQuestionDto.serializer(),
+            remoteItems = { remote.getGameQuestions(key) },
+            legacyItems = if (game == KidsGame.TRIVIA) remote::getSpeedChallengeQuestions else null,
+            fallback = if (game == KidsGame.RIDDLE) localRiddles else localQuestions,
+            identity = { it.prompt }
+        ) { item ->
             val choices = item.choices.map(String::trim)
-            if (item.question.isNotBlank() && choices.size in 3..4 && choices.size == choices.distinct().size &&
+            val question = item.question.trim()
+            if (question.isNotEmpty() && choices.size in 2..4 && choices.size == choices.distinct().size &&
                 choices.none(String::isBlank) && item.correctIndex in choices.indices) {
-                SpeedQuestion(item.question, choices, item.correctIndex)
+                SpeedQuestion(question, choices, item.correctIndex)
             } else null
         }
-        val remoteQuestions = questions.distinctBy { it.prompt }
-        if (remoteQuestions.isEmpty()) return localQuestions
-        return (remoteQuestions + localQuestions.shuffled()).distinctBy { it.prompt }.take(maxOf(15, remoteQuestions.size))
     }
 
-    private suspend fun <T> fetch(block: suspend () -> T): T? = withTimeoutOrNull(3_000) {
-        try {
-            block()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
+    private suspend fun <Dto, Item, Key> loadContent(
+        key: String,
+        serializer: KSerializer<Dto>,
+        remoteItems: suspend () -> List<Dto>,
+        legacyItems: (suspend () -> List<Dto>)?,
+        fallback: List<Item>,
+        identity: (Item) -> Key,
+        decode: (Dto) -> Item?
+    ): List<Item> {
+        val listSerializer = ListSerializer(serializer)
+        val cached = runCatching {
+            questionCache.getString(key)?.let { contentJson.decodeFromString(listSerializer, it) }
+                .orEmpty().mapNotNull(decode)
+        }.getOrDefault(emptyList())
+        val fresh = fetch {
+            val items = safelyFetch(remoteItems).orEmpty().filter { decode(it) != null }
+            if (items.isNotEmpty() || cached.isNotEmpty()) items
+            else legacyItems?.invoke().orEmpty().filter { decode(it) != null }
+        }.orEmpty()
+        if (fresh.isNotEmpty()) {
+            runCatching { questionCache.putString(key, contentJson.encodeToString(listSerializer, fresh)) }
         }
+        val available = if (fresh.isNotEmpty()) fresh.mapNotNull(decode) else cached
+        val unique = available.distinctBy(identity)
+        return (unique + fallback.shuffled()).distinctBy(identity).take(maxOf(fallback.size, unique.size))
+    }
+
+    private suspend fun <T> fetch(block: suspend () -> T): T? =
+        withTimeoutOrNull(3_000) { safelyFetch(block) }
+
+    private suspend fun <T> safelyFetch(block: suspend () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private fun decodePrize(code: String) = WheelPrize.fromStoredCode(code)

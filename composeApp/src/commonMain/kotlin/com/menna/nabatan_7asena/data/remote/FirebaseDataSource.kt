@@ -65,6 +65,14 @@ class FirebaseDataSource constructor(
         firestore.collection("speed_challenge_questions").limit(100).get().documents
             .mapNotNull { runCatching { it.data<SpeedQuestionDto>() }.getOrNull() }
 
+    internal suspend fun getGameQuestions(game: String): List<SpeedQuestionDto> =
+        firestore.collection("game_questions").document(game).collection("items")
+            .get(Source.SERVER).documents.mapNotNull { runCatching { it.data<SpeedQuestionDto>() }.getOrNull() }
+
+    internal suspend fun getGameVerses(): List<VerseBuilderDto> =
+        firestore.collection("game_questions").document("verse").collection("items")
+            .get(Source.SERVER).documents.mapNotNull { runCatching { it.data<VerseBuilderDto>() }.getOrNull() }
+
     private suspend fun wheelClaim(profileId: String, day: String) =
         firestore.collection("users").document(ownerUid()).collection("daily_reward_profiles")
             .document(profileId).collection("spins").document(day)

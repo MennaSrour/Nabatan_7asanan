@@ -64,6 +64,7 @@ internal fun RewardsPage(
     title: String,
     onBack: () -> Unit,
     scroll: Boolean = true,
+    showBack: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -76,7 +77,7 @@ internal fun RewardsPage(
                 Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) {
+                if (showBack) IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = RewardInk)
                 }
                 RewardText(title, size = 27, bold = true)

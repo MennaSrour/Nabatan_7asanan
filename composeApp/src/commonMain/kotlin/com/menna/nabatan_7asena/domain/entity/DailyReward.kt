@@ -9,14 +9,15 @@ enum class KidsGame(val title: String, val hint: String) {
     MEMORY("لعبة الذاكرة", "اعثر على كل زوج من البطاقات"),
     VERSE("رتّب الآية", "اضغط على كلمات الآية بالترتيب"),
     TRIVIA("تحدي السرعة", "أجب عن الأسئلة في ٦٠ ثانية"),
-    CATCH("التقاط الحسنات", "حرّك السلة والتقط النجوم")
+    CATCH("التقاط الحسنات", "حرّك السلة والتقط النجوم"),
+    RIDDLE("فزورة اليوم", "اختر الإجابة الصحيحة")
 }
 
 enum class WheelPrize(val label: String, val stars: Int = 0, val water: Int = 0, val game: KidsGame? = null) {
     MEMORY(KidsGame.MEMORY.title, game = KidsGame.MEMORY),
     WATER_3("٣ قطرات ماء", water = 3),
     VERSE(KidsGame.VERSE.title, game = KidsGame.VERSE),
-    RIDDLE("فزورة اليوم"),
+    RIDDLE(KidsGame.RIDDLE.title, game = KidsGame.RIDDLE),
     TRIVIA(KidsGame.TRIVIA.title, game = KidsGame.TRIVIA),
     STARS_20("٢٠ نجمة", stars = 20),
     CATCH(KidsGame.CATCH.title, game = KidsGame.CATCH),
@@ -34,7 +35,7 @@ enum class WheelPrize(val label: String, val stars: Int = 0, val water: Int = 0,
 
 data class DailyRewardStatus(
     val prize: WheelPrize? = null,
-    val rewardedGames: Set<KidsGame> = emptySet(),
+    val usedRounds: Set<KidsGame> = emptySet(),
     val earnedHere: Boolean = false,
     val waterDelivered: Boolean = false,
     val spinPending: Boolean = false,
