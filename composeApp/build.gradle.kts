@@ -48,17 +48,17 @@ kotlin {
             implementation(libs.ktor.json)
         }
         androidMain.dependencies {
-            implementation(project.dependencies.platform("com.google.firebase:firebase-bom:33.16.0"))
-            implementation("com.google.firebase:firebase-messaging")
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.messaging)
             implementation(libs.androidx.core.ktx)
             implementation(libs.sqlite.framework)
             implementation(libs.hilt.android)
-            implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-            implementation("androidx.hilt:hilt-work:1.2.0")
-            implementation("androidx.work:work-runtime-ktx:2.9.0")
+            implementation(libs.androidx.hilt.navigation.compose)
+            implementation(libs.androidx.hilt.work)
+            implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.play.services.location)
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-            implementation("androidx.media3:media3-exoplayer:1.2.1")
+            implementation(libs.coroutines.play.services)
+            implementation(libs.androidx.media3.exoplayer)
             implementation(libs.ktor.android)
         }
         iosMain.dependencies { implementation(libs.ktor.ios) }
@@ -69,8 +69,8 @@ kotlin {
 
 android {
     namespace = "com.menna.nabatan.shared"
-    compileSdk = 36
-    defaultConfig { minSdk = 24 }
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    defaultConfig { minSdk = libs.versions.android.minSdk.get().toInt() }
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -85,12 +85,11 @@ compose.resources {
 }
 
 dependencies {
-    add("kspAndroid", libs.room.compiler)
+    listOf("kspAndroid", "kspIosX64", "kspIosArm64", "kspIosSimulatorArm64").forEach {
+        add(it, libs.room.compiler)
+    }
     add("kspAndroid", libs.hilt.compiler)
-    add("kspAndroid", "androidx.hilt:hilt-compiler:1.2.0")
-    add("kspIosX64", libs.room.compiler)
-    add("kspIosArm64", libs.room.compiler)
-    add("kspIosSimulatorArm64", libs.room.compiler)
+    add("kspAndroid", libs.androidx.hilt.compiler)
 }
 
 // Standalone test executables need native SDK linking; the app continues to use SPM.
@@ -104,8 +103,8 @@ if (providers.gradleProperty("firebaseNativeTests").orNull == "true") {
         }
     }
     (kotlin as ExtensionAware).extensions.configure<CocoapodsExtension> {
-        version = "1.0"
-        ios.deploymentTarget = "15.0"
+        version = libs.versions.ios.cocoapodsFramework.get()
+        ios.deploymentTarget = libs.versions.ios.deploymentTarget.get()
         listOf("FirebaseCore", "FirebaseAuth", "FirebaseFirestore", "FirebaseRemoteConfig").forEach { sdk ->
             pod(sdk) {
                 version = libs.versions.firebaseIos.get()

@@ -111,6 +111,13 @@ The bundle is written to `app/build/outputs/bundle/release/`. With none of the
 signing variables set, the same command produces an unsigned bundle for build
 verification. Providing only some signing variables fails configuration.
 
+The committed Android version lives in `app/version.properties`. A direct
+`:app:bundleRelease` or `:app:assembleRelease` invocation packages the next patch
+and version code and persists them after packaging succeeds. Requesting both
+tasks in one command uses the same version. Debug builds, Gradle sync, and
+release lint use the stored version. Retain the updated file with each release
+so future checkouts continue from the version that was built.
+
 ## Verification
 
 Use JDK 21 and Android SDK 36:
