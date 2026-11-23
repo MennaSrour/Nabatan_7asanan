@@ -32,19 +32,26 @@ internal fun mushafSections(ayahs: List<AyahModel>, surahPrefix: String): List<M
 
 internal data class MushafTypography(val fontSizeSp: Float, val lineHeightSp: Float, val fits: Boolean)
 
-/** Half-sp precision; never ellipsize Quran text or shrink below the readable minimum. */
-internal fun fitMushafTypography(fits: (Float, Float) -> Boolean): MushafTypography {
-    var low = 28 // 14sp
-    var high = 52 // 26sp
-    var best: Int? = null
+/** Select the largest quarter-sp size that fits both axes of the page frame. */
+internal fun fitMushafTypography(
+    maximumSp: Float = 26f,
+    fits: (Float, Float) -> Boolean
+): MushafTypography {
+    var low = 2
+    var high = (maximumSp * 4).toInt().coerceAtLeast(low)
+    var best = 0
     while (low <= high) {
         val step = (low + high) / 2
-        val size = step / 2f
-        if (fits(size, size * 1.8f)) { best = step; low = step + 1 }
-        else high = step - 1
+        val size = step / 4f
+        if (fits(size, size * 1.75f)) {
+            best = step
+            low = step + 1
+        } else {
+            high = step - 1
+        }
     }
-    best?.let { return MushafTypography(it / 2f, it / 2f * 1.8f, true) }
-    return MushafTypography(13f, 13f * 1.7f, fits(13f, 13f * 1.7f))
+    val size = best.coerceAtLeast(2) / 4f
+    return MushafTypography(size, size * 1.75f, best != 0)
 }
 
 internal fun mushafBookmarkTarget(

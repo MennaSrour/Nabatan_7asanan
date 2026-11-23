@@ -2,19 +2,23 @@
 
 package com.menna.nabatan_7asena.presentation.screens.friends
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -23,15 +27,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.data.repository.*
 import com.menna.nabatan_7asena.domain.entity.PresetCategory
 import com.menna.nabatan_7asena.domain.entity.PresetMessage
-import com.menna.nabatan_7asena.presentation.common.*
-import com.menna.nabatan_7asena.resources.painterResource
+import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
+import com.menna.nabatan_7asena.core.util.arabicIndic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
-import com.menna.nabatan_7asena.domain.entity.User
 
 @Composable
 internal fun PresetChatScreen(chatId: String, onBack: () -> Unit) {
@@ -106,7 +109,18 @@ private fun PresetChatContent(
                     TextButton(onClick = { retry++ }) { Text("إعادة المحاولة", color = FriendsPurple) }
                 }
                 history == null -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = FriendsPurple)
-                history.isEmpty() -> Text("ابدأ بتحية لطيفة", Modifier.align(Alignment.Center))
+                history.isEmpty() -> Surface(
+                    Modifier.align(Alignment.Center),
+                    color = FriendsCream,
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(1.dp, FriendsGold)
+                ) {
+                    Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.ChatBubbleOutline, null, tint = FriendsPurple)
+                        Text("ابدأ بتحية لطيفة", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
                 else -> LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(history, key = { it.id }) { message ->
                         val sent = message.senderId == account.uid
@@ -115,12 +129,19 @@ private fun PresetChatContent(
                 }
             }
         }
-        Button(
+        ChunkyButton(
             onClick = { picker = true },
             modifier = Modifier.fillMaxWidth(),
             enabled = !sending && !failed && messages != null,
-            colors = ButtonDefaults.buttonColors(containerColor = FriendsGold, contentColor = FriendsPurple)
-        ) { Text("اختر رسالة") }
+            color = FriendsGold,
+            edgeColor = FriendsGoldEdge,
+            faceBrush = Brush.verticalGradient(listOf(FriendsCream, FriendsGold))
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.ChatBubbleOutline, null, tint = FriendsPurple)
+                Text("اختر رسالة", color = FriendsPurple, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+        }
     }
     if (picker) PresetPicker(onDismiss = { picker = false }) { preset ->
         picker = false
@@ -145,28 +166,35 @@ private fun PresetChatContent(
 private fun MessageBubble(message: ChatMessage, sent: Boolean, profile: FriendProfile?) {
     val dateTime = Instant.fromEpochSeconds(message.time.seconds, message.time.nanoseconds.toLong())
         .toLocalDateTime(TimeZone.currentSystemDefault())
-    val stamp = "${dateTime.day}/${dateTime.month.number}  ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
+    val date = "${arabicIndic(dateTime.day)}/${arabicIndic(dateTime.month.number)}"
+    val time = "${arabicIndic(dateTime.hour).padStart(2, '٠')}:${arabicIndic(dateTime.minute).padStart(2, '٠')}"
+    val accent = if (sent) FriendsLavender else FriendsGold
+    val bubbleShape = RoundedCornerShape(
+        topStart = 20.dp, topEnd = 20.dp,
+        bottomStart = if (sent) 5.dp else 20.dp,
+        bottomEnd = if (sent) 20.dp else 5.dp
+    )
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, if (sent) Alignment.Start else Alignment.End),
         verticalAlignment = Alignment.Bottom
     ) {
-        Image(
-            painterResource(AvatarCatalog.resFor(profile?.avatarGender ?: User.Gender.BOY, profile?.avatarIndex ?: 0)),
-            contentDescription = if (sent) "صورتي" else "صورة صديقي",
-            modifier = Modifier.size(36.dp).clip(CircleShape)
-        )
+        if (sent) FriendAvatarBadge(profile, accent, Modifier.size(40.dp))
         Surface(
-            Modifier.widthIn(max = 250.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = if (sent) FriendsLavender else Color.White,
-            contentColor = FriendsPurple
+            Modifier.weight(1f, fill = false).widthIn(max = 310.dp),
+            shape = bubbleShape,
+            color = if (sent) FriendsLavender else FriendsCream,
+            contentColor = FriendsPurple,
+            border = BorderStroke(1.dp, if (sent) Color.White else accent),
+            shadowElevation = 1.dp
         ) {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(message.preset.text, style = MaterialTheme.typography.bodyLarge)
-                Text(stamp, style = MaterialTheme.typography.labelSmall)
+                Text("$date  $time", style = MaterialTheme.typography.labelSmall, color = FriendsPurple.copy(alpha = 0.85f))
             }
         }
+        if (!sent) FriendAvatarBadge(profile, accent, Modifier.size(40.dp))
     }
 }
 
@@ -177,7 +205,7 @@ private fun PresetPicker(onDismiss: () -> Unit, onSend: (PresetMessage) -> Unit)
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = FriendsCream, contentColor = FriendsPurple) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding()) {
             Text("اختر رسالة", style = MaterialTheme.typography.titleLarge)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 PresetCategory.entries.forEach { option ->
                     FilterChip(selected = category == option, onClick = { category = option }, label = { Text(option.title) },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = FriendsLavender))

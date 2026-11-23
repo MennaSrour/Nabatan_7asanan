@@ -4,19 +4,19 @@ import com.menna.nabatan_7asena.domain.entity.AyahModel
 import kotlin.test.*
 
 class MushafPageLayoutTest {
-    @Test fun selectsLargestHalfSpSizeThatFits() {
+    @Test fun selectsLargestQuarterSpSizeThatFits() {
         val result = fitMushafTypography { size, _ -> size <= 18.3f }
-        assertEquals(18f, result.fontSizeSp)
+        assertEquals(18.25f, result.fontSizeSp)
         assertTrue(result.fits)
         assertEquals(26f, fitMushafTypography { _, _ -> true }.fontSizeSp)
     }
 
-    @Test fun compactMinimumPrecedesScrollingFallback() {
-        val compact = fitMushafTypography { _, height -> height <= 23f }
-        assertEquals(13f, compact.fontSizeSp)
-        assertEquals(13f * 1.7f, compact.lineHeightSp)
+    @Test fun fitsDensePagesBelowTheOldMinimumAndGrowsForTablets() {
+        val compact = fitMushafTypography { _, height -> height <= 16f }
+        assertEquals(9f, compact.fontSizeSp)
+        assertEquals(9f * 1.75f, compact.lineHeightSp)
         assertTrue(compact.fits)
-        assertFalse(fitMushafTypography { _, _ -> false }.fits)
+        assertEquals(46.5f, fitMushafTypography(maximumSp = 60f) { size, _ -> size <= 46.6f }.fontSizeSp)
     }
 
     @Test fun midPageSurahBeginsWithBannerAndSeparateBasmalah() {

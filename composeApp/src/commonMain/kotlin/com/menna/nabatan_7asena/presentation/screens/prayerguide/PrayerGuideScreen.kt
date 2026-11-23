@@ -18,6 +18,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.menna.nabatan_7asena.platform.animation.LottieAnimation
+import com.menna.nabatan_7asena.platform.animation.LottieCompositionSpec
+import com.menna.nabatan_7asena.platform.animation.rememberLottieComposition
+import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
+import com.menna.nabatan_7asena.resources.AppResources as R
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.core.util.arabicIndic
@@ -55,7 +61,7 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
         scope.launch {
             try {
                 val granted = awardBonus()
-                feedback = if (granted) "+ ${arabicIndic(PRAYER_GUIDE_BONUS_STARS)} نجوم ⭐"
+                feedback = if (granted) "أضفت إلى حصّالتك ${arabicIndic(PRAYER_GUIDE_BONUS_STARS)} نجوم"
                     else "نجوم الدليل لهذا اليوم في حصّالتك بالفعل!"
                 saved = true
             } catch (e: CancellationException) {
@@ -69,6 +75,10 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        if (complete) {
+            PrayerGuideCelebration(feedback, saved, saving, onRetry = ::claimBonus, onFinish = onBack)
+            return@CompositionLocalProvider
+        }
         val scroll = rememberScrollState()
         LaunchedEffect(prayerTab, index) { scroll.scrollTo(0) }
         Column(
@@ -80,24 +90,14 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
                 Text("دليل الوضوء والصلاة", color = Ink, style = MaterialTheme.typography.headlineSmall)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GuideTab("💧 الوضوء", !prayerTab, Modifier.weight(1f)) { prayerTab = false }
-                GuideTab("🕌 الصلاة", prayerTab, Modifier.weight(1f)) { prayerTab = true }
+                GuideTab("الوضوء", !prayerTab, Modifier.weight(1f)) { prayerTab = false }
+                GuideTab("الصلاة", prayerTab, Modifier.weight(1f)) { prayerTab = true }
             }
             StepChecklist(steps, index, reviewed, onSelect = ::showStep)
             Column(
                 Modifier.weight(1f).verticalScroll(scroll),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (complete) {
-                    Column(
-                        Modifier.fillMaxWidth().background(SoftGold, RoundedCornerShape(20.dp)).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("🎉 أحسنت! أكملت الوضوء والصلاة", color = Ink, fontWeight = FontWeight.Bold)
-                        feedback?.let { Text(it, color = Ink) }
-                        if (!saved && !saving) TextButton(onClick = ::claimBonus) { Text("حفظ النجوم", color = Purple) }
-                    }
-                }
                 StepCard(steps[index], index, steps.size)
                 if (prayerTab) PrayerSummary()
             }
@@ -117,12 +117,47 @@ fun PrayerGuideScreen(onBack: () -> Unit, awardBonus: suspend () -> Boolean) {
                             showStep(index + 1)
                         } else if (wuduReviewed == wuduSteps.size && prayerReviewed == prayerSteps.size) {
                             claimBonus()
-                            scope.launch { scroll.animateScrollTo(0) }
                         } else {
                             prayerTab = !prayerTab
                         }
                     }
                 ) { Text(if (index < steps.lastIndex) "الخطوة التالية" else "أكملت الخطوات") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrayerGuideCelebration(
+    feedback: String?,
+    saved: Boolean,
+    saving: Boolean,
+    onRetry: () -> Unit,
+    onFinish: () -> Unit
+) {
+    val confetti by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.win_celebration))
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Lavender, Cream))).systemBarsPadding(),
+        contentAlignment = Alignment.Center
+    ) {
+        val artworkHeight = (maxHeight * 0.32f).coerceAtMost(190.dp)
+        Column(
+            Modifier.widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .background(Cream, RoundedCornerShape(30.dp))
+                .border(2.dp, SoftGold, RoundedCornerShape(30.dp))
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            LottieAnimation(confetti, Modifier.fillMaxWidth().height(artworkHeight), iterations = 1)
+            Text("أحسنت", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = Purple)
+            Text("أكملت خطوات الوضوء والصلاة", style = MaterialTheme.typography.titleLarge, color = Ink, textAlign = TextAlign.Center)
+            if (saving) Text("جارٍ حفظ النجوم", color = Ink)
+            feedback?.let { Text(it, color = Ink, textAlign = TextAlign.Center) }
+            if (!saved && !saving) TextButton(onClick = onRetry) { Text("حفظ النجوم", color = Purple) }
+            ChunkyButton(onClick = onFinish, enabled = !saving, color = SoftGold, edgeColor = Color(0xFFDDBA67)) {
+                Text("إنهاء", color = Purple, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
         }
     }
