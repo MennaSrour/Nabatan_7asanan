@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,21 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
+}
+
+val releaseSigningVariables = listOf(
+    "ANDROID_UPLOAD_STORE_FILE",
+    "ANDROID_UPLOAD_STORE_PASSWORD",
+    "ANDROID_UPLOAD_KEY_ALIAS",
+    "ANDROID_UPLOAD_KEY_PASSWORD"
+)
+val releaseSigningValues = releaseSigningVariables.associateWith {
+    providers.environmentVariable(it).orNull?.takeIf(String::isNotBlank)
+}
+val configureReleaseSigning = releaseSigningValues.values.any { it != null }
+if (configureReleaseSigning) {
+    val missing = releaseSigningVariables.filter { releaseSigningValues[it] == null }
+    require(missing.isEmpty()) { "Missing Android upload signing variables: ${missing.joinToString()}" }
 }
 
 android {
@@ -21,12 +38,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    if (configureReleaseSigning) {
+        signingConfigs.create("upload") {
+            storeFile = rootProject.file(requireNotNull(releaseSigningValues["ANDROID_UPLOAD_STORE_FILE"]))
+            storePassword = releaseSigningValues["ANDROID_UPLOAD_STORE_PASSWORD"]
+            keyAlias = releaseSigningValues["ANDROID_UPLOAD_KEY_ALIAS"]
+            keyPassword = releaseSigningValues["ANDROID_UPLOAD_KEY_PASSWORD"]
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             resValue("string", "app_name", "App (Debug)")
         }
         release {
+            signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -44,14 +71,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
     }
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
 }
 
 dependencies {

@@ -29,6 +29,6 @@ actual object PlatformInfo {
     actual val versionName: String get() = NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: "1.0"
     actual val supportsAppUpdates = false // Android's Play Store update contract does not apply to iOS.
 }
-actual fun openAppStore() = Unit
+actual fun openAppStore(): Boolean = false
 
 actual val ioDispatcher: kotlinx.coroutines.CoroutineDispatcher get() = kotlinx.coroutines.Dispatchers.Default

@@ -35,11 +35,11 @@ fun App() {
     LaunchedEffect(model) { model.enableDailyAutoScheduling() }
     LaunchedEffect(nav) {
         AppNavigation.destination.collectLatest { route ->
-            if (route in listOf("quran", "sebha")) {
+            if (route == "quran" || route == "sebha") {
                 nav.currentBackStackEntryFlow.first {
                     it.destination.route in listOf("home", "settings", "quran", "sebha")
                 }
-                nav.navigate(route!!) { launchSingleTop = true }
+                nav.navigate(route) { launchSingleTop = true }
                 AppNavigation.destination.value = null
             }
         }

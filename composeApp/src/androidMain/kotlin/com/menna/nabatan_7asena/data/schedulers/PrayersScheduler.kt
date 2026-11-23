@@ -53,9 +53,8 @@ class PrayersScheduler @Inject constructor(
 
             try {
                 alarmManager?.scheduleReminder(time, pendingIntent)
-                Log.d("PrayersScheduler", "تم جدولة صلاة $name")
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.w("PrayersScheduler", "Could not schedule prayer reminder", e)
             }
         }
     }

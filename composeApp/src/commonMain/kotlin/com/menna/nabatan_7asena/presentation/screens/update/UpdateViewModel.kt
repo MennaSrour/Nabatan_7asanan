@@ -28,19 +28,14 @@ open class UpdateViewModel constructor(
     fun checkForUpdates() {
         viewModelScope.launch {
             try {
-                Log.d("UPDATE", "Checking for updates...")
                 _uiState.value = UpdateUiState.Loading
 
                 val result = checkForUpdateUseCase()
-                Log.d("UPDATE", "Update check result: $result")
-                Log.d("UPDATE", "Download URL: ${result.downloadUrl}")
 
                 if (result.isUpdateAvailable) {
                     _uiState.value = UpdateUiState.UpdateAvailable(result)
-                    Log.d("UPDATE", "Update available: ${result.latestVersionName}")
                 } else {
                     _uiState.value = UpdateUiState.Idle
-                    Log.d("UPDATE", "No update available")
                 }
             } catch (e: CancellationException) {
                 throw e

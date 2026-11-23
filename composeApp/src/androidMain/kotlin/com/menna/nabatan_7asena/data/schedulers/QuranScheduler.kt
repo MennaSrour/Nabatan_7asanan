@@ -60,6 +60,6 @@ class QuranScheduler @Inject constructor(
                 )
                 alarmManager?.scheduleReminder(cal.timeInMillis, pendingIntent)
             }
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { android.util.Log.w("QuranScheduler", "Could not schedule Quran reminder: ${e.javaClass.simpleName}") }
     }
 }

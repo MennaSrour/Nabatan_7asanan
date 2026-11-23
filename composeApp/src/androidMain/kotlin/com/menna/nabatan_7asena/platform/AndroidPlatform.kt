@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.ActivityNotFoundException
 import android.media.MediaPlayer
 import android.Manifest
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
@@ -46,15 +47,26 @@ actual object PlatformInfo {
     private val info get() = AndroidPlatform.context.packageManager.getPackageInfo(AndroidPlatform.context.packageName, 0)
     actual val versionCode: Int get() = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else info.versionCode
     actual val versionName: String get() = info.versionName.orEmpty()
-    actual val supportsAppUpdates = true
+    actual val supportsAppUpdates: Boolean
+        get() = (AndroidPlatform.context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) == 0
 }
-actual fun openAppStore() {
-    val context = AndroidPlatform.context
-    try { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=com.menna.nabatan_7asena")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-    catch (_: ActivityNotFoundException) {
-        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=com.menna.nabatan_7asena")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
+actual fun openAppStore(): Boolean {
+    val packageName = AndroidPlatform.context.packageName
+    return openExternalUri("market://details?id=$packageName") ||
+        openExternalUri("https://play.google.com/store/apps/details?id=$packageName")
 }
+
+private fun openExternalUri(url: String): Boolean = try {
+    AndroidPlatform.context.startActivity(
+        Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    )
+    true
+} catch (_: ActivityNotFoundException) {
+    false
+} catch (_: SecurityException) {
+    false
+}
+
 @OptIn(ExperimentalResourceApi::class)
 fun createResourcePlayer(context: Context, resource: Int): MediaPlayer? {
     val path = ResourceCatalog.rawPaths[resource] ?: return null

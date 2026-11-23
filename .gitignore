@@ -25,3 +25,7 @@ iosApp/DerivedData/
 # Firebase configuration is supplied per platform/environment.
 google-services.json
 GoogleService-Info.plist
+
+# Android upload keys
+*.jks
+*.keystore

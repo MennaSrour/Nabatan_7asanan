@@ -40,23 +40,8 @@ class FirebaseDataSource constructor(
     }
 
     suspend fun getDailyPlan(dayId: Int): DailyPlanDto? {
-        try {
-            Log.d("DailyPlanDebug", "جاري البحث عن خطة يوم رقم: $dayId")
-
-            val snapshot = firestore.collection("daily_plans")
-                .document(dayId.toString())
-                .get()
-
-            if (snapshot.exists) {
-                Log.d("DailyPlanDebug", "تم العثور على الخطة ليوم: $dayId")
-                return snapshot.data<DailyPlanDto>()
-            }
-            Log.w("DailyPlanDebug", "لا توجد خطة متاحة لليوم: $dayId")
-            return null
-        } catch (e: Exception) {
-            Log.e("DailyPlanDebug", "حدث خطأ في جلب خطة اليوم", e)
-            throw e
-        }
+        val snapshot = firestore.collection("daily_plans").document(dayId.toString()).get()
+        return if (snapshot.exists) snapshot.data<DailyPlanDto>() else null
     }
 
     suspend fun getLeaderboard(): List<UserRankDto> {
