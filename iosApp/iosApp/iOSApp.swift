@@ -21,21 +21,34 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         if FirebaseApp.app() == nil,
            let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-           let options = FirebaseOptions(contentsOfFile: path) {
+           let options = FirebaseOptions(contentsOfFile: path),
+           options.bundleID == Bundle.main.bundleIdentifier,
+           !options.googleAppID.isEmpty,
+           !(options.apiKey ?? "").isEmpty,
+           !(options.projectID ?? "").isEmpty {
             FirebaseApp.configure(options: options)
         }
 
+        UNUserNotificationCenter.current().delegate = self
         guard FirebaseApp.app() != nil else { return true }
 
+        Messaging.messaging().isAutoInitEnabled = false
         Messaging.messaging().delegate = self
-        UNUserNotificationCenter.current().delegate = self
         BroadcastNotificationManager.shared.initialize()
         return true
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Messaging.messaging().apnsToken = deviceToken
-        subscribeToBroadcastTopic()
+        guard FirebaseApp.app() != nil else { return }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else { return }
+            DispatchQueue.main.async {
+                guard FirebaseApp.app() != nil else { return }
+                Messaging.messaging().isAutoInitEnabled = true
+                Messaging.messaging().apnsToken = deviceToken
+                self.subscribeToBroadcastTopic()
+            }
+        }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -43,7 +56,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        guard fcmToken != nil, messaging.apnsToken != nil else { return }
+        guard FirebaseApp.app() != nil, fcmToken != nil, messaging.apnsToken != nil else { return }
         subscribeToBroadcastTopic()
     }
 

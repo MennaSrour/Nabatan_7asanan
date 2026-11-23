@@ -4,6 +4,7 @@ package com.menna.nabatan_7asena.platform
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import platform.CoreLocation.*
 import platform.Foundation.*
 import platform.UIKit.*
@@ -18,12 +19,12 @@ internal object IosPermissions : PermissionPlatform {
     override fun exactAlarmsGranted() = false
     override fun batteryExempt() = false
     override suspend fun refresh() {
-        notificationAccess = suspendCancellableCoroutine { continuation ->
+        notificationAccess = withTimeoutOrNull(10_000) { suspendCancellableCoroutine { continuation ->
             UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { settings ->
                 if (continuation.isActive) continuation.resume(settings?.authorizationStatus in
                     listOf(UNAuthorizationStatusAuthorized, UNAuthorizationStatusProvisional, UNAuthorizationStatusEphemeral))
             }
-        }
+        } } ?: false
     }
 }
 actual fun appPermissions(): PermissionPlatform = IosPermissions
@@ -50,16 +51,18 @@ actual fun rememberPermissionRequester(onResult: (AppPermission) -> Unit): (AppP
                                     if (continuation.isActive) continuation.resume(it?.authorizationStatus ?: UNAuthorizationStatusNotDetermined)
                                 }
                             }
-                            if (status == UNAuthorizationStatusNotDetermined) suspendCancellableCoroutine<Unit> { continuation ->
+                            if (status == UNAuthorizationStatusNotDetermined && confirmNotificationPurpose()) suspendCancellableCoroutine<Unit> { continuation ->
                                 UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
                                     UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge) { _, _ ->
                                     if (continuation.isActive) continuation.resume(Unit)
                                 }
-                            } else openIosAppSettings()
+                            } else if (status != UNAuthorizationStatusNotDetermined) openIosAppSettings()
                         }
                         else -> Unit
                     }
                     IosPermissions.refresh()
+                    if (permission == AppPermission.NOTIFICATIONS && IosPermissions.notificationsGranted() &&
+                        com.menna.nabatan_7asena.data.remote.FirebaseAvailability.isConfigured) BroadcastNotificationManager.initialize()
                     callback(permission)
                 } finally { requesting = false }
             }

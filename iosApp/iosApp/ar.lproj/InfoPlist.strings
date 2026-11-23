@@ -1,0 +1,4 @@
+"NSLocationWhenInUseUsageDescription" = "نرسل إحداثيات موقعك إلى خدمة المواقيت لحساب أوقات الصلاة في منطقتك. يمكنك اختيار مدينة محفوظة بدلاً من منح الإذن.";
+"NabataNotificationPurpose" = "تذكرك الإشعارات الاختيارية بالصلاة والأذكار. يمكنك تغيير الإذن من الإعدادات.";
+"NabataPermissionContinue" = "متابعة";
+"NabataPermissionLater" = "ليس الآن";

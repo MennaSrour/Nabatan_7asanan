@@ -151,6 +151,14 @@ jobs:
           restore-keys: |
             xcode-sim-${{ runner.arch }}-${{ steps.toolchain.outputs.xcode }}-${{ hashFiles('iosApp/**', 'gradle/libs.versions.toml') }}-
             xcode-sim-${{ runner.arch }}-${{ steps.toolchain.outputs.xcode }}-
+      - name: Validate iOS bundle metadata
+        run: |
+          plutil -lint iosApp/iosApp/Info.plist iosApp/iosApp/PrivacyInfo.xcprivacy \
+            iosApp/iosApp/en.lproj/InfoPlist.strings iosApp/iosApp/ar.lproj/InfoPlist.strings
+      - name: Compile all configured iOS actuals
+        run: |
+          bash .github/scripts/ci-run.sh ios-compile ./gradlew --build-cache --max-workers=2 \
+            :composeApp:compileKotlinIosArm64 :composeApp:compileKotlinIosSimulatorArm64 :composeApp:compileKotlinIosX64
       - name: Run shared tests on the available simulator architecture
         run: |
           pod --version
@@ -184,6 +192,7 @@ jobs:
           name: ios-test-reports
           path: |
             composeApp/build/reports/tests/
+            .ci/ios-compile.log
             .ci/ios-tests.log
             .ci/ios-build.log
           if-no-files-found: ignore

@@ -1,0 +1,4 @@
+"NSLocationWhenInUseUsageDescription" = "Your location is sent to the prayer-time service to calculate prayer times for your area. You can choose a saved city instead.";
+"NabataNotificationPurpose" = "Optional notifications remind you about prayers and daily remembrance. You can change this in Settings.";
+"NabataPermissionContinue" = "Continue";
+"NabataPermissionLater" = "Not now";
