@@ -90,8 +90,9 @@ open class KidsRewardsViewModel(
         if (_spin.value != SpinState.Saving) _spin.value = SpinState.Idle
     }
 
-    internal fun resetGame() {
-        if (_payout.value?.let { it.credited == null && !it.failed } != true) _payout.value = null
+    internal suspend fun startRound(current: RewardAccount, game: KidsGame): Boolean {
+        if (account.value != current) return false
+        return rewards.startRound(current.profileId, current.day, game)
     }
 
     internal fun finishGame(current: RewardAccount, game: KidsGame, stars: Int, score: Int? = null) {
@@ -124,5 +125,5 @@ open class KidsRewardsViewModel(
     }
 
     internal suspend fun verses() = rewards.verses()
-    internal suspend fun questions() = rewards.questions()
+    internal suspend fun questions(game: KidsGame) = rewards.questions(game)
 }
