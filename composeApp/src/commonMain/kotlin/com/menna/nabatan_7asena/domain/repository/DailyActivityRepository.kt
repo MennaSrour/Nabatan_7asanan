@@ -12,6 +12,7 @@ interface DailyActivityRepository {
     fun getDailyActivities(date: String, city: String,country:String): Flow<List<Activity>>
     suspend fun completeDailyActivity(activity: Activity)
     suspend fun updateActivityStatus(date: String, activityId: Int, isCompleted: Boolean)
+    suspend fun claimDailyCompletionReward(profileId: String, date: String, completedTaskIds: Set<Int>): Boolean
     suspend fun getSuggestedExtraTasks(): ExtraTasks
     suspend fun getTodayRiddle(): DailyContent?
     suspend fun addExtraTask(title: String)

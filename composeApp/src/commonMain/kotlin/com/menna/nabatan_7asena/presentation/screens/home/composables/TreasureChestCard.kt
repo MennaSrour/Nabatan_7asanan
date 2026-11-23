@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.presentation.screens.home.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,7 +38,7 @@ fun TreasureChestCard(isUnlocked: Boolean, completedCount: Int = 0, totalCount: 
     val progress = treasureProgress(completedCount, totalCount)
     val shape = RoundedCornerShape(28.dp)
     val colors = SummerTheme.colors
-    val openLabel = genderedStringResource(GenderedStrings.treasureOpen)
+    val openLabel = if (isUnlocked) "لف العجلة الآن" else "لف العجلة"
     Box(Modifier.fillMaxWidth().padding(bottom = 7.dp)) {
         Box(Modifier.matchParentSize().offset(y = 7.dp).clip(shape).background(colors.goldDeep))
         Column(Modifier.fillMaxWidth().clip(shape)
@@ -45,14 +46,43 @@ fun TreasureChestCard(isUnlocked: Boolean, completedCount: Int = 0, totalCount: 
             .border(2.dp, colors.goldDeep.copy(alpha = 0.65f), shape)
             .clickable(role = Role.Button, onClickLabel = if (isUnlocked) openLabel else null, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.treasure_daily_reward), style = SummerTheme.typography.chestSubtitle, color = colors.textBrown)
-            TreasureChestIllustration(isUnlocked)
+            Text("عجلة هدية اليوم", style = SummerTheme.typography.chestSubtitle, color = colors.textBrown)
+            DailyWheelIllustration()
             TreasureChestPrompt(isUnlocked, progress)
             if (progress.total > 0) TreasureChestProgress(progress)
-            Text(if (isUnlocked) openLabel else genderedStringResource(GenderedStrings.treasureUnlockHint),
+            Text(if (isUnlocked) "لف العجلة الآن" else "لف العجلة",
                 style = SummerTheme.typography.chestSubtitle, color = colors.textDarkBrown,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
         }
+    }
+}
+
+@Composable
+private fun DailyWheelIllustration() {
+    val colors = SummerTheme.colors
+    Canvas(Modifier.size(72.dp)) {
+        val radius = size.minDimension / 2
+        val origin = androidx.compose.ui.geometry.Offset(
+            (size.width - radius * 2) / 2,
+            (size.height - radius * 2) / 2
+        )
+        val wheelSize = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+        val slices = listOf(
+            colors.wisdomAccent, colors.goldWarm, colors.successGreen,
+            colors.secondaryAccent, colors.goldDeep, colors.wisdomStart
+        )
+        slices.forEachIndexed { index, color ->
+            drawArc(color, -90f + index * 60f, 60f, true, origin, wheelSize)
+        }
+        drawCircle(colors.dialogBackground, radius * .2f)
+        drawCircle(colors.goldDeep, radius, style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+        drawLine(
+            colors.textDarkBrown,
+            androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2),
+            androidx.compose.ui.geometry.Offset(size.width / 2, size.height * .08f),
+            strokeWidth = 2.dp.toPx()
+        )
+        drawCircle(colors.textDarkBrown, radius * .07f)
     }
 }
 

@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -35,6 +34,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
 internal fun PresetChatScreen(chatId: String, onBack: () -> Unit) {
@@ -185,7 +185,7 @@ private fun MessageBubble(message: ChatMessage, sent: Boolean, profile: FriendPr
             shape = bubbleShape,
             color = if (sent) FriendsLavender else FriendsCream,
             contentColor = FriendsPurple,
-            border = BorderStroke(1.dp, if (sent) Color.White else accent),
+            border = BorderStroke(1.dp, if (sent) SummerTheme.colors.white else accent),
             shadowElevation = 1.dp
         ) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp),

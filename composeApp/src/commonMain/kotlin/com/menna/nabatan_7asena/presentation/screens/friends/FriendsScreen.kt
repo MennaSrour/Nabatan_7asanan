@@ -34,16 +34,16 @@ import com.menna.nabatan_7asena.data.repository.FriendProfile
 import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
 import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
 import com.menna.nabatan_7asena.resources.painterResource
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-internal val FriendsCream = Color(0xFFFFF8EC)
-internal val FriendsLavender = Color(0xFFEDE3FB)
-internal val FriendsPurple = Color(0xFF533681)
-internal val FriendsGold = Color(0xFFF6D786)
-
-internal val FriendsGoldEdge = Color(0xFFD8AE58)
-internal val FriendsLavenderEdge = Color(0xFFAB8BCB)
+internal val FriendsCream: Color @Composable get() = SummerTheme.colors.dialogBackground
+internal val FriendsLavender: Color @Composable get() = SummerTheme.colors.wisdomStart
+internal val FriendsPurple: Color @Composable get() = SummerTheme.colors.textDarkBrown
+internal val FriendsGold: Color @Composable get() = SummerTheme.colors.goldWarm
+internal val FriendsGoldEdge: Color @Composable get() = SummerTheme.colors.goldDeep
+internal val FriendsLavenderEdge: Color @Composable get() = SummerTheme.colors.wisdomAccent
 
 @Composable
 private fun FriendCodeCard(state: FriendsState, onRetry: () -> Unit) {
@@ -55,7 +55,7 @@ private fun FriendCodeCard(state: FriendsState, onRetry: () -> Unit) {
     Column(
         Modifier.fillMaxWidth()
             .background(Brush.linearGradient(listOf(FriendsLavender, FriendsCream, FriendsGold.copy(alpha = 0.55f))), shape)
-            .border(1.dp, Color.White, shape)
+            .border(1.dp, SummerTheme.colors.white, shape)
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -67,7 +67,7 @@ private fun FriendCodeCard(state: FriendsState, onRetry: () -> Unit) {
             }
         }
         Column(
-            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.74f), RoundedCornerShape(18.dp)).padding(12.dp),
+            Modifier.fillMaxWidth().background(SummerTheme.colors.surfaceElevated.copy(alpha = 0.88f), RoundedCornerShape(18.dp)).padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -100,8 +100,8 @@ private fun FriendCodeCard(state: FriendsState, onRetry: () -> Unit) {
 @Composable
 internal fun FriendAvatarBadge(profile: FriendProfile?, accent: Color, modifier: Modifier = Modifier) {
     Box(
-        modifier.background(Brush.verticalGradient(listOf(Color.White, accent)), CircleShape)
-            .border(2.dp, Color.White, CircleShape).padding(4.dp),
+        modifier.background(Brush.verticalGradient(listOf(SummerTheme.colors.surfaceElevated, accent)), CircleShape)
+            .border(2.dp, SummerTheme.colors.white, CircleShape).padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         if (profile == null) {
@@ -123,37 +123,27 @@ internal expect fun rememberFriendCodeCopier(): (String) -> Unit
 @Composable
 internal fun FriendsScaffold(title: String, onBack: () -> Unit, snackbar: SnackbarHostState, content: @Composable (PaddingValues) -> Unit) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        MaterialTheme(
-            colorScheme = lightColorScheme(
-                primary = FriendsPurple,
-                onPrimary = Color.White,
-                primaryContainer = FriendsLavender,
-                onPrimaryContainer = FriendsPurple,
-                surface = FriendsCream,
-                onSurface = FriendsPurple,
-                onSurfaceVariant = FriendsPurple,
-                outline = FriendsPurple
-            )
-        ) {
-            Scaffold(
-                containerColor = FriendsCream,
-                contentColor = FriendsPurple,
-                topBar = {
-                    TopAppBar(
-                        title = { Text(title, fontWeight = FontWeight.ExtraBold) },
-                        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع") } },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent,
-                            titleContentColor = FriendsPurple, navigationIconContentColor = FriendsPurple)
+        Scaffold(
+            containerColor = SummerTheme.colors.backgroundLight,
+            contentColor = SummerTheme.colors.textPrimary,
+            topBar = {
+                TopAppBar(
+                    title = { Text(title, fontWeight = FontWeight.ExtraBold) },
+                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع") } },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = FriendsPurple,
+                        navigationIconContentColor = FriendsPurple
                     )
-                },
-                snackbarHost = { SnackbarHost(snackbar) },
-                content = { insets ->
-                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(FriendsLavender, FriendsCream)))) {
-                        content(insets)
-                    }
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbar) },
+            content = { insets ->
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(FriendsLavender, FriendsCream)))) {
+                    content(insets)
                 }
-            )
-        }
+            }
+        )
     }
 }
 
@@ -178,7 +168,7 @@ internal fun FriendsScreen(onBack: () -> Unit, onChat: (String) -> Unit) {
                     enabled = state.account != null && !state.failed && !busy,
                     color = FriendsLavender,
                     edgeColor = FriendsLavenderEdge,
-                    faceBrush = Brush.verticalGradient(listOf(Color.White, FriendsLavender))
+                    faceBrush = Brush.verticalGradient(listOf(SummerTheme.colors.surfaceElevated, FriendsLavender))
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.PersonAdd, null, tint = FriendsPurple)
@@ -284,7 +274,7 @@ private fun FriendRow(
         }
     }
     if (onClick == null) Surface(shape = shape, color = FriendsCream, border = stroke, content = content)
-    else Surface(onClick, shape = shape, color = Color.White, border = stroke, shadowElevation = 2.dp, content = content)
+    else Surface(onClick, shape = shape, color = SummerTheme.colors.cardBackground, border = stroke, shadowElevation = 2.dp, content = content)
 }
 
 @Composable
