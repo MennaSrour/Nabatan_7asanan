@@ -6,7 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.text.font.FontWeight
 import com.menna.nabatan_7asena.presentation.screens.quran.*
 import com.menna.nabatan_7asena.core.util.arabicIndic
 import com.menna.nabatan_7asena.domain.QuranConstants

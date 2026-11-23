@@ -14,8 +14,6 @@ import com.menna.nabatan_7asena.resources.ResourceCatalog
 import com.menna.nabatan_7asena.core.alarm.RetiredDailyMission
 import com.menna.nabatan.shared.generated.resources.Res
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 
 object AndroidPlatform {
     lateinit var context: Context

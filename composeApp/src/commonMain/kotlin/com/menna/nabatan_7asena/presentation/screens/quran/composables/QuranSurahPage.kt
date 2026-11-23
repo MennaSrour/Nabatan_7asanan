@@ -9,9 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
-import com.menna.nabatan_7asena.resources.Font
-import androidx.compose.ui.text.font.FontFamily
-import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.domain.QuranConstants
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranActions
 import com.menna.nabatan_7asena.presentation.screens.quran.QuranLayoutState

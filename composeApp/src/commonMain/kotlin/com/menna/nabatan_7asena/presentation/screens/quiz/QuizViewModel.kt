@@ -7,7 +7,6 @@ import com.menna.nabatan_7asena.domain.usecase.GetRecentQuizWinnersUseCase
 import com.menna.nabatan_7asena.domain.usecase.GetWeeklyCompetitionQuestionsUseCase
 import com.menna.nabatan_7asena.domain.usecase.GetWeeklyStudyQuestionsUseCase
 import com.menna.nabatan_7asena.domain.usecase.IsCompetitionDayUseCase
-import com.menna.nabatan_7asena.domain.usecase.SubmitCompetitionScoreUseCase
 import com.menna.nabatan_7asena.presentation.common.GenderedStrings
 import com.menna.nabatan_7asena.presentation.platform.ScreenAudioPlayer
 import kotlinx.coroutines.CancellationException

@@ -18,13 +18,40 @@ hilt = "2.57.1"
 coreKtx = "1.17.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
-espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.2"
 composeBom = "2024.09.00"
 playServicesLocation = "21.3.0"
 
+android-compileSdk = "36"
+android-minSdk = "24"
+android-targetSdk = "36"
+ios-deploymentTarget = "15.0"
+ios-cocoapodsFramework = "1.0"
+googleServices = "4.4.0"
+firebaseBom = "33.16.0"
+hiltAndroidx = "1.2.0"
+work = "2.9.0"
+splashscreen = "1.0.1"
+material = "1.12.0"
+media3 = "1.2.1"
+desugar = "2.1.5"
+
 [libraries]
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-common = { module = "com.google.firebase:firebase-common" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltAndroidx" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltAndroidx" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltAndroidx" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
+google-material = { module = "com.google.android.material:material", version.ref = "material" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+android-desugar-jdk = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
@@ -49,11 +76,9 @@ ktor-ios = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
@@ -70,3 +95,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
