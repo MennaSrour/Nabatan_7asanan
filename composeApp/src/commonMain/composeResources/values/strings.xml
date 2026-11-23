@@ -568,7 +568,7 @@
     <string name="quiz_official_finished">أنهيت تحدي هذه الجمعة!</string>
     <string name="quiz_official_used">محاولتك الرسمية لهذه الجمعة مسجلة</string>
     <string name="quiz_official_score">نتيجتك: %1$d من 5</string>
-    <string name="quiz_official_unavailable">اتصل بالإنترنت للتحقق من محاولتك الرسمية</string>
+    <string name="quiz_official_unavailable">تعذّر التحقق من محاولتك الرسمية. جرّب مرة تانية.</string>
     <string name="quiz_official_retry">إعادة التحقق</string>
     <string name="quiz_official_one_attempt">محاولة رسمية واحدة. بدء التحدي يسجل محاولتك، حتى عند الخروج.</string>
     <string name="quiz_official_save_error_male">تعذّر حفظ نتيجتك، اضغط التالي للمحاولة مرة أخرى</string>
