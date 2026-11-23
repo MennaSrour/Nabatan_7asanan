@@ -21,6 +21,9 @@ import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material.icons.rounded.SlowMotionVideo
+import com.menna.nabatan_7asena.core.config.FeatureFlags
+import com.menna.nabatan_7asena.presentation.screens.shorts.KIDS_SHORTS_ROUTE
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -52,11 +55,15 @@ fun FloatingBottomBar(
         BottomNavItem("dua", Icons.Rounded.NightsStay, navAccent),
         BottomNavItem("leaderboard", Icons.Rounded.EmojiEvents, navAccent),
         BottomNavItem("quiz", Icons.Rounded.WorkspacePremium, navAccent)
-    )
+    ) + if (FeatureFlags.ENABLE_KIDS_SHORTS) {
+        listOf(BottomNavItem(KIDS_SHORTS_ROUTE, Icons.Rounded.SlowMotionVideo, navAccent))
+    } else {
+        emptyList()
+    }
 
     Surface(
         modifier = modifier
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = if (FeatureFlags.ENABLE_KIDS_SHORTS) 4.dp else 16.dp)
             .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
             .height(58.dp)
             .fillMaxWidth()
@@ -77,7 +84,7 @@ fun FloatingBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 6.dp),
+                .padding(horizontal = if (FeatureFlags.ENABLE_KIDS_SHORTS) 2.dp else 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

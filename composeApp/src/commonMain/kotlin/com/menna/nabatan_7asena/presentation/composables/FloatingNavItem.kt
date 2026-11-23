@@ -19,6 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.menna.nabatan.shared.generated.resources.Res
+import com.menna.nabatan.shared.generated.resources.kids_shorts
+import com.menna.nabatan_7asena.presentation.screens.shorts.KIDS_SHORTS_ROUTE
+import org.jetbrains.compose.resources.stringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
@@ -72,7 +76,7 @@ fun FloatingNavItem(
         ClayImage(
             resName = assetName,
             fallbackIcon = item.icon,
-            contentDescription = null,
+            contentDescription = if (item.route == KIDS_SHORTS_ROUTE) stringResource(Res.string.kids_shorts) else null,
             tint = iconColor,
             modifier = Modifier.size(if (isSelected) 24.dp else 22.dp)
         )

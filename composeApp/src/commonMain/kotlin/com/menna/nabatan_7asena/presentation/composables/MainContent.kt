@@ -1,5 +1,6 @@
 package com.menna.nabatan_7asena.presentation.composables
 
+import com.menna.nabatan_7asena.presentation.screens.shorts.KIDS_SHORTS_ROUTE
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,7 +19,7 @@ fun MainContent(navController: NavHostController, openSettings: () -> Unit, open
     val entry by navController.currentBackStackEntryAsState()
     Box(Modifier.fillMaxSize()) {
         NavigationGraph(navController, openSettings, openFriends)
-        if (entry?.destination?.route !in setOf("garden", "prayer-guide", "progress", RAMADAN_CALENDAR_ROUTE, WheelRoute)) {
+        if (entry?.destination?.route !in setOf("garden", "prayer-guide", "progress", RAMADAN_CALENDAR_ROUTE, WheelRoute, KIDS_SHORTS_ROUTE)) {
             FloatingBottomBar(navController, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         }
         UpdateDialog()

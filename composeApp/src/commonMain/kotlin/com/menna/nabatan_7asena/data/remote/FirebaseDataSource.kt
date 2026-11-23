@@ -1,6 +1,9 @@
 package com.menna.nabatan_7asena.data.remote
 
 import com.menna.nabatan_7asena.platform.Log
+import com.menna.nabatan_7asena.data.remote.dto.KidsShortDto
+import com.menna.nabatan_7asena.domain.entity.KidsShort
+import kotlinx.coroutines.CancellationException
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.auth.auth
 import kotlinx.coroutines.sync.Mutex
@@ -38,6 +41,24 @@ class FirebaseDataSource constructor(
         if (current?.uid == expectedUid) auth.signOut()
         auth.currentUser?.uid ?: checkNotNull(auth.signInAnonymously().user).uid
     }
+
+    internal suspend fun getKidsShorts(): List<KidsShort> =
+        firestore.collection("kids_shorts")
+            .where { "isActive" equalTo true }
+            .get()
+            .documents
+            .mapNotNull { document ->
+                try {
+                    document.data<KidsShortDto>().toDomain(document.id)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Log.w("KidsShorts", "Skipping invalid clip document ${document.id}")
+                    null
+                }
+            }
+            .sortedWith(compareBy(KidsShort::order, KidsShort::id))
+            .distinctBy(KidsShort::id)
 
     suspend fun getDailyPlan(dayId: Int): DailyPlanDto? {
         val snapshot = firestore.collection("daily_plans").document(dayId.toString()).get()
