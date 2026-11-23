@@ -64,6 +64,9 @@ internal fun ColumnScope.CatchGoodDeeds(onFinish: (Int, Int) -> Unit) {
 
     RewardText("الوقت ${arabicNumber(seconds)} ث  ·  الحسنات ${arabicNumber(score)} ★", bold = true)
     RoundProgress(seconds / CatchTime)
+    val fieldBrush = Brush.verticalGradient(listOf(RewardLavender, RewardCream, RewardMint))
+    val prizeColor = RewardGold
+    val outlineColor = RewardPurple
     Canvas(
         Modifier.fillMaxWidth().weight(1f).clip(RewardShape)
             .semantics { contentDescription = "ملعب التقاط النجوم. اسحب السلة أو استخدم أزرار اليمين واليسار." }
@@ -80,7 +83,7 @@ internal fun ColumnScope.CatchGoodDeeds(onFinish: (Int, Int) -> Unit) {
                 }
             }
     ) {
-        drawRect(Brush.verticalGradient(listOf(RewardLavender, RewardCream, RewardMint)))
+        drawRect(fieldBrush)
         val unit = size.minDimension
         falling.forEach { item ->
             val at = Offset(item.x * size.width, item.y * size.height)
@@ -94,19 +97,19 @@ internal fun ColumnScope.CatchGoodDeeds(onFinish: (Int, Int) -> Unit) {
                     if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
                 path.close()
-                drawPath(path, RewardGold)
-                drawPath(path, RewardPurple, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+                drawPath(path, prizeColor)
+                drawPath(path, outlineColor, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
             } else {
-                drawCircle(RewardPurple, unit * .022f, at + Offset(-unit * .02f, 0f))
-                drawCircle(RewardPurple, unit * .028f, at + Offset(0f, -unit * .01f))
-                drawCircle(RewardPurple, unit * .021f, at + Offset(unit * .024f, 0f))
+                drawCircle(outlineColor, unit * .022f, at + Offset(-unit * .02f, 0f))
+                drawCircle(outlineColor, unit * .028f, at + Offset(0f, -unit * .01f))
+                drawCircle(outlineColor, unit * .021f, at + Offset(unit * .024f, 0f))
             }
         }
         val left = (basket - BasketHalf) * size.width
         val top = BasketY * size.height
         val width = BasketHalf * 2 * size.width
-        drawRoundRect(RewardPurple, Offset(left, top), Size(width, size.height * .073f), CornerRadius(9.dp.toPx()))
-        drawRoundRect(RewardGold, Offset(left, top), Size(width, size.height * .024f), CornerRadius(6.dp.toPx()))
+        drawRoundRect(outlineColor, Offset(left, top), Size(width, size.height * .073f), CornerRadius(9.dp.toPx()))
+        drawRoundRect(prizeColor, Offset(left, top), Size(width, size.height * .024f), CornerRadius(6.dp.toPx()))
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         RewardButton("يمين", { move(basket + .14f) }, Modifier.weight(1f))

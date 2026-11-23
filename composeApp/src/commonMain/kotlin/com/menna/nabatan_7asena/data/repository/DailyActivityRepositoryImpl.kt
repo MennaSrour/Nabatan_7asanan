@@ -170,6 +170,12 @@ class DailyActivityRepositoryImpl constructor(
         appDao.saveActivity(date, activityId, isCompleted, today, today.minus(1, DateTimeUnit.DAY))
     }
 
+    override suspend fun claimDailyCompletionReward(
+        profileId: String,
+        date: String,
+        completedTaskIds: Set<Int>
+    ): Boolean = appDao.claimDailyCompletionReward(profileId, date, completedTaskIds)
+
     override suspend fun getSuggestedExtraTasks(): ExtraTasks {
         val todayId = getDayOfYear()
 

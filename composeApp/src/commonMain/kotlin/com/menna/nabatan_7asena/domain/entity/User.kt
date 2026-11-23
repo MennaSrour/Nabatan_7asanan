@@ -18,3 +18,4 @@ data class User(
 }
 
 const val PRAYER_GUIDE_BONUS_STARS = 5
+const val DAILY_COMPLETION_BONUS_STARS = 50

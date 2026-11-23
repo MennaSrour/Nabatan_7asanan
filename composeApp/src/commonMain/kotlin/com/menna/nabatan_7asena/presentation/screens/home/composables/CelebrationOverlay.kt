@@ -8,11 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
 import com.menna.nabatan_7asena.platform.animation.LottieCompositionSpec
 import com.menna.nabatan_7asena.resources.AppResources as R
@@ -21,7 +26,7 @@ import com.menna.nabatan_7asena.presentation.common.genderedStringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
-fun CelebrationOverlay(onDismiss: () -> Unit) {
+fun CelebrationOverlay(onDismiss: () -> Unit, onOpenDailyGift: () -> Unit) {
     Dialog(
         onDismissRequest = onDismiss
     ) {
@@ -50,6 +55,23 @@ fun CelebrationOverlay(onDismiss: () -> Unit) {
                     color = SummerTheme.colors.goldWarm,
                     style = SummerTheme.typography.overlaySubtitle
                 )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "أضفنا ٥٠ نجمة إلى رصيدك",
+                    color = SummerTheme.colors.white,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(Modifier.height(18.dp))
+                Button(
+                    onClick = { onDismiss(); onOpenDailyGift() },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SummerTheme.colors.goldWarm,
+                        contentColor = SummerTheme.colors.textDarkBrown
+                    )
+                ) {
+                    Text("لف العجلة لهدية اليوم", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

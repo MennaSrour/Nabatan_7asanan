@@ -26,6 +26,7 @@ interface AppDao {
     @Query("SELECT itemId FROM daily_records WHERE date = :date AND isCompleted = 1")
     suspend fun completedGiftTaskIds(date: String): List<Int>
 
+
     @Query("SELECT id FROM extra_tasks WHERE date = :date")
     suspend fun extraGiftTaskIds(date: String): List<Int>
 
@@ -40,6 +41,29 @@ interface AppDao {
     @Transaction
     suspend fun reserveDailyGift(reward: DailyRewardEntity, taskDate: String): Boolean =
         giftTasksCompleted(reward.profileId, taskDate) && claimReward(reward)
+
+    @Transaction
+    suspend fun claimDailyCompletionReward(
+        profileId: String,
+        date: String,
+        requiredTaskIds: Set<Int>
+    ): Boolean {
+        if (requiredTaskIds.isEmpty()) return false
+        if (activeRewardProfileId().orEmpty().ifBlank { "local" } != profileId) return false
+        if (!completedGiftTaskIds(date).containsAll(requiredTaskIds)) return false
+        val reward = DailyRewardEntity(
+            profileId = profileId,
+            day = date,
+            kind = DAILY_COMPLETION_REWARD_KIND,
+            prize = "daily_completion",
+            stars = DAILY_COMPLETION_BONUS_STARS,
+            synced = true,
+            claimId = date
+        )
+        if (insertReward(reward) == -1L) return false
+        creditRewardBalance(reward)
+        return true
+    }
 
     @Transaction
     suspend fun claimDailyGiftGame(reward: DailyRewardEntity, taskDate: String): Boolean {

@@ -104,7 +104,6 @@ open class HomeViewModel constructor(
 
     private val playingTaskId = MutableStateFlow<Int?>(null)
     private val tempCompletedTaskIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
-    private var lastCompletedCount = -1
 
     private var gardenSyncJob: Job? = null
     private var gardenSyncProfile: String? = null
@@ -292,20 +291,9 @@ open class HomeViewModel constructor(
 
     private fun observeCombined() {
         viewModelScope.launch {
-            combinedUiState.collect { (state, completedCount) ->
-                val allTasksCompleted = state.tasks.isNotEmpty() && state.tasks.all { it.isCompleted }
-
-                if (lastCompletedCount != -1 && completedCount > lastCompletedCount && allTasksCompleted) {
-                    if (!_uiState.value.showCelebration) {
-                        delay(500)
-                        audioPlayerManager.playCelebrationSound()
-                        _uiState.update { it.copy(showCelebration = true) }
-                    }
-                }
-
+            combinedUiState.collect { (state, _) ->
                 if (gardenSyncProfile != state.gardenProfileId) { gardenSyncJob?.cancel(); gardenSyncProfile = null }
                 if (state.garden?.syncPending == true && !state.isGardenUnavailable) requestGardenSync(state.gardenProfileId)
-                lastCompletedCount = completedCount
 
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -448,6 +436,7 @@ open class HomeViewModel constructor(
                 if (task?.category == TaskCategory.QURAN) {
                     incrementQuranPartUseCase()
                 }
+                claimDailyCompletionIfEligible(taskId, true)
             }
             tempCompletedTaskIds.update { it - taskId }
         }
@@ -479,9 +468,40 @@ open class HomeViewModel constructor(
                         if (newStatus) incrementQuranPartUseCase()
                         else decrementQuranPartUseCase()
                     }
+                    claimDailyCompletionIfEligible(item.id, newStatus)
                 }
                 tempCompletedTaskIds.update { it - item.id }
             }
+        }
+    }
+
+    private suspend fun claimDailyCompletionIfEligible(taskId: Int, isCompleted: Boolean) {
+        if (!isCompleted) return
+        val state = _uiState.value
+        val date = state.prayerDate ?: return
+        if (date != AppClock.today() || state.hasLoadError || state.hasPrayerLoadError || addingTask) return
+        val tasks = state.tasks
+        val optimisticStatus = tempCompletedTaskIds.value
+        if (tasks.isEmpty() || tasks.none { it.id == taskId } || tasks.any { task ->
+                val completed = optimisticStatus[task.id] ?: (if (task.id == taskId) true else task.isCompleted)
+                !completed
+            }) return
+
+        try {
+            val claimed = dailyActivityRepository.claimDailyCompletionReward(
+                profileId = state.gardenProfileId.ifBlank { "local" },
+                date = AppClock.dateString(date),
+                completedTaskIds = tasks.mapTo(mutableSetOf()) { it.id }
+            )
+            if (claimed) {
+                delay(350)
+                audioPlayerManager.playCelebrationSound()
+                _uiState.update { it.copy(showCelebration = true) }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            sendMessage("تعذّر حفظ مكافأة إكمال مهام اليوم. حاول مرة أخرى.")
         }
     }
 
@@ -492,6 +512,7 @@ open class HomeViewModel constructor(
         viewModelScope.launch {
             try {
                 quranJourney.complete(id, date, wird)
+                claimDailyCompletionIfEligible(item.id, true)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

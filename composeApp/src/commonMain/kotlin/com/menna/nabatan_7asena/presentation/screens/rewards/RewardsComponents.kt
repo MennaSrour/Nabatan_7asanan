@@ -8,8 +8,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -20,14 +20,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.menna.nabatan_7asena.ui.theme.KidsFontFamily
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
-internal val RewardInk = Color(0xFF382452)
-internal val RewardPurple = Color(0xFF664495)
-internal val RewardCream = Color(0xFFFFFAEC)
-internal val RewardLavender = Color(0xFFEDE1FA)
-internal val RewardGold = Color(0xFFFFCE6D)
-internal val RewardMint = Color(0xFFD6EFDC)
-internal val RewardRose = Color(0xFFF6DCE4)
+internal val RewardInk: Color @Composable get() = SummerTheme.colors.textPrimary
+internal val RewardPurple: Color @Composable get() = SummerTheme.colors.wisdomAccent
+internal val RewardCream: Color @Composable get() = SummerTheme.colors.dialogBackground
+internal val RewardLavender: Color @Composable get() = SummerTheme.colors.wisdomStart
+internal val RewardGold: Color @Composable get() = SummerTheme.colors.goldWarm
+internal val RewardMint: Color @Composable get() = SummerTheme.colors.successGreen.copy(alpha = .28f)
+internal val RewardRose: Color @Composable get() = SummerTheme.colors.errorRed.copy(alpha = .22f)
 internal val RewardShape = RoundedCornerShape(22.dp)
 
 internal fun arabicNumber(value: Int) = value.toString().map {

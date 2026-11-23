@@ -37,12 +37,12 @@ internal fun HomeShortcutCards(badgeCount: String, onPrayerGuide: () -> Unit, on
     ) {
         ShortcutCard(
             "تعلّم الوضوء والصلاة", "خطوة بخطوة",
-            Color(0xFFD9F8FF), Color(0xFFAEF0D5), Color(0xFF6BB9B3),
+            SummerTheme.colors.wisdomStart, SummerTheme.colors.wisdomEnd, SummerTheme.colors.wisdomAccent,
             onPrayerGuide, Modifier.weight(1f)
         ) { GuideArtwork(GuideScene.WashHands, Modifier.size(width = 90.dp, height = 64.dp)) }
         ShortcutCard(
             BADGES_TITLE, badgeCount,
-            Color(0xFFFFECB3), Color(0xFFE7D5FF), Color(0xFFAF8BD5),
+            SummerTheme.colors.goldWarm.copy(alpha = .24f), SummerTheme.colors.wisdomStart, SummerTheme.colors.goldDeep,
             onBadges, Modifier.weight(1f)
         ) { TrophyArtwork(Modifier.size(64.dp)) }
     }
@@ -67,10 +67,10 @@ private fun ShortcutCard(
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             artwork()
             Box(Modifier.heightIn(min = 50.dp), contentAlignment = Alignment.Center) {
-                Text(title, color = Color(0xFF382752), style = MaterialTheme.typography.titleMedium,
+                Text(title, color = SummerTheme.colors.textDarkBrown, style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
             }
-            Text(subtitle, color = Color(0xFF503A6A), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+            Text(subtitle, color = SummerTheme.colors.textBrown, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
         }
     }
 }
@@ -80,7 +80,7 @@ internal fun FriendsHomeCard(onClick: () -> Unit, showBadge: Boolean) {
     ChunkyButton(
         onClick = onClick,
         color = FriendsCream,
-        edgeColor = Color(0xFFAF8BD5),
+        edgeColor = SummerTheme.colors.wisdomAccent,
         shape = RoundedCornerShape(26.dp),
         faceBrush = Brush.horizontalGradient(listOf(FriendsLavender, FriendsCream)),
         faceBorder = FriendsGold,
@@ -97,7 +97,7 @@ internal fun FriendsHomeCard(onClick: () -> Unit, showBadge: Boolean) {
             Text(
                 text = "أصحابي",
                 modifier = Modifier.weight(1f),
-                color = FriendsPurple,
+                color = SummerTheme.colors.textDarkBrown,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )

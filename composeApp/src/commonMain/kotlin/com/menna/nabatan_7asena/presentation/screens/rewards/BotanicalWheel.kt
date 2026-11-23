@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.menna.nabatan_7asena.domain.entity.WheelPrize
 import com.menna.nabatan_7asena.ui.theme.KidsFontFamily
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlin.math.PI
 import kotlin.math.floor
 import kotlin.math.cos
@@ -34,15 +35,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
-private val Emerald = Color(0xFF205C42)
-private val Forest = Color(0xFF153E2E)
-private val Moss = Color(0xFF80A45D)
-private val Pollen = Color(0xFFFFD373)
-private val Petal = Color(0xFFF9BACB)
-private val Cream = Color(0xFFFFF4CE)
-private val WedgeColors = listOf(
-    Color(0xFF75BD93), Color(0xFFCEE3A9), Color(0xFFFFCECA), Color(0xFFF8D88A),
-    Color(0xFFA3D8BB), Color(0xFFF5C76F), Color(0xFFE3D0EC)
+private data class WheelPalette(
+    val emerald: Color,
+    val forest: Color,
+    val moss: Color,
+    val pollen: Color,
+    val petal: Color,
+    val cream: Color,
+    val wedges: List<Color>
 )
 private data class SeedParticle(val angle: Float, val distance: Float, val size: Float)
 
@@ -55,10 +55,24 @@ internal fun BotanicalWheel(
     enabled: Boolean,
     onSpin: () -> Unit
 ) {
+    val theme = SummerTheme.colors
+    val palette = WheelPalette(
+        emerald = theme.successGreen,
+        forest = theme.textDarkBrown,
+        moss = theme.leafGreen,
+        pollen = theme.goldWarm,
+        petal = theme.secondaryAccent,
+        cream = theme.dialogBackground,
+        wedges = listOf(
+            theme.successGreen, theme.wisdomStart, theme.secondaryAccent.copy(alpha = .72f),
+            theme.goldWarm.copy(alpha = .72f), theme.leafGreen.copy(alpha = .68f),
+            theme.wisdomAccent.copy(alpha = .68f), theme.goldDeep.copy(alpha = .55f)
+        )
+    )
     val font = KidsFontFamily
     val measurer = rememberTextMeasurer()
     val labelStyle = TextStyle(
-        color = Forest, fontFamily = font, fontWeight = FontWeight.ExtraBold,
+        color = palette.forest, fontFamily = font, fontWeight = FontWeight.ExtraBold,
         fontSize = 13.sp, lineHeight = 15.sp, textAlign = TextAlign.Center
     )
     val labels = remember(measurer, labelStyle) {
@@ -86,12 +100,12 @@ internal fun BotanicalWheel(
             val radius = size.minDimension * .38f
             val topLeft = center - Offset(radius, radius)
             drawCircle(
-                Brush.radialGradient(listOf(Pollen.copy(alpha = .37f), Color.Transparent), center, radius * 1.3f),
+                Brush.radialGradient(listOf(palette.pollen.copy(alpha = .37f), Color.Transparent), center, radius * 1.3f),
                 radius * 1.3f
             )
-            drawCircle(Emerald, radius * 1.13f)
-            drawCircle(Moss, radius * 1.09f, style = Stroke(2.dp.toPx()))
-            drawCircle(Pollen, radius * 1.025f, style = Stroke(2.dp.toPx()))
+            drawCircle(palette.emerald, radius * 1.13f)
+            drawCircle(palette.moss, radius * 1.09f, style = Stroke(2.dp.toPx()))
+            drawCircle(palette.pollen, radius * 1.025f, style = Stroke(2.dp.toPx()))
 
             val active = (-rotation / wheelSlice).roundToInt()
             val segment = rotation / wheelSlice + .5f
@@ -101,17 +115,17 @@ internal fun BotanicalWheel(
             labels.forEachIndexed { index, label ->
                 val angle = -90f + index * wheelSlice + rotation
                 val isUnderPointer = ((active % labels.size) + labels.size) % labels.size == index
-                drawArc(WedgeColors[index], angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2))
+                drawArc(palette.wedges[index], angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2))
                 if (WheelPrize.segments[index] == winner) {
                     drawArc(
-                        Brush.radialGradient(listOf(Cream.copy(alpha = .34f), Pollen.copy(alpha = .74f + pulse * .5f)),
+                        Brush.radialGradient(listOf(palette.cream.copy(alpha = .34f), palette.pollen.copy(alpha = .74f + pulse * .5f)),
                             center, radius),
                         angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2)
                     )
-                    drawArc(Cream, angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2),
+                    drawArc(palette.cream, angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2),
                         style = Stroke(2.5.dp.toPx()))
                 } else if (spinning && isUnderPointer) {
-                    drawArc(Cream.copy(alpha = .13f + .12f * bounce),
+                    drawArc(palette.cream.copy(alpha = .13f + .12f * bounce),
                         angle - wheelSlice / 2, wheelSlice, true, topLeft, Size(radius * 2, radius * 2))
                 }
                 val anchor = center + direction(angle) * (radius * .69f)
@@ -119,30 +133,30 @@ internal fun BotanicalWheel(
             }
             labels.indices.forEach { index ->
                 val boundary = -90f + index * wheelSlice + rotation - wheelSlice / 2
-                drawLine(Cream.copy(alpha = .82f), center, center + direction(boundary) * radius, 1.5.dp.toPx())
+                drawLine(palette.cream.copy(alpha = .82f), center, center + direction(boundary) * radius, 1.5.dp.toPx())
             }
 
             repeat(30) { index ->
                 val angle = index * 12f + rotation
                 val point = center + direction(angle) * (radius * 1.073f)
                 if (index % 5 == 0) {
-                    drawBlossom(point, radius * .044f, if (index % 2 == 0) Petal else Cream)
+                    drawBlossom(point, radius * .044f, if (index % 2 == 0) palette.petal else palette.cream, palette.pollen)
                 } else {
                     drawLeaf(point, angle + if (index % 2 == 0) 63f else 117f,
-                        radius * .079f, if (index % 2 == 0) Moss else Color(0xFFABD89C))
-                    drawCircle(Pollen, radius * .011f, center + direction(angle + 5f) * (radius * 1.11f))
+                        radius * .079f, if (index % 2 == 0) palette.moss else palette.moss.copy(alpha = .55f), palette.emerald)
+                    drawCircle(palette.pollen, radius * .011f, center + direction(angle + 5f) * (radius * 1.11f))
                 }
             }
 
             drawCircle(
-                Brush.radialGradient(listOf(Cream, Pollen.copy(alpha = .65f), Color.Transparent), center, radius * .44f),
+                Brush.radialGradient(listOf(palette.cream, palette.pollen.copy(alpha = .65f), Color.Transparent), center, radius * .44f),
                 radius * .44f
             )
             val tickLift = if (spinning) bounce * bounce else 0f
             val pointer = center + Offset(0f, -radius * (1.24f + tickLift * .024f))
             rotate(-10f * tickLift, pointer) {
-                drawLeaf(pointer, 90f, radius * .34f, Pollen, Emerald)
-                drawCircle(Cream, radius * .022f, pointer + Offset(0f, radius * .09f))
+                drawLeaf(pointer, 90f, radius * .34f, palette.pollen, palette.emerald)
+                drawCircle(palette.cream, radius * .022f, pointer + Offset(0f, radius * .09f))
             }
 
             if (celebration < 1f) {
@@ -152,9 +166,9 @@ internal fun BotanicalWheel(
                         Offset(0f, radius * celebration * celebration * .2f)
                     val scale = radius * particle.size
                     if (index % 3 == 0) {
-                        drawLeaf(point, particle.angle + 210f * celebration, scale * .12f, Moss.copy(alpha = fade))
+                        drawLeaf(point, particle.angle + 210f * celebration, scale * .12f, palette.moss.copy(alpha = fade), palette.emerald)
                     } else {
-                        val dot = if (index % 3 == 1) Pollen else Petal
+                        val dot = if (index % 3 == 1) palette.pollen else palette.petal
                         val flare = scale * .048f
                         drawPath(Path().apply {
                             repeat(10) { spike ->
@@ -175,13 +189,13 @@ internal fun BotanicalWheel(
             contentPadding = PaddingValues(4.dp),
             modifier = Modifier.size(85.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Cream, contentColor = Forest,
-                disabledContainerColor = Emerald, disabledContentColor = Cream
+                containerColor = palette.cream, contentColor = palette.forest,
+                disabledContainerColor = palette.emerald, disabledContentColor = palette.cream
             )
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Canvas(Modifier.size(22.dp)) {
-                    drawBlossom(center, size.minDimension * .30f, if (enabled) Moss else Petal)
+                    drawBlossom(center, size.minDimension * .30f, if (enabled) palette.moss else palette.petal, palette.pollen)
                 }
                 Text("لف العجلة", fontFamily = font, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp,
                     textAlign = TextAlign.Center)
@@ -195,7 +209,7 @@ private fun direction(angle: Float): Offset {
     return Offset(cos(radians).toFloat(), sin(radians).toFloat())
 }
 
-private fun DrawScope.drawLeaf(base: Offset, angle: Float, length: Float, color: Color, vein: Color = Emerald) {
+private fun DrawScope.drawLeaf(base: Offset, angle: Float, length: Float, color: Color, vein: Color) {
     val forward = direction(angle) * length
     val side = direction(angle + 90f) * (length * .45f)
     val tip = base + forward
@@ -210,9 +224,9 @@ private fun DrawScope.drawLeaf(base: Offset, angle: Float, length: Float, color:
         (length * .045f).coerceAtLeast(.8f))
 }
 
-private fun DrawScope.drawBlossom(point: Offset, radius: Float, color: Color) {
+private fun DrawScope.drawBlossom(point: Offset, radius: Float, color: Color, centerColor: Color) {
     repeat(5) { petal ->
         drawCircle(color, radius * .55f, point + direction(petal * 72f - 90f) * radius * .62f)
     }
-    drawCircle(Pollen, radius * .36f, point)
+    drawCircle(centerColor, radius * .36f, point)
 }
