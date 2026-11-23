@@ -24,7 +24,7 @@ val iosServices: SharedServices by lazy {
         IosAlarms(), IosPermissions, IosScheduling(), { IosScreenAudio() })
 }
 
-// Audio, downloads and local alarm adapters remain unsupported on iOS.
+// Quran streaming/downloads and local alarm adapters remain release blockers on iOS.
 private class IosScheduling : SchedulingPlatform {
     override fun enableDailyAutoScheduling(replace: Boolean) = Unit
     override fun scheduleImmediately() = Unit
@@ -35,19 +35,6 @@ private class IosAlarms : GlobalAlarmManager {
     override fun cancelAzkarAlarms() = Unit
     override fun cancelQuranAlarms() = Unit
     override fun cancelAllAlarms() = Unit
-}
-private class IosScreenAudio : ScreenAudioPlayer {
-    override fun play(resource: Int, onFinished: () -> Unit) { onFinished() }
-    override fun stop() = Unit
-}
-private class IosAudio : AudioPlayerManager {
-    override fun playTaskSound(item: HomeUiState.UiTaskItem, onCompletion: () -> Unit) { onCompletion() }
-    override fun playWelcomeSound(onCompletion: () -> Unit) { onCompletion() }
-    override fun playCelebrationSound(onCompletion: () -> Unit) { onCompletion() }
-    override fun playCorrectAnswerSound(onCompletion: () -> Unit) { onCompletion() }
-    override fun playAlarmSound(soundResId: Int, onCompletion: () -> Unit) { onCompletion() }
-    override fun playDuaOrZekrSound(soundResId: Int, onCompletion: () -> Unit) { onCompletion() }
-    override fun stopAnyPlayingSound() = Unit
 }
 private class IosQuranAudio : QuranAudioPlayer {
     override fun play(url: String, onReady: () -> Unit, onBuffering: () -> Unit, onEnded: () -> Unit, onError: (Exception) -> Unit) {

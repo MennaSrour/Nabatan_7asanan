@@ -14,34 +14,50 @@ import kotlin.coroutines.resume
 
 internal object IosLocationAccess : LocationTracker {
     private val mutex = Mutex()
+    private val authorizationMutex = Mutex()
     private var authorization: CancellableContinuation<Unit>? = null
     private var position: CancellableContinuation<CLLocation?>? = null
     private val locationDelegate = object : NSObject(), CLLocationManagerDelegateProtocol {
         override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
             if (didChangeAuthorizationStatus != kCLAuthorizationStatusNotDetermined) {
-                authorization?.takeIf { it.isActive }?.resume(Unit)
+                val pending = authorization
                 authorization = null
+                pending?.takeIf { it.isActive }?.resume(Unit)
             }
         }
         override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
-            position?.takeIf { it.isActive }?.resume(didUpdateLocations.lastOrNull() as? CLLocation)
+            val pending = position
             position = null
+            val fix = (didUpdateLocations.lastOrNull() as? CLLocation)?.takeIf {
+                it.horizontalAccuracy >= 0.0 && kotlin.math.abs(it.timestamp.timeIntervalSinceNow) < 60.0
+            }
+            pending?.takeIf { it.isActive }?.resume(fix)
         }
         override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
-            position?.takeIf { it.isActive }?.resume(null)
+            val pending = position
             position = null
+            pending?.takeIf { it.isActive }?.resume(null)
         }
     }
     private val manager = CLLocationManager().apply { delegate = locationDelegate }
 
     fun granted(): Boolean = CLLocationManager.locationServicesEnabled() &&
         CLLocationManager.authorizationStatus() in listOf(kCLAuthorizationStatusAuthorizedAlways, kCLAuthorizationStatusAuthorizedWhenInUse)
-    suspend fun requestAuthorization() {
-        if (CLLocationManager.authorizationStatus() != kCLAuthorizationStatusNotDetermined) return
-        suspendCancellableCoroutine { continuation ->
-            authorization = continuation
-            continuation.invokeOnCancellation { authorization = null }
-            manager.requestWhenInUseAuthorization()
+    suspend fun requestAuthorization() = withContext(Dispatchers.Main) {
+        authorizationMutex.withLock {
+            if (CLLocationManager.authorizationStatus() != kCLAuthorizationStatusNotDetermined) return@withLock
+            withTimeoutOrNull(60_000) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    authorization = continuation
+                    continuation.invokeOnCancellation {
+                        platform.darwin.dispatch_async(platform.darwin.dispatch_get_main_queue()) {
+                            if (authorization === continuation) authorization = null
+                        }
+                    }
+                    manager.requestWhenInUseAuthorization()
+                }
+            }
+            Unit
         }
     }
     override suspend fun getCurrentLocation(): UserLocation? = withContext(Dispatchers.Main) {
@@ -50,7 +66,11 @@ internal object IosLocationAccess : LocationTracker {
             val location = withTimeoutOrNull(10_000) {
                 suspendCancellableCoroutine<CLLocation?> { continuation ->
                     position = continuation
-                    continuation.invokeOnCancellation { position = null; manager.stopUpdatingLocation() }
+                    continuation.invokeOnCancellation {
+                        platform.darwin.dispatch_async(platform.darwin.dispatch_get_main_queue()) {
+                            if (position === continuation) { position = null; manager.stopUpdatingLocation() }
+                        }
+                    }
                     manager.requestLocation()
                 }
             } ?: return@withLock null

@@ -2,6 +2,7 @@ package com.menna.nabatan_7asena.presentation.screens.settings.composables
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ fun SettingsSections(state: SettingsUiState, actions: SettingsActions, padding: 
         modifier = Modifier
             .padding(padding)
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
