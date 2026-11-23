@@ -14,9 +14,9 @@ class DailyGiftTest {
     }
 
     @Test
-    fun wheelOffersAllFourGamesOnceAndKeepsLegacyResultsReadable() {
+    fun wheelOffersAllFiveGamesOnceAndKeepsLegacyResultsReadable() {
         assertEquals(KidsGame.entries.toSet(), WheelPrize.segments.mapNotNull { it.game }.toSet())
-        assertEquals(4, WheelPrize.segments.count { it.game != null })
+        assertEquals(5, WheelPrize.segments.count { it.game != null })
         assertEquals(WheelPrize.MEMORY, WheelPrize.fromStoredCode("BONUS_ROUND"))
         assertEquals(WheelPrize.STARS_50, WheelPrize.fromStoredCode("STARS_50"))
         assertTrue(WheelPrize.RIDDLE in WheelPrize.segments)
