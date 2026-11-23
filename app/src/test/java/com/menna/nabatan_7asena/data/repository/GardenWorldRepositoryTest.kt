@@ -26,6 +26,7 @@ class GardenWorldRepositoryTest {
         val uploads = mutableListOf<GardenProgress>()
         val repo = repository(storage) { _, device, progress -> assertEquals("old-device", device); uploads += progress }
         val migrated = repo.progress()
+        assertEquals(4, migrated.plotCount)
         assertEquals(35, migrated.trees.single().xp)
         assertEquals(1, migrated.placements.size)
         assertEquals(1, migrated.quantities["butterflies"])
@@ -42,6 +43,7 @@ class GardenWorldRepositoryTest {
         val storage = Memory()
         val repo = repository(storage)
         repo.creditTasks("child", date, setOf(1, 2, 3))
+        repo.buyProduct("child", GardenProduct.LAND)
         repo.buyProduct("child", GardenProduct.PALM)
         val palm = repo.progress().trees.single { it.species == GardenSpecies.PALM }
         repo.plantTree("child", palm.id, 1)
@@ -53,7 +55,7 @@ class GardenWorldRepositoryTest {
         assertNull(restored.progress().trees.single { it.id == palm.id }.plotIndex)
         assertEquals(0, restored.progress().trees.single { it.id == "original-tree" }.xp)
         assertEquals(1, restored.progress().waterDrops)
-        assertEquals(15, restored.progress().spentStars)
+        assertEquals(65, restored.progress().spentStars)
         assertEquals(1, restored.progress("other").trees.size)
     }
 
@@ -61,7 +63,7 @@ class GardenWorldRepositoryTest {
         val repo = repository()
         repo.buy("child", GardenDecoration.FOUNTAIN)
         val results = (1..5).map { async {
-            try { repo.placeDecoration("child", GardenDecoration.FOUNTAIN, 1); true } catch (_: GardenPlacementUnavailable) { false }
+            try { repo.placeDecoration("child", GardenDecoration.FOUNTAIN, 0); true } catch (_: GardenPlacementUnavailable) { false }
         } }.awaitAll()
         assertEquals(1, results.count { it })
         assertEquals(1, repo.progress().placements.size)
@@ -73,28 +75,29 @@ class GardenWorldRepositoryTest {
         val storage = Memory()
         val uploads = mutableListOf<GardenProgress>()
         val repo = repository(storage) { _, _, progress -> uploads += progress }
-        repo.buyProduct("child", GardenProduct.LAND)
+        repeat(2) { repo.buyProduct("child", GardenProduct.LAND) }
         repeat(3) { repo.buy("child", GardenDecoration.LANTERN) }
-        repo.placeDecoration("child", GardenDecoration.LANTERN, 6)
+        repo.placeDecoration("child", GardenDecoration.LANTERN, 1)
         val id = repo.progress().placements.single().id
         repo.managePlacement("child", id, visible = false)
         repo.managePlacement("child", id, plot = 2)
         repo.sync("child")
         val restored = repository(storage).progress()
-        assertEquals(7, restored.plotCount)
+        assertEquals(3, restored.plotCount)
         assertEquals(3, restored.quantities["lantern"])
         assertEquals(2, restored.placements.single().plotIndex)
         assertFalse(restored.placements.single().visible)
         assertEquals(restored.placements, uploads.last().placements)
         repo.managePlacement("child", id, remove = true)
         assertEquals(3, repo.progress().availableDecoration("lantern"))
-        assertEquals(140, repo.progress().spentStars)
+        assertEquals(190, repo.progress().spentStars)
     }
 
     @Test fun failedPlacementSaveCannotMoveATreeOrLoseAnInventoryCopy() = runTest {
         val storage = Memory()
         val repo = repository(storage)
         repo.creditTasks("child", date, setOf(1))
+        repo.buyProduct("child", GardenProduct.LAND)
         val before = repo.progress()
         val persisted = storage.saved
         storage.fail = true
@@ -103,15 +106,17 @@ class GardenWorldRepositoryTest {
         assertEquals(persisted, storage.saved)
     }
 
-    @Test fun concurrentExpansionAtTheCapChargesForOnlyOneValidExpansion() = runTest {
-        val repo = repository()
-        repeat(3) { repo.buyProduct("child", GardenProduct.LAND) }
+    @Test fun concurrentExpansionPastSixteenChargesOnlyWhatTheBalanceCovers() = runTest {
+        val storage = Memory()
+        val repo = repository(storage)
+        repeat(19) { repo.buyProduct("child", GardenProduct.LAND) }
         val results = (1..3).map { async {
-            try { repo.buyProduct("child", GardenProduct.LAND); true } catch (_: GardenLandLimit) { false }
+            try { repo.buyProduct("child", GardenProduct.LAND); true } catch (_: InsufficientGardenStars) { false }
         } }.awaitAll()
         assertEquals(1, results.count { it })
-        assertEquals(16, repo.progress().plotCount)
-        assertEquals(200, repo.progress().spentStars)
+        assertEquals(21, repo.progress().plotCount)
+        assertEquals(1000, repo.progress().spentStars)
+        assertEquals(21, repository(storage).progress().plotCount)
     }
 
     @Test fun unsupportedFutureSaveIsPreservedRatherThanReset() = runTest {

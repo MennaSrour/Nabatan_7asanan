@@ -39,7 +39,12 @@ class GardenRepositoryImpl(
         val snapshot = storage.read()?.let { json.decodeFromString<GardenSnapshot>(it) } ?: GardenSnapshot(deviceId = Uuid.random().toString())
         require(snapshot.version in 1..2 && snapshot.deviceId.isNotBlank())
         snapshot.profiles.values.forEach { it.validate() }
-        val migrated = snapshot.copy(version = 2, profiles = snapshot.profiles.mapValues { it.value.asWorld() })
+        val migrated = snapshot.copy(version = 2, profiles = snapshot.profiles.mapValues { (_, saved) ->
+            val migratedWorld = saved.asWorld()
+            // Pre-grid saves also opened into four plots; keep that space for existing profiles.
+            if (saved.worldFormat == 0) migratedWorld.copy(expansions = maxOf(3, migratedWorld.expansions))
+            else migratedWorld
+        })
         migrated.profiles.values.forEach { it.validate() }
         migrated
     } catch (e: CancellationException) {

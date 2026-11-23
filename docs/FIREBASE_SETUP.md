@@ -8,6 +8,12 @@ Deploy from the repository root after testing in a staging project.
 firebase deploy --only firestore:rules --project YOUR_PROJECT_ID
 ```
 
+Deploy the updated rules before releasing the expandable Living Garden. They accept
+both legacy and current garden formats and no longer enforce the old 16-plot
+limit. Garden purchases are saved locally before backup. The existing Firestore
+backup format still stores one document per garden, subject to Firestore's
+document size limit.
+
 Room still owns profile and daily progress. The optional `users/{uid}` cloud profile and garden backups are private. Friday attempts are private, one per Firebase UID per week, with one bounded score submission. The app currently computes scores and picks questions on the device, so scores and client-declared week IDs are untrusted. A trusted backend must verify gameplay before publishing leaderboard and Friday podium documents. Until that backend is connected, the app displays the published rankings and records new Friday attempts privately.
 
 Publish only approved public display names and ranking fields in `leaderboard` and `quiz_podium`. Before rollout, copy approved legacy ranking fields from `quiz_scores` to `quiz_podium`. The legacy collection is denied to clients because it can contain attempt tokens. For sample game and shorts content, see [the seed script instructions](../scripts/README.md).

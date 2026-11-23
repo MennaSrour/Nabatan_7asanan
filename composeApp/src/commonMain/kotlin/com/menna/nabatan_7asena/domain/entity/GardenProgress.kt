@@ -40,9 +40,10 @@ data class GardenProgress(
         rewardDate?.let { LocalDate.parse(it) }
         lastWateredDate?.let { LocalDate.parse(it) }
         wheelRewardDays.forEach { LocalDate.parse(it) }
-        require(worldFormat in 0..1)
-        if (worldFormat == 1) {
-            require(expansions in 0..GARDEN_MAX_EXPANSIONS && trees.isNotEmpty())
+        require(worldFormat in 0..2)
+        if (worldFormat != 0) {
+            val maxExpansions = if (worldFormat == 1) (Int.MAX_VALUE - 4) / 3 else Int.MAX_VALUE - GARDEN_INITIAL_PLOTS
+            require(expansions in 0..maxExpansions && trees.isNotEmpty())
             require(trees.map { it.id }.distinct().size == trees.size && trees.all { it.id.isNotBlank() && it.xp >= 0 })
             require(trees.sumOf { it.xp.toLong() } == xp.toLong())
             val planted = trees.mapNotNull { it.plotIndex }

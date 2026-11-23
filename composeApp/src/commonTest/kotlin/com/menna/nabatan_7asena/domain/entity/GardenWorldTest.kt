@@ -11,7 +11,7 @@ class GardenWorldTest {
             ownedItems = setOf("lantern", "butterflies"), equippedItems = setOf("lantern"), lastWateredDate = "2026-11-21")
         val world = legacy.asWorld()
         world.validate()
-        assertEquals(4, world.plotCount)
+        assertEquals(1, world.plotCount)
         assertEquals(35, world.trees.single().xp)
         assertEquals(0, world.trees.single().plotIndex)
         assertEquals("2026-11-21", world.trees.single().lastWateredDate)
@@ -24,7 +24,7 @@ class GardenWorldTest {
     }
 
     @Test fun everyTreeGrowsIndependentlyAndRemovingItKeepsItsGrowth() {
-        var world = GardenProgress(waterDrops = 4).asWorld()
+        var world = GardenProgress(waterDrops = 4).asWorld().copy(expansions = 3)
         world = buyGardenProduct(world, GardenProduct.PALM, 200, "palm").progress
         world = plantGardenTree(world, "palm", 1)
         world = waterGarden(world, date, "palm")
@@ -42,20 +42,37 @@ class GardenWorldTest {
         assertEquals(1, world.trees.first { it.id == "original-tree" }.xp)
     }
 
-    @Test fun expansionAddsThreePlotsEachTimeAndNeverChargesBeyondSixteen() {
+    @Test fun newGardenStartsWithOneTreeAndCanExpandBeyondTheOldLimit() {
         var world = GardenProgress().asWorld()
-        listOf(7, 10, 13, 16).forEach { count ->
-            world = buyGardenProduct(world, GardenProduct.LAND, 500, "unused").progress
-            assertEquals(count, world.plotCount)
+        assertEquals(1, world.plotCount)
+        assertEquals(0, world.trees.single().plotIndex)
+        repeat(60) { index ->
+            world = buyGardenProduct(world, GardenProduct.LAND, 3000, "unused").progress
+            assertEquals(index + 2, world.plotCount)
         }
-        val paid = world.spentStars
-        assertFailsWith<GardenLandLimit> { buyGardenProduct(world, GardenProduct.LAND, 500, "unused") }
-        assertEquals(200, paid)
+        assertEquals(3000, world.spentStars)
+        assertFailsWith<InsufficientGardenStars> { buyGardenProduct(world, GardenProduct.LAND, 3000, "unused") }
         world.validate()
     }
 
+    @Test fun existingExpandedGardensKeepEveryPlotAndPlacement() {
+        val legacy = GardenProgress(
+            worldFormat = 1,
+            expansions = 4,
+            spentStars = 200,
+            trees = listOf(GardenTree("tree", GardenSpecies.OLIVE, 15))
+        )
+        val world = legacy.asWorld()
+        assertEquals(16, world.plotCount)
+        assertEquals(15, world.trees.single().plotIndex)
+        assertEquals(200, world.spentStars)
+        val expanded = buyGardenProduct(world, GardenProduct.LAND, 250, "unused").progress
+        assertEquals(17, expanded.plotCount)
+        expanded.validate()
+    }
+
     @Test fun quantitiesCanBePurchasedPlacedHiddenMovedAndReturnedWithoutRefundOrLoss() {
-        var world = GardenProgress().asWorld()
+        var world = GardenProgress().asWorld().copy(expansions = 2)
         repeat(3) { world = buyGardenDecoration(world, GardenDecoration.FLOWERS, 100).progress }
         assertEquals(3, world.availableDecoration("flowers"))
         world = placeGardenDecoration(world, GardenDecoration.FLOWERS, 0, "a")
@@ -85,7 +102,7 @@ class GardenWorldTest {
     }
 
     @Test fun hiddenTreesDoNotSpendWaterAndReplantingMakesAnInventoryTreeVisible() {
-        var world = GardenProgress(waterDrops = 2).asWorld()
+        var world = GardenProgress(waterDrops = 2).asWorld().copy(expansions = 2)
         world = setGardenTreeVisible(world, "original-tree", false)
         assertFailsWith<GardenPlacementUnavailable> { waterGarden(world, date, "original-tree") }
         assertEquals(2, world.waterDrops)
@@ -108,7 +125,7 @@ class GardenWorldTest {
         val world = GardenProgress().asWorld()
         assertFailsWith<IllegalArgumentException> { world.copy(xp = 5).validate() }
         assertFailsWith<IllegalArgumentException> { world.copy(trees = world.trees + world.trees.single()).validate() }
-        assertFailsWith<IllegalArgumentException> { world.copy(expansions = 5).validate() }
+        assertFailsWith<IllegalArgumentException> { world.copy(expansions = -1).validate() }
         assertFailsWith<IllegalArgumentException> { world.copy(placements = listOf(GardenPlacement("x", "unowned", 0, 0))).validate() }
     }
 }
