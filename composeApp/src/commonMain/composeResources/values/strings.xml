@@ -617,14 +617,11 @@
     <string name="world_bench">مقعد خشبي</string>
     <string name="world_fountain">نافورة صغيرة</string>
     <string name="world_expand">توسعة الحديقة</string>
-    <string name="world_expansion_hint">المساحة الحالية: %1$d · التوسعة تضيف 3 مساحات</string>
-    <string name="world_max_land">وصلت الحديقة إلى 16 مساحة للغرس</string>
+    <string name="world_expansion_hint">المساحات الحالية: %1$d · كل توسعة تضيف مساحة واحدة</string>
     <string name="world_owned_quantity">المملوك ×%1$d</string>
     <string name="world_available_quantity">المتاح في المخزن ×%1$d</string>
     <string name="world_place_manage">وضع أو إدارة النسخ</string>
     <string name="world_shop_hint">يمكن شراء نسخ متعددة ثم وضعها في مساحات الحديقة من المخزن</string>
-    <string name="world_land_limit_male">وصلت حديقتك إلى أوسع مساحة حالياً</string>
-    <string name="world_land_limit_female">وصلت حديقتك إلى أوسع مساحة حالياً</string>
     <string name="world_place_error_male">المكان غير متاح، يرجى اختيار مساحة أو نسخة أخرى من المخزن</string>
     <string name="world_place_error_female">المكان غير متاح، يرجى اختيار مساحة أو نسخة أخرى من المخزن</string>
     <string name="world_tree_inventory">الأشجار</string>

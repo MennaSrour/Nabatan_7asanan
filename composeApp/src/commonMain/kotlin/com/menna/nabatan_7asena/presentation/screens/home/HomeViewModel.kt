@@ -385,7 +385,6 @@ open class HomeViewModel constructor(
             catch (e: Exception) {
                 val error = when (e) {
                     is com.menna.nabatan_7asena.domain.entity.InsufficientGardenStars -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopInsufficient
-                    is com.menna.nabatan_7asena.domain.entity.GardenLandLimit -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenLandLimit
                     is com.menna.nabatan_7asena.domain.entity.GardenPlacementUnavailable -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.gardenPlacementUnavailable
                     else -> com.menna.nabatan_7asena.presentation.common.GenderedStrings.shopSaveFailed
                 }

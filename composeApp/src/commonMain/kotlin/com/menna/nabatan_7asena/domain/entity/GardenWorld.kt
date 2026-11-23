@@ -2,9 +2,9 @@ package com.menna.nabatan_7asena.domain.entity
 
 import kotlinx.serialization.Serializable
 
-const val GARDEN_INITIAL_PLOTS = 4
-const val GARDEN_PLOTS_PER_EXPANSION = 3
-const val GARDEN_MAX_EXPANSIONS = 4
+const val GARDEN_INITIAL_PLOTS = 1
+private const val LEGACY_INITIAL_PLOTS = 4
+private const val LEGACY_PLOTS_PER_EXPANSION = 3
 const val GARDEN_DECORATION_SLOTS = 3
 
 @Serializable
@@ -27,21 +27,34 @@ enum class GardenProduct(val id: String) {
     val decoration get() = GardenDecoration.entries.firstOrNull { it.id == id }
     val price: Int get() = species?.price ?: decoration?.price ?: 50
 }
-class GardenLandLimit : IllegalStateException("Maximum garden land reached")
 class GardenPlacementUnavailable : IllegalStateException("Garden placement is unavailable")
 
-/** Deterministic migration: preserve the old tree, all purchases and all visible decorations. */
-fun GardenProgress.asWorld(): GardenProgress {
-    if (worldFormat == 1) return this
-    require(worldFormat == 0)
-    val placed = equippedItems.sorted().mapIndexed { index, item ->
-        GardenPlacement("legacy-$item", item, index % GARDEN_INITIAL_PLOTS, index / GARDEN_INITIAL_PLOTS)
+/** Keep existing plot indices and convert old three-plot expansions to individual plots. */
+fun GardenProgress.asWorld(): GardenProgress = when (worldFormat) {
+    2 -> this
+    1 -> copy(worldFormat = 2, expansions = plotCount - GARDEN_INITIAL_PLOTS)
+    0 -> {
+        val placed = equippedItems.sorted().mapIndexed { index, item ->
+            GardenPlacement("legacy-$item", item, index % LEGACY_INITIAL_PLOTS, index / LEGACY_INITIAL_PLOTS)
+        }
+        copy(
+            worldFormat = 2,
+            trees = listOf(GardenTree("original-tree", GardenSpecies.APPLE, 0, xp, lastWateredDate = lastWateredDate)),
+            quantities = ownedItems.associateWith { 1 },
+            placements = placed,
+            expansions = placed.maxOfOrNull { it.plotIndex } ?: 0
+        )
     }
-    return copy(worldFormat = 1, trees = listOf(GardenTree("original-tree", GardenSpecies.APPLE, 0, xp,
-        lastWateredDate = lastWateredDate)), quantities = ownedItems.associateWith { 1 }, placements = placed)
+    else -> error("Unsupported garden format")
 }
 
-val GardenProgress.plotCount: Int get() = GARDEN_INITIAL_PLOTS + expansions * GARDEN_PLOTS_PER_EXPANSION
+val GardenProgress.plotCount: Int
+    get() = when (worldFormat) {
+        1 -> LEGACY_INITIAL_PLOTS + expansions * LEGACY_PLOTS_PER_EXPANSION
+        0 -> GARDEN_INITIAL_PLOTS
+        else -> GARDEN_INITIAL_PLOTS + expansions
+    }
+
 fun GardenProgress.availableDecoration(itemId: String): Int = (quantities[itemId] ?: 0) - placements.count { it.itemId == itemId }
 fun GardenProgress.ownedQuantity(product: GardenProduct): Int = if (product == GardenProduct.LAND) expansions
     else product.species?.let { species -> trees.count { it.species == species } } ?: quantities.getOrElse(product.id) { 0 }
@@ -57,12 +70,14 @@ internal fun GardenProgress.worldCopy(trees: List<GardenTree> = this.trees, quan
 
 fun buyGardenProduct(current: GardenProgress, product: GardenProduct, earnedStars: Int, newId: String): GardenPurchase {
     val world = current.asWorld()
-    if (product == GardenProduct.LAND && world.expansions >= GARDEN_MAX_EXPANSIONS) throw GardenLandLimit()
     if (gardenShopBalance(earnedStars, world.spentStars) < product.price) throw InsufficientGardenStars()
     check(world.spentStars <= Int.MAX_VALUE - product.price)
     val spent = world.spentStars + product.price
     val next = when {
-        product == GardenProduct.LAND -> world.worldCopy(expansions = world.expansions + 1, spent = spent)
+        product == GardenProduct.LAND -> {
+            check(world.plotCount < Int.MAX_VALUE)
+            world.worldCopy(expansions = world.expansions + 1, spent = spent)
+        }
         product.species != null -> {
             require(newId.isNotBlank() && world.trees.none { it.id == newId })
             world.worldCopy(trees = world.trees + GardenTree(newId, requireNotNull(product.species)), spent = spent)

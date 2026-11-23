@@ -80,7 +80,7 @@ class GardenShopRepositoryTest {
     @Test fun offlineBackupKeepsPurchasedItemsAndPendingRevision() = runTest {
         val repository = GardenRepositoryImpl(Memory(), earnedStars = { 100 }) { _, _, _ -> error("offline") }
         repository.buy("child", GardenDecoration.SPARKLES)
-        repository.placeDecoration("child", GardenDecoration.SPARKLES, 1)
+        repository.placeDecoration("child", GardenDecoration.SPARKLES, 0)
         assertFalse(repository.sync("child"))
         assertEquals(setOf("sparkles"), repository.progress().equippedItems)
         assertTrue(repository.progress().syncPending)

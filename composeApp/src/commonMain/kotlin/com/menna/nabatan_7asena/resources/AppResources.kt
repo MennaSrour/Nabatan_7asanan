@@ -791,9 +791,6 @@ object AppResources {
         const val world_in_inventory: Int = -207143992
         const val world_inventory: Int = -186007261
         const val world_inventory_empty: Int = -1247552620
-        const val world_land_limit_female: Int = -996535202
-        const val world_land_limit_male: Int = -992533577
-        const val world_max_land: Int = -1499387201
         const val world_move_here: Int = -88657863
         const val world_no_placed: Int = -1484478731
         const val world_olive: Int = -608988890
@@ -1535,9 +1532,6 @@ object ResourceCatalog {
         AppResources.string.world_in_inventory to Res.string.world_in_inventory,
         AppResources.string.world_inventory to Res.string.world_inventory,
         AppResources.string.world_inventory_empty to Res.string.world_inventory_empty,
-        AppResources.string.world_land_limit_female to Res.string.world_land_limit_female,
-        AppResources.string.world_land_limit_male to Res.string.world_land_limit_male,
-        AppResources.string.world_max_land to Res.string.world_max_land,
         AppResources.string.world_move_here to Res.string.world_move_here,
         AppResources.string.world_no_placed to Res.string.world_no_placed,
         AppResources.string.world_olive to Res.string.world_olive,

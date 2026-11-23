@@ -51,7 +51,7 @@ service cloud.firestore {
     function validGardenShop(data) {
       let owned = data.get('ownedItems', []);
       let equipped = data.get('equippedItems', []);
-      return bounded(data.get('spentStars', 0), 1000000)
+      return bounded(data.get('spentStars', 0), 2147483647)
         && owned is list && equipped is list
         && owned.size() == owned.toSet().size()
         && equipped.size() == equipped.toSet().size()
@@ -65,12 +65,12 @@ service cloud.firestore {
         'worldFormat', 'trees', 'quantities', 'placements', 'expansions', 'wheelRewardDays'])
         && data.get('wheelRewardDays', []) is list
         && data.get('wheelRewardDays', []).size() == data.get('wheelRewardDays', []).toSet().size()
-        && bounded(data.get('worldFormat', 0), 1)
-        && bounded(data.get('expansions', 0), 4)
-        && data.get('trees', []) is list && data.get('trees', []).size() <= 100000
+        && bounded(data.get('worldFormat', 0), 2)
+        && bounded(data.get('expansions', 0), data.get('worldFormat', 0) == 2 ? 2147483646 : 4)
+        && data.get('trees', []) is list
         && data.get('quantities', {}) is map && data.get('quantities', {}).keys().hasOnly(
           ['butterflies', 'birds', 'flowers', 'lantern', 'rainbow', 'sparkles', 'bench', 'fountain'])
-        && data.get('placements', []) is list && data.get('placements', []).size() <= 48
+        && data.get('placements', []) is list
         && validGardenShop(data)
         && bounded(data.get('xp', 0), 1000000)
         && bounded(data.get('waterDrops', 0), 1000000)
