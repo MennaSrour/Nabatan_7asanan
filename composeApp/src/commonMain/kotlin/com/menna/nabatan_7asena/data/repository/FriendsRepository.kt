@@ -7,13 +7,19 @@ import com.menna.nabatan_7asena.data.remote.dto.UserRankDto
 import com.menna.nabatan_7asena.domain.entity.LeaderboardEntry
 import com.menna.nabatan_7asena.domain.entity.PresetMessage
 import com.menna.nabatan_7asena.domain.entity.User
+import com.menna.nabatan_7asena.platform.PlatformPreferences
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.Direction
 import dev.gitlive.firebase.firestore.BaseTimestamp
 import dev.gitlive.firebase.firestore.Source
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -60,6 +66,8 @@ internal data class ChatMessage(val id: String, val preset: PresetMessage, val s
 internal class FriendsActionError(message: String) : Exception(message)
 
 internal class FriendsRepository(private val firebase: FirebaseDataSource) {
+    private val readPreferences by lazy { PlatformPreferences("preset_chat_read") }
+    private val readPositions = MutableStateFlow<Map<String, Instant>>(emptyMap())
     private val sessionMutex = Mutex()
     private val firestore get() = Firebase.firestore
     private val profiles get() = firestore.collection("friendProfiles")
@@ -159,6 +167,33 @@ internal class FriendsRepository(private val firebase: FirebaseDataSource) {
                 ChatMessage(doc.id, preset, doc.get("senderId"), time)
             }.reversed()
         }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun hasUnreadMessages(uid: String, chatId: String): Flow<Boolean> {
+        val key = "$uid/$chatId"
+        return readPositions
+            .map { it[key] ?: savedReadPosition(key) }
+            .distinctUntilChanged()
+            .flatMapLatest { readThrough ->
+                val timestamp = Timestamp(readThrough.epochSeconds, readThrough.nanosecondsOfSecond)
+                messages(chatId).where { "timestamp" greaterThan timestamp }.snapshots.map { snapshot ->
+                    snapshot.documents.any { it.get<String>("senderId") != uid }
+                }
+            }
+            .distinctUntilChanged()
+    }
+
+    fun markRead(uid: String, chatId: String, time: Timestamp) {
+        val key = "$uid/$chatId"
+        val position = Instant.fromEpochSeconds(time.seconds, time.nanoseconds.toLong())
+        if (position <= (readPositions.value[key] ?: savedReadPosition(key))) return
+        readPreferences.putString(key, position.toString())
+        readPositions.update { it + (key to position) }
+    }
+
+    private fun savedReadPosition(key: String): Instant =
+        readPreferences.getString(key)?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            ?: Instant.fromEpochSeconds(0)
 
     suspend fun send(account: FriendsAccount, relationship: Friendship, preset: PresetMessage) {
         val message = messages(relationship.id).document

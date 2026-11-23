@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.data.repository.*
 import com.menna.nabatan_7asena.domain.entity.PresetCategory
@@ -83,6 +85,13 @@ private fun PresetChatContent(
             throw e
         } catch (_: Exception) {
             failed = true
+        }
+    }
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val latestMessage = messages?.lastOrNull().takeUnless { failed }
+    LaunchedEffect(account.uid, friendship.id, latestMessage, lifecycleState) {
+        if (latestMessage != null && lifecycleState == Lifecycle.State.RESUMED) {
+            model.markRead(account, friendship, latestMessage)
         }
     }
     LaunchedEffect(messages?.lastOrNull()?.id) {

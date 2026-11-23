@@ -1,6 +1,11 @@
 package com.menna.nabatan_7asena.presentation.screens.home.composables
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PeopleOutline
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -9,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.menna.nabatan_7asena.presentation.common.components.TrophyArtwork
@@ -16,6 +23,10 @@ import com.menna.nabatan_7asena.presentation.screens.badges.BADGES_TITLE
 import com.menna.nabatan_7asena.presentation.screens.prayerguide.GuideArtwork
 import com.menna.nabatan_7asena.presentation.screens.prayerguide.GuideScene
 import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
+import com.menna.nabatan_7asena.presentation.screens.friends.FriendsCream
+import com.menna.nabatan_7asena.presentation.screens.friends.FriendsGold
+import com.menna.nabatan_7asena.presentation.screens.friends.FriendsLavender
+import com.menna.nabatan_7asena.presentation.screens.friends.FriendsPurple
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
@@ -60,6 +71,37 @@ private fun ShortcutCard(
                     fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
             }
             Text(subtitle, color = Color(0xFF503A6A), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+internal fun FriendsHomeCard(onClick: () -> Unit, showBadge: Boolean) {
+    ChunkyButton(
+        onClick = onClick,
+        color = FriendsCream,
+        edgeColor = Color(0xFFAF8BD5),
+        shape = RoundedCornerShape(26.dp),
+        faceBrush = Brush.horizontalGradient(listOf(FriendsLavender, FriendsCream)),
+        faceBorder = FriendsGold,
+        modifier = Modifier.fillMaxWidth()
+            .padding(horizontal = SummerTheme.dimensions.paddingScreenHorizontal, vertical = 8.dp)
+            .semantics { if (showBadge) stateDescription = "لديك تحديث جديد" }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(Icons.Rounded.PeopleOutline, null, Modifier.size(32.dp), tint = FriendsPurple)
+            Text(
+                text = "أصحابي",
+                modifier = Modifier.weight(1f),
+                color = FriendsPurple,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
+            if (showBadge) Badge(containerColor = FriendsPurple)
         }
     }
 }
