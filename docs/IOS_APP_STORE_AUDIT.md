@@ -13,7 +13,7 @@ Category compliance or replace device/parental/privacy review.
 | Location | When-In-Use only; no background-location entitlement. Requests run on Main, serialize authorization/fixes, reject invalid/older fixes, and time out safely. Cancellation cleanup checks continuation identity so it cannot clear a replacement request. Saved/manual-city fallback remains available. |
 | Notifications | Launch only checks existing authorization. Permission is requested after the explicit onboarding/Settings action and localized purpose explanation. Authorized APNs registration enables FCM auto-init; missing/mismatched Firebase config leaves the host offline. |
 | Haptics | Shared UI uses Compose LocalHapticFeedback; there is no app-specific haptics expect/actual. Compose supplies the native implementation; no microphone/vibration permission plist key is required. Hardware/silent/accessibility behavior needs device testing. |
-| Bundled audio | Replaces immediate-success stubs with retained AVAudioPlayer/delegate instances. Replacement/stop discards prior callbacks; decode/missing-resource failure releases waiting screens once. No recording/microphone access requested. |
+| Bundled audio | Replaces immediate-success stubs with retained AVAudioPlayer/delegate instances. Replacement/stop discards prior callbacks; decode/missing-resource failure or an audio interruption/app deactivation releases waiting screens once; notification observers are removed on stop/completion. No recording/microphone access requested. |
 | Quran streaming/downloads | Still explicitly unsupported on iOS. Streaming reports onError; downloads return Failed. These remain release blockers for advertised Quran playback/offline features. |
 | Local prayer/azkar/Quran alarms | Scheduling and cancellation adapters remain no-ops on iOS. APNs broadcasts are a separate feature and do not implement prayer reminders. Implement UNUserNotificationCenter local scheduling before advertising timed reminders on iOS. |
 | Firebase/Firestore count | GitLive/Firestore actuals and Room-generated actuals are included in native compilation. Native Firebase initialization precedes Compose service resolution; config bundle ID/project/app/API-key presence is checked. Server count propagates error/missing results and ignores canceled continuations. Network/offline/auth failures require device testing with a non-production project. |
@@ -78,6 +78,9 @@ Remaining submission blockers outside this patch:
    production rules. Test on device/TestFlight; simulator signing-free builds do not
    validate APNs delivery, production Firebase or submission signing.
 
-References for release review: Apple App Review Guidelines 1.3 (Kids), 5.1 (privacy),
-UserNotifications authorization documentation, and required-reason API/privacy
-manifest documentation. No approval/compliance certification is asserted by this PR.
+References for release review:
+- [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/), sections 1.3 and 5.1.
+- [Notification authorization](https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications).
+- [Privacy manifests](https://developer.apple.com/documentation/bundleresources/privacy_manifest_files).
+
+No approval/compliance certification is asserted by this PR.

@@ -10,12 +10,15 @@ import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.resources.ResourceCatalog
 import platform.AVFAudio.*
 import platform.Foundation.*
+import platform.UIKit.UIApplicationWillResignActiveNotification
+import platform.darwin.NSObjectProtocol
 import platform.darwin.NSObject
 
 /** Retains the weak AVAudioPlayer delegate; stop/replacement never invokes stale callbacks. */
 internal class IosScreenAudio : ScreenAudioPlayer {
     private var player: AVAudioPlayer? = null
     private var finished: (() -> Unit)? = null
+    private val observers = mutableListOf<NSObjectProtocol>()
     private val delegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
         override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
             if (player == this@IosScreenAudio.player) finish()
@@ -36,13 +39,21 @@ internal class IosScreenAudio : ScreenAudioPlayer {
             val audio = AVAudioPlayer(contentsOfURL = url, error = null)
             audio.delegate = delegate
             player = audio
+            listOf(AVAudioSessionInterruptionNotification, UIApplicationWillResignActiveNotification).forEach { name ->
+                observers += NSNotificationCenter.defaultCenter.addObserverForName(name, null, NSOperationQueue.mainQueue) { finish() }
+            }
             if (!audio.prepareToPlay() || !audio.play()) finish()
         } catch (_: Exception) {
             platformLog("WARN", "Audio", "Bundled audio is unavailable")
             finish()
         }
     }
+    private fun clearObservers() {
+        observers.forEach { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        observers.clear()
+    }
     private fun finish() {
+        clearObservers()
         val callback = finished
         finished = null
         player?.delegate = null
@@ -51,6 +62,7 @@ internal class IosScreenAudio : ScreenAudioPlayer {
         callback?.invoke()
     }
     override fun stop() {
+        clearObservers()
         finished = null
         player?.delegate = null
         player?.stop()

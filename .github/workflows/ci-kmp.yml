@@ -91,13 +91,14 @@ jobs:
       - name: Use isolated CI Firebase configuration
         run: python3 .github/scripts/ci-firebase.py
       - name: Shared compilation, unit tests and debug APK
-        run: ./gradlew --build-cache --parallel --max-workers=2 :composeApp:compileCommonMainKotlinMetadata :composeApp:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug
+        run: bash .github/scripts/ci-run.sh android-build ./gradlew --build-cache --parallel --max-workers=2 :composeApp:compileCommonMainKotlinMetadata :composeApp:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug
       - name: Upload Android test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-test-reports
           path: |
+            .ci/android-build.log
             app/build/reports/tests/
             composeApp/build/reports/tests/
           if-no-files-found: ignore

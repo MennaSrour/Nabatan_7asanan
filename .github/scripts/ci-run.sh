@@ -10,7 +10,7 @@ if "$@" 2>&1 | tee "$log"; then
 else
   status=$?
 fi
-python3 - "$log" <<'PY'
+python3 - "$log" "$name" <<'PY'
 import pathlib
 import re
 import sys
@@ -22,6 +22,6 @@ errors = [line for line in text.splitlines()
           if re.search(r'(^e:|error:|^ld:|Undefined symbols|framework not found)', line)]
 message = '\n'.join(errors[:20]) + '\n' + summary
 message = message[:14000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-print(f'::error title=Native build failure::{message}')
+print(f'::error title=Build failure ({sys.argv[2]})::{message}')
 PY
 exit "$status"
