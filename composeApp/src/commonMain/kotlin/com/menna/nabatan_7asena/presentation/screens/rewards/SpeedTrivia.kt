@@ -5,6 +5,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.menna.nabatan_7asena.domain.entity.SpeedQuestion
+import com.menna.nabatan_7asena.domain.entity.KidsGame
 import kotlinx.coroutines.delay
 import kotlin.time.TimeSource
 
@@ -12,7 +13,7 @@ private const val TriviaTime = 60_000L
 
 @Composable
 internal fun SpeedTrivia(viewModel: KidsRewardsViewModel, onFinish: (Int, Int) -> Unit) {
-    val questions by produceState<List<SpeedQuestion>>(emptyList()) { value = viewModel.questions().shuffled() }
+    val questions by produceState<List<SpeedQuestion>>(emptyList()) { value = viewModel.questions(KidsGame.TRIVIA).shuffled().take(15) }
     if (questions.isEmpty()) {
         CircularProgressIndicator(color = RewardPurple)
     } else {

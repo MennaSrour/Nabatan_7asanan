@@ -45,8 +45,19 @@ interface AppDao {
     suspend fun claimDailyGiftGame(reward: DailyRewardEntity, taskDate: String): Boolean {
         if (!giftTasksCompleted(reward.profileId, taskDate)) return false
         val wheel = wheelReward(reward.profileId, reward.day)?.takeIf { it.settled } ?: return false
-        if (WheelPrize.fromStoredCode(wheel.prize)?.game?.name != reward.kind) return false
+        if (!wheel.earnedHere || WheelPrize.fromStoredCode(wheel.prize)?.game?.name != reward.kind) return false
         return claimReward(reward)
+    }
+
+    @Query("SELECT * FROM daily_rewards WHERE profileId = :profileId AND day = :day AND kind = :kind")
+    suspend fun gameRound(profileId: String, day: String, kind: String): DailyRewardEntity?
+
+    @Transaction
+    suspend fun finishDailyGiftGame(profileId: String, day: String, kind: String, stars: Int): Int {
+        val round = gameRound(profileId, day, kind) ?: return 0
+        if (round.settled) return round.stars
+        if (!settleReward(round.copy(stars = stars))) return 0
+        return stars
     }
 
     @Query("SELECT MAX(day) FROM daily_rewards WHERE profileId = :profileId AND kind = :kind")
