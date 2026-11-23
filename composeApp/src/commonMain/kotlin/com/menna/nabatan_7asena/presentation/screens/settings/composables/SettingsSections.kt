@@ -10,6 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.menna.nabatan_7asena.presentation.screens.friends.LocalFriendsViewModel
+import com.menna.nabatan_7asena.presentation.screens.friends.rememberFriendCodeCopier
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,6 +48,8 @@ fun SettingsSections(state: SettingsUiState, actions: SettingsActions, padding: 
             onClick = onEditName
         )
 
+        if (state.userId != null) SettingsFriendCodeItem()
+
         Spacer(modifier = Modifier.height(24.dp))
 
         PrayerSettingsSection(state, actions)
@@ -63,4 +73,33 @@ fun SettingsSections(state: SettingsUiState, actions: SettingsActions, padding: 
             onClick = onReset
         )
     }
+}
+
+
+@Composable
+private fun SettingsFriendCodeItem() {
+    val model = LocalFriendsViewModel.current ?: return
+    val state by model.state.collectAsStateWithLifecycle()
+    val copyCode = rememberFriendCodeCopier()
+    val code = state.account?.profile?.friendCode
+    var copied by remember(code) { mutableStateOf(false) }
+    val status = when {
+        copied -> "تم نسخ الكود"
+        code != null -> "اضغط لنسخ الكود"
+        state.loading -> "جارٍ تجهيز الكود"
+        state.failed -> "اضغط لإعادة المحاولة"
+        else -> "الكود غير متاح الآن"
+    }
+    SummerSettingsItem(
+        icon = Icons.Rounded.ContentCopy,
+        title = "كود الصداقة",
+        subtitle = if (code == null) status else "\u2066$code\u2069\n$status",
+        iconColor = SummerTheme.colors.wisdomAccent,
+        onClick = {
+            if (code != null) {
+                copyCode(code)
+                copied = true
+            } else if (state.failed) model.retry()
+        }
+    )
 }

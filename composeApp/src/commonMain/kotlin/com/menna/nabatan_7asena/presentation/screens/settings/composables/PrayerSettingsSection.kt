@@ -1,51 +1,80 @@
 package com.menna.nabatan_7asena.presentation.screens.settings.composables
 
-import androidx.compose.runtime.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.material3.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.menna.nabatan_7asena.data.local.prayerCityChoices
 import com.menna.nabatan_7asena.domain.entity.PrayerCalculationMethod
-import com.menna.nabatan_7asena.presentation.screens.settings.*
+import com.menna.nabatan_7asena.presentation.screens.settings.SettingsActions
+import com.menna.nabatan_7asena.presentation.screens.settings.SettingsUiState
 import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.resources.stringResource
+import com.menna.nabatan_7asena.ui.theme.SummerTheme
 
 @Composable
 internal fun PrayerSettingsSection(state: SettingsUiState, actions: SettingsActions) {
-    SummerSectionTitle(stringResource(R.string.prayer_location_settings))
-    SettingsChoice(state.prayerSettings.selectedCity?.city ?: stringResource(R.string.prayer_use_gps),
-        listOf(stringResource(R.string.prayer_use_gps)) + prayerCityChoices.map { it.city }) {
-        actions.selectPrayerCity(prayerCityChoices.getOrNull(it - 1))
-    }
-    Text(stringResource(R.string.prayer_saved_location, state.prayerSettings.place?.city ?: stringResource(R.string.prayer_no_location)),
-        style = MaterialTheme.typography.bodySmall)
-    SummerSectionTitle(stringResource(R.string.prayer_method_title))
-    val choices = listOf(stringResource(R.string.prayer_method_auto)) + PrayerCalculationMethod.entries.map { methodName(it) }
-    SettingsChoice(state.prayerSettings.method?.let { methodName(it) } ?: choices.first(), choices) {
-        actions.selectPrayerMethod(PrayerCalculationMethod.entries.getOrNull(it - 1))
-    }
-    SummerSectionTitle(stringResource(R.string.hijri_offset_title))
-    Text(stringResource(R.string.hijri_offset_hint), style = MaterialTheme.typography.bodySmall)
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        (-2..2).forEach { offset ->
-            FilterChip(selected = state.prayerSettings.hijriDateOffset == offset, onClick = { actions.setHijriDateOffset(offset) },
-                label = { Text(if (offset > 0) "+$offset" else "$offset", style = MaterialTheme.typography.labelLarge.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Ltr)) })
-        }
-    }
-    Spacer(Modifier.height(16.dp))
+    SummerSectionTitle("مواقيت الصلاة والتاريخ الهجري")
+    val settings = state.prayerSettings
+    val useGps = stringResource(R.string.prayer_use_gps)
+    val savedLocation = stringResource(
+        R.string.prayer_saved_location,
+        settings.place?.city ?: stringResource(R.string.prayer_no_location)
+    )
+    SettingsChoice(
+        icon = Icons.Rounded.LocationOn,
+        title = stringResource(R.string.prayer_location_settings),
+        subtitle = "${settings.selectedCity?.city ?: useGps}\n$savedLocation",
+        options = listOf(useGps) + prayerCityChoices.map { it.city },
+        onSelect = { actions.selectPrayerCity(prayerCityChoices.getOrNull(it - 1)) }
+    )
+    val methods = PrayerCalculationMethod.entries
+    val methodOptions = listOf(stringResource(R.string.prayer_method_auto)) + methods.map { methodName(it) }
+    SettingsChoice(
+        icon = Icons.Rounded.Schedule,
+        title = stringResource(R.string.prayer_method_title),
+        subtitle = settings.method?.let { methodName(it) } ?: methodOptions.first(),
+        options = methodOptions,
+        onSelect = { actions.selectPrayerMethod(methods.getOrNull(it - 1)) }
+    )
+    val offsets = listOf("تأخير يومين", "تأخير يوم", "بدون تعديل", "تقديم يوم", "تقديم يومين")
+    SettingsChoice(
+        icon = Icons.Rounded.CalendarMonth,
+        title = stringResource(R.string.hijri_offset_title),
+        subtitle = "${offsets[(settings.hijriDateOffset + 2).coerceIn(offsets.indices)]}\n${stringResource(R.string.hijri_offset_hint)}",
+        options = offsets,
+        onSelect = { actions.setHijriDateOffset(it - 2) }
+    )
 }
 
 @Composable
-private fun SettingsChoice(selected: String, options: List<String>, onSelect: (Int) -> Unit) {
+private fun SettingsChoice(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    options: List<String>,
+    onSelect: (Int) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { expanded = true }) { Text(selected) }
+        SummerSettingsItem(icon, title, subtitle, iconColor = SummerTheme.colors.wisdomAccent,
+            onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEachIndexed { index, option ->
-                DropdownMenuItem(text = { Text(option) }, onClick = { expanded = false; onSelect(index) })
+                DropdownMenuItem(text = { Text(option) }, onClick = {
+                    expanded = false
+                    onSelect(index)
+                })
             }
         }
     }

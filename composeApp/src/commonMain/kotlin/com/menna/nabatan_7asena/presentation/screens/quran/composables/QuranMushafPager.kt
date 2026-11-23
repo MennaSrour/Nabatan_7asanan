@@ -34,14 +34,13 @@ fun QuranMushafPager(state: QuranUiState, actions: QuranActions, layout: QuranLa
 @Composable
 private fun MushafPage(page: Int, ayahs: List<AyahModel>, state: QuranUiState, actions: QuranActions) {
     val q = SummerTheme.quran
-    var fallback by remember(page) { mutableStateOf(false) }
     Surface(color = q.headerEnd, shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, q.border), modifier = Modifier.fillMaxSize().padding(horizontal = 5.dp, vertical = 6.dp)) {
         Column(Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
             MushafPageActions(ayahs, state, actions)
-            MushafPageBody(ayahs, audioAyah(state.audioState), actions, { fallback = it }, Modifier.weight(1f))
+            MushafPageBody(ayahs, audioAyah(state.audioState), actions, Modifier.weight(1f))
             HorizontalDivider(color = q.border)
-            MushafPageFooter(page, fallback)
+            MushafPageFooter(page)
         }
     }
 }
@@ -67,12 +66,11 @@ private fun MushafPageActions(ayahs: List<AyahModel>, state: QuranUiState, actio
 }
 
 @Composable
-private fun MushafPageFooter(page: Int, fallback: Boolean) {
+private fun MushafPageFooter(page: Int) {
     Row(Modifier.fillMaxWidth().heightIn(min = 26.dp), horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.quran_page_label, arabicIndic(page)), color = SummerTheme.quran.accentStrong)
-        if (fallback) Icon(Icons.Rounded.UnfoldMore, stringResource(R.string.quran_small_page_hint),
-            tint = SummerTheme.quran.accentStrong, modifier = Modifier.padding(start = 4.dp).size(16.dp))
+
     }
 }
 

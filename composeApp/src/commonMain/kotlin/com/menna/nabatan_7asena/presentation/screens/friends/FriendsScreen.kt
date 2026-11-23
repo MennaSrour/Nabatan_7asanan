@@ -1,25 +1,39 @@
 package com.menna.nabatan_7asena.presentation.screens.friends
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.PeopleOutline
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.menna.nabatan_7asena.data.repository.FriendsActionError
-import com.menna.nabatan_7asena.data.repository.Friendship
+import com.menna.nabatan_7asena.data.repository.FriendProfile
+import com.menna.nabatan_7asena.presentation.common.AvatarCatalog
+import com.menna.nabatan_7asena.presentation.common.components.ChunkyButton
+import com.menna.nabatan_7asena.resources.painterResource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -28,35 +42,76 @@ internal val FriendsLavender = Color(0xFFEDE3FB)
 internal val FriendsPurple = Color(0xFF533681)
 internal val FriendsGold = Color(0xFFF6D786)
 
+internal val FriendsGoldEdge = Color(0xFFD8AE58)
+internal val FriendsLavenderEdge = Color(0xFFAB8BCB)
+
 @Composable
-internal fun FriendCodeCard() {
-    val model = LocalFriendsViewModel.current ?: return
-    val state by model.state.collectAsStateWithLifecycle()
-    val code = state.account?.profile?.friendCode
+private fun FriendCodeCard(state: FriendsState, onRetry: () -> Unit) {
+    val profile = state.account?.profile
+    val code = profile?.friendCode
     val copyCode = rememberFriendCodeCopier()
     var copied by remember(code) { mutableStateOf(false) }
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = FriendsLavender,
-            contentColor = FriendsPurple,
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Row(
-                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("كود الصداقة", style = MaterialTheme.typography.titleMedium)
-                    if (code != null) Text(code, style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr))
-                    else Text(if (state.loading) "جارٍ تجهيز الكود" else "الكود غير متاح الآن")
-                }
-                if (code != null) TextButton(onClick = {
-                    copyCode(code)
-                    copied = true
-                }) { Text(if (copied) "تم نسخ الكود" else "نسخ الكود", color = FriendsPurple) }
-                else if (state.failed) TextButton(onClick = model::retry) { Text("إعادة المحاولة", color = FriendsPurple) }
+    val shape = RoundedCornerShape(28.dp)
+    Column(
+        Modifier.fillMaxWidth()
+            .background(Brush.linearGradient(listOf(FriendsLavender, FriendsCream, FriendsGold.copy(alpha = 0.55f))), shape)
+            .border(1.dp, Color.White, shape)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            FriendAvatarBadge(profile, FriendsGold, Modifier.size(60.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("أهلًا بك", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                Text("شارك كود الصداقة مع أصحابك", style = MaterialTheme.typography.bodyMedium)
             }
+        }
+        Column(
+            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.74f), RoundedCornerShape(18.dp)).padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("كود الصداقة", style = MaterialTheme.typography.labelLarge)
+            Text(
+                code ?: if (state.loading) "جارٍ تجهيز الكود" else "الكود غير متاح الآن",
+                style = if (code == null) MaterialTheme.typography.bodyMedium else
+                    MaterialTheme.typography.headlineSmall.copy(textDirection = TextDirection.Ltr),
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
+        if (code != null) {
+            ChunkyButton(
+                onClick = { copyCode(code); copied = true },
+                color = FriendsGold,
+                edgeColor = FriendsGoldEdge,
+                faceBrush = Brush.verticalGradient(listOf(FriendsCream, FriendsGold)),
+                depth = 4.dp,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.ContentCopy, null, Modifier.size(18.dp), tint = FriendsPurple)
+                    Text(if (copied) "تم نسخ الكود" else "نسخ الكود", color = FriendsPurple, fontWeight = FontWeight.Bold)
+                }
+            }
+        } else if (state.failed) TextButton(onClick = onRetry) { Text("إعادة المحاولة", color = FriendsPurple) }
+    }
+}
+
+@Composable
+internal fun FriendAvatarBadge(profile: FriendProfile?, accent: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier.background(Brush.verticalGradient(listOf(Color.White, accent)), CircleShape)
+            .border(2.dp, Color.White, CircleShape).padding(4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (profile == null) {
+            Icon(Icons.Rounded.PeopleOutline, null, Modifier.fillMaxSize().padding(4.dp), tint = FriendsPurple)
+        } else {
+            Image(
+                painterResource(AvatarCatalog.resFor(profile.avatarGender, profile.avatarIndex)),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().clip(CircleShape)
+            )
         }
     }
 }
@@ -85,14 +140,18 @@ internal fun FriendsScaffold(title: String, onBack: () -> Unit, snackbar: Snackb
                 contentColor = FriendsPurple,
                 topBar = {
                     TopAppBar(
-                        title = { Text(title) },
+                        title = { Text(title, fontWeight = FontWeight.ExtraBold) },
                         navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع") } },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = FriendsLavender,
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent,
                             titleContentColor = FriendsPurple, navigationIconContentColor = FriendsPurple)
                     )
                 },
                 snackbarHost = { SnackbarHost(snackbar) },
-                content = content
+                content = { insets ->
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(FriendsLavender, FriendsCream)))) {
+                        content(insets)
+                    }
+                }
             )
         }
     }
@@ -112,20 +171,27 @@ internal fun FriendsScreen(onBack: () -> Unit, onChat: (String) -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { FriendCodeCard() }
+            item { FriendCodeCard(state, model::retry) }
             item {
-                Button(
+                ChunkyButton(
                     onClick = { showDialog = true },
                     enabled = state.account != null && !state.failed && !busy,
-                    colors = ButtonDefaults.buttonColors(containerColor = FriendsPurple)
-                ) { Text("إضافة صديق") }
+                    color = FriendsLavender,
+                    edgeColor = FriendsLavenderEdge,
+                    faceBrush = Brush.verticalGradient(listOf(Color.White, FriendsLavender))
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.PersonAdd, null, tint = FriendsPurple)
+                        Text("إضافة صديق", color = FriendsPurple, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
             if (state.failed) item {
                 Text("تعذر تحميل قائمة الأصحاب")
                 TextButton(onClick = model::retry) { Text("إعادة المحاولة") }
             }
             if (state.loading) item { CircularProgressIndicator(color = FriendsPurple) }
-            if (state.incoming.isNotEmpty()) item { Text("طلبات الصداقة", style = MaterialTheme.typography.titleLarge) }
+            if (state.incoming.isNotEmpty()) item { FriendsSectionTitle("طلبات الصداقة") }
             items(state.incoming, key = { it.id }) { relationship ->
                 FriendRow(relationship.senderCode) {
                     listOf(true, false).forEach { accept ->
@@ -146,16 +212,33 @@ internal fun FriendsScreen(onBack: () -> Unit, onChat: (String) -> Unit) {
                     }
                 }
             }
-            if (state.outgoing.isNotEmpty()) item { Text("الطلبات المرسلة", style = MaterialTheme.typography.titleLarge) }
+            if (state.outgoing.isNotEmpty()) item { FriendsSectionTitle("الطلبات المرسلة") }
             items(state.outgoing, key = { it.id }) { relationship ->
                 FriendRow(relationship.recipientCode) { Text("بانتظار القبول") }
             }
-            item { Text("قائمة الأصحاب", style = MaterialTheme.typography.titleLarge) }
+            item { FriendsSectionTitle("قائمة الأصحاب") }
             if (!state.loading && !state.failed && state.accepted.isEmpty()) item {
-                Text("أضف أول صديق باستخدام كود الصداقة")
+                Surface(
+                    Modifier.fillMaxWidth(),
+                    color = FriendsCream,
+                    shape = RoundedCornerShape(22.dp),
+                    border = BorderStroke(1.dp, FriendsGold)
+                ) {
+                    Text("أضف أول صديق باستخدام كود الصداقة", Modifier.padding(16.dp), color = FriendsPurple)
+                }
             }
             items(state.accepted, key = { it.id }) { relationship ->
-                FriendRow(relationship.peerCode(requireNotNull(state.account).uid), onClick = { onChat(relationship.id) }) {
+                val account = state.account ?: return@items
+                val friendProfile by produceState<FriendProfile?>(null, relationship.id, account.uid) {
+                    value = try {
+                        model.peer(relationship, account)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                FriendRow(relationship.peerCode(account.uid), friendProfile, onClick = { onChat(relationship.id) }) {
                     Icon(Icons.Rounded.ChatBubbleOutline, "افتح المحادثة", tint = FriendsPurple)
                 }
             }
@@ -165,16 +248,43 @@ internal fun FriendsScreen(onBack: () -> Unit, onChat: (String) -> Unit) {
 }
 
 @Composable
-private fun FriendRow(code: String, onClick: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit) {
+private fun FriendsSectionTitle(title: String) {
+    Text(title, Modifier.padding(top = 6.dp), color = FriendsPurple,
+        style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+}
+
+@Composable
+private fun FriendRow(
+    code: String,
+    profile: FriendProfile? = null,
+    onClick: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(22.dp)
+    val stroke = BorderStroke(1.dp, FriendsGold.copy(alpha = 0.75f))
     val content: @Composable () -> Unit = {
-        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(code, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Ltr))
-            actions()
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                FriendAvatarBadge(profile, if (onClick == null) FriendsLavender else FriendsGold, Modifier.size(46.dp))
+                Text(code, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Ltr),
+                    fontWeight = FontWeight.Bold)
+                if (onClick != null) actions()
+            }
+            if (onClick == null) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = actions
+                )
+            }
         }
     }
-    val shape = RoundedCornerShape(16.dp)
-    if (onClick == null) Surface(shape = shape, color = Color.White, contentColor = FriendsPurple, content = content)
-    else Surface(onClick, shape = shape, color = Color.White, contentColor = FriendsPurple, content = content)
+    if (onClick == null) Surface(shape = shape, color = FriendsCream, border = stroke, content = content)
+    else Surface(onClick, shape = shape, color = Color.White, border = stroke, shadowElevation = 2.dp, content = content)
 }
 
 @Composable

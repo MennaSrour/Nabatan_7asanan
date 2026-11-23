@@ -1,12 +1,13 @@
 package com.menna.nabatan_7asena.presentation.screens.quran.composables
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.*
@@ -20,64 +21,86 @@ import com.menna.nabatan_7asena.resources.AppResources as R
 import com.menna.nabatan_7asena.resources.stringResource
 import com.menna.nabatan_7asena.ui.theme.SummerTheme
 import kotlin.math.ceil
-
-private val SectionGap = 2.dp
+import kotlin.math.roundToInt
 
 @Composable
 internal fun MushafPageBody(
     ayahs: List<AyahModel>, active: Pair<Int, Int>?, actions: QuranActions,
-    onFallbackChanged: (Boolean) -> Unit, modifier: Modifier = Modifier
+    modifier: Modifier = Modifier
 ) {
     val prefix = stringResource(R.string.quran_surah_prefix)
     val sections = remember(ayahs, prefix) { mushafSections(ayahs, prefix) }
     val quranFont = quranFontFamily()
     val bannerFont = DownloadLabelFont
     val density = LocalDensity.current
-    val measurer = rememberTextMeasurer(cacheSize = 32)
+    val measurer = rememberTextMeasurer(cacheSize = 0)
     // Invalidate fitting if bundled fonts finish loading after the initial composition.
     val resolvedQuranFont = LocalFontFamilyResolver.current.resolve(quranFont).value
     val resolvedBannerFont = LocalFontFamilyResolver.current.resolve(bannerFont).value
-    BoxWithConstraints(modifier.padding(vertical = 3.dp)) {
-        val width = constraints.maxWidth.coerceAtLeast(1)
+    BoxWithConstraints(modifier.padding(vertical = 3.dp), contentAlignment = Alignment.Center) {
+        val width = constraints.maxWidth
         val height = constraints.maxHeight
+        if (width == 0 || height == 0 || sections.isEmpty()) return@BoxWithConstraints
+        val bannerInset = minOf(24.dp, maxWidth / 12)
+        val bannerInsetPx = with(density) { bannerInset.roundToPx() }
+        val maximumSp = (maxWidth.value / 11f).coerceIn(26f, 72f)
         val fitted = remember(sections, width, height, density, resolvedQuranFont, resolvedBannerFont) {
-            fitMushafTypography { size, lineHeight ->
-                measuredSections(sections, size, lineHeight, width, density, quranFont, bannerFont, measurer)
-                    .let { it.sum() + with(density) { SectionGap.roundToPx() } * (sections.size - 1).coerceAtLeast(0) <= height }
+            fitMushafTypography(maximumSp) { size, lineHeight ->
+                val gap = sectionGapPx(size, density)
+                var remaining = height - gap * (sections.size - 1)
+                sections.all { section ->
+                    val measured = measurer.measure(
+                        section.text,
+                        style = sectionStyle(section, size, lineHeight, quranFont, bannerFont),
+                        constraints = Constraints(maxWidth = if (section is MushafSection.Banner) {
+                            (width - 2 * bannerInsetPx).coerceAtLeast(1)
+                        } else width),
+                        layoutDirection = LayoutDirection.Rtl,
+                        density = density
+                    )
+                    remaining -= measured.size.height + 2 * sectionPaddingPx(section, size, density)
+                    !measured.didOverflowWidth && remaining >= 0
+                }
             }
         }
-        val heights = remember(sections, fitted, width, density, resolvedQuranFont, resolvedBannerFont) {
-            measuredSections(sections, fitted.fontSizeSp, fitted.lineHeightSp, width, density, quranFont, bannerFont, measurer)
+        val gap = with(density) { sectionGapPx(fitted.fontSizeSp, density).toDp() }
+        val pageContent: @Composable () -> Unit = {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
+                sections.forEach { section ->
+                    MushafSectionContent(
+                        section, fitted, quranFont, bannerFont, active, actions,
+                        bannerInset, Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
-        SideEffect { onFallbackChanged(!fitted.fits) }
-        val bodyModifier = if (fitted.fits) Modifier.fillMaxWidth()
-            else Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-        Column(bodyModifier, verticalArrangement = Arrangement.spacedBy(SectionGap)) {
-            sections.forEachIndexed { index, section ->
-                val sectionModifier = Modifier.fillMaxWidth().height(with(density) { heights[index].toDp() })
-                MushafSectionContent(section, fitted, quranFont, bannerFont, active, actions, sectionModifier)
+        if (fitted.fits) {
+            pageContent()
+        } else {
+            // Even a very short split-screen window must retain every section.
+            Layout(content = pageContent) { measurables, frame ->
+                val page = measurables.single().measure(frame.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+                val scale = (frame.maxHeight.toFloat() / page.height.coerceAtLeast(1)).coerceAtMost(1f)
+                layout(page.width, frame.constrainHeight((page.height * scale).roundToInt())) {
+                    page.placeWithLayer(0, 0) {
+                        transformOrigin = TransformOrigin(0.5f, 0f)
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                }
             }
         }
     }
 }
 
-private fun measuredSections(
-    sections: List<MushafSection>, size: Float, lineHeight: Float, width: Int,
-    density: Density, quranFont: FontFamily, bannerFont: FontFamily, measurer: TextMeasurer
-): List<Int> = sections.map { section ->
-    val horizontalInset = if (section is MushafSection.Banner) with(density) { 48.dp.roundToPx() } else 0
-    val style = sectionStyle(section, size, lineHeight, quranFont, bannerFont)
-    val measured = measurer.measure(section.text, style = style,
-        constraints = Constraints(maxWidth = (width - horizontalInset).coerceAtLeast(1)),
-        layoutDirection = LayoutDirection.Rtl, density = density, overflow = TextOverflow.Visible)
-    measured.size.height + sectionPaddingPx(section, size, density) * 2
-}
+private fun sectionGapPx(size: Float, density: Density): Int =
+    with(density) { minOf(2.dp.toPx(), (size * 0.12f).sp.toPx()).toInt() }
 
 private fun sectionPaddingPx(section: MushafSection, size: Float, density: Density): Int = with(density) {
     when (section) {
-        is MushafSection.Banner -> 4.dp.roundToPx()
-        is MushafSection.Verses -> ceil((size * 0.5f).sp.toPx()).toInt() // Space for tall first/last-line Quranic marks.
-        MushafSection.Basmalah -> 2.dp.roundToPx()
+        is MushafSection.Banner -> minOf(4.dp.toPx(), (size * 0.2f).sp.toPx()).toInt()
+        is MushafSection.Verses -> ceil((size * 0.5f).sp.toPx()).toInt()
+        MushafSection.Basmalah -> minOf(2.dp.toPx(), (size * 0.12f).sp.toPx()).toInt()
     }
 }
 
@@ -92,14 +115,14 @@ private fun sectionStyle(section: MushafSection, size: Float, lineHeight: Float,
 @Composable
 private fun MushafSectionContent(
     section: MushafSection, fitted: MushafTypography, quranFont: FontFamily, bannerFont: FontFamily,
-    active: Pair<Int, Int>?, actions: QuranActions, modifier: Modifier
+    active: Pair<Int, Int>?, actions: QuranActions, bannerInset: Dp, modifier: Modifier
 ) {
     val style = sectionStyle(section, fitted.fontSizeSp, fitted.lineHeightSp, quranFont, bannerFont)
-    if (section is MushafSection.Banner) MushafSurahBanner(section.text, style, modifier)
+    val padding = with(LocalDensity.current) { sectionPaddingPx(section, fitted.fontSizeSp, this).toDp() }
+    if (section is MushafSection.Banner) MushafSurahBanner(section.text, style, bannerInset, padding, modifier)
     else {
         val palette = SummerTheme.quran
         val text = remember(section, active, palette) { sectionText(section, active, palette.accentSoft, actions) }
-        val padding = with(LocalDensity.current) { sectionPaddingPx(section, fitted.fontSizeSp, this).toDp() }
         BasicText(text, style = style.copy(color = palette.textPrimary), overflow = TextOverflow.Visible,
             modifier = modifier.padding(vertical = padding))
     }
@@ -111,7 +134,7 @@ private fun sectionText(section: MushafSection, active: Pair<Int, Int>?, highlig
         section.ayahs.forEachIndexed { index, ayah ->
             if (index > 0) append(" ")
             val selected = active == (ayah.suraNo to ayah.ayaNo)
-            withLink(LinkAnnotation.Clickable("${ayah.suraNameAr} ${ayah.ayaNo}",
+            withLink(LinkAnnotation.Clickable("${ayah.suraNameAr} ${com.menna.nabatan_7asena.core.util.arabicIndic(ayah.ayaNo)}",
                 styles = TextLinkStyles(style = SpanStyle(background = if (selected) highlight else Color.Transparent, textDecoration = TextDecoration.None)),
                 linkInteractionListener = { actions.playAyahAudio(ayah.suraNo, ayah.ayaNo) })) {
                 append(com.menna.nabatan_7asena.domain.util.uthmaniText(ayah.text, ayah.ayaNo))
